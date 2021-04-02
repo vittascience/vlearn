@@ -22,6 +22,7 @@ class ControllerCourse extends Controller
                 return $this->entityManager->getRepository('Learn\Entity\Course')
                     ->findAll();
             },
+
             'get_one' => function ($data) {
                 preg_match('/[0-9]{1,11}/', $data['id'], $matches);
                 $data['id'] = $matches[0];
@@ -131,6 +132,14 @@ class ControllerCourse extends Controller
                 } catch (\Error $error) {
                     echo ($error->getMessage());
                 }
+            },
+
+            'increment_views' => function ($data) {
+                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $data['id']));
+                $tutorial->incrementViews();
+                $this->entityManager->persist($tutorial);
+                $this->entityManager->flush();
+                return true;
             },
             'update' => function () {
                 //prepare the data

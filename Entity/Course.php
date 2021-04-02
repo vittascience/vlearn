@@ -67,6 +67,12 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
      * @var integer
      */
     private $duration = 3600; // in seconds
+
+    /**
+     * @ORM\Column(name="views", type="integer", options={"default":0})
+     * @var integer
+     */
+    private $views = 0; // in seconds
     /**
      * @ORM\Column(name="difficulty", type="integer", nullable=false, options={"default":0})
      * @var integer
@@ -245,6 +251,27 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             $this->duration = $duration;
         } else {
             throw new EntityDataIntegrityException("duration needs to be integer and positive");
+        }
+    }
+
+    /**
+     * @return int
+     */
+    public function getViews()
+    {
+        return $this->views;
+    }
+
+    /**
+     * @param int $views
+     */
+    public function incrementViews($views)
+    {
+        $views = intval($views);
+        if (is_int($views) && $views >= 0) {
+            $this->views += 1;
+        } else {
+            throw new EntityDataIntegrityException("views needs to be integer and positive");
         }
     }
 
@@ -439,6 +466,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             $this->setTitle(urldecode($objectToCopyFrom->getTitle()));
             $this->setDescription(urldecode($objectToCopyFrom->getDescription()));
             $this->setDuration($objectToCopyFrom->getDuration());
+            $this->setViews($objectToCopyFrom->getViews());
             $this->setDifficulty($objectToCopyFrom->getDifficulty());
             $this->setLang($objectToCopyFrom->getLang());
             $this->setSupport($objectToCopyFrom->getSupport());
@@ -474,6 +502,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             'title' => $this->getTitle(),
             'description' => $this->getDescription(),
             'duration' => $this->getDuration(),
+            'views' => $this->getViews(),
             'difficulty' => $this->getDifficulty(),
             'lang' => $this->getLang(),
             'support' => $this->getSupport(),
