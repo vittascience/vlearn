@@ -135,11 +135,17 @@ class ControllerCourse extends Controller
             },
 
             'increment_views' => function ($data) {
-                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $data['id']));
-                $tutorial->incrementViews();
-                $this->entityManager->persist($tutorial);
-                $this->entityManager->flush();
-                return true;
+                if (isset($_SESSION['views'][$data['id']])) {
+                    return false;
+                } else {
+                    $_SESSION['views'][$data['id']] = 1;
+                    $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $data['id']));
+                    $tutorial->incrementViews();
+                    $this->entityManager->persist($tutorial);
+                    $this->entityManager->flush();
+
+                    return true;
+                }
             },
             'update' => function () {
                 //prepare the data
