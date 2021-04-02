@@ -276,6 +276,19 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
     }
 
     /**
+     * @param int $views
+     */
+    public function setViews($views)
+    {
+        $views = intval($views);
+        if (is_int($views) && $views >= 0) {
+            $this->views = $views;
+        } else {
+            throw new EntityDataIntegrityException("views needs to be integer and positive");
+        }
+    }
+
+    /**
      * @return int
      */
     public function getDifficulty()
