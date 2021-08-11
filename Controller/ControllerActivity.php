@@ -46,21 +46,26 @@ class ControllerActivity extends Controller
                             :'';
                 $content = isset($_POST['content']) 
                             ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '',$_POST['content'])))
-                            : '';
-                $isFromClassroom = is_bool($_POST['isFromClassroom']) 
+                            :'';
+                $isFromClassroom = isset($_POST['isFromClassroom']) && is_bool($_POST['isFromClassroom'])
                                     ? $_POST['isFromClassroom']
-                                    : '';
+                                    : null;
                 $userId = isset($this->user['id'])
                             ? intval($this->user['id'])
                             : null;
                 $forkedActivityId = isset($_POST['id']) ? intval($_POST['id']) : null;
+                if(isset($_POST['isFromClassroom']) && filter_var($_POST['isFromClassroom'], FILTER_VALIDATE_BOOLEAN)){
+                    $isFromClassroom = $_POST['isFromClassroom']
+                                    ? (bool) $_POST['isFromClassroom']
+                                    : null;
+                }
 
                 // create empty errors array and check for errors
                 $errors = [];
-                if(empty($title)) $errors['titleInvalid'] = true; 
-                if(empty($content)) $errors['contentInvalid'] = true;
-                if(empty($isFromClassroom)) $errors['isFromClassroomInvalid'] = true;
-                if($userId == null) $errors['userIdInvalid'] = true;
+                if(empty($title)) $errors['activityTitleInvalid'] = true; 
+                if(empty($content)) $errors['activityContentInvalid'] = true;
+                if(empty($isFromClassroom)) $errors['activityIsFromClassroomInvalid'] = true;
+                if($userId == null) $errors['activityUserIdInvalid'] = true;
 
                 // return errors if any
                 if(!empty($errors)){
@@ -68,7 +73,7 @@ class ControllerActivity extends Controller
                         'errors' => $errors
                     );
                 }
-
+                
                 // no errors found, we can process the data
                 // get the user 
                 $user = $this->entityManager
