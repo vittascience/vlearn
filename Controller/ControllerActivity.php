@@ -38,23 +38,68 @@ class ControllerActivity extends Controller
                 $this->entityManager->flush();
                 return $name;
             },
-            'add' => function ($data) {
-                $isFromClassroom = false;
-                if (isset($data['isFromClassroom'])) {
-                    $isFromClassroom = true;
+            'add' => function () {
+
+                // bind and sanitize incoming data
+                $title = isset($_POST['title'])
+                            ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '',$_POST['title'])))
+                            :'';
+                $content = isset($_POST['content']) 
+                            ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '',$_POST['content'])))
+                            : '';
+                $isFromClassroom = is_bool($_POST['isFromClassroom']) 
+                                    ? $_POST['isFromClassroom']
+                                    : '';
+                $userId = isset($this->user['id'])
+                            ? intval($this->user['id'])
+                            : null;
+                $forkedActivityId = isset($_POST['id']) ? intval($_POST['id']) : null;
+
+                // create empty errors array and check for errors
+                $errors = [];
+                if(empty($title)) $errors['titleInvalid'] = true; 
+                if(empty($content)) $errors['contentInvalid'] = true;
+                if(empty($isFromClassroom)) $errors['isFromClassroomInvalid'] = true;
+                if($userId == null) $errors['userIdInvalid'] = true;
+
+                // return errors if any
+                if(!empty($errors)){
+                    return array(
+                        'errors' => $errors
+                    );
                 }
-                $user = $this->entityManager->getRepository('User\Entity\User')
-                    ->find($this->user['id']);
-                $activity = new Activity($data['title'], $data['content'], $user, $isFromClassroom);
-                if (isset($data['id'])) {
+
+                // no errors found, we can process the data
+                // get the user 
+                $user = $this->entityManager
+                                ->getRepository('User\Entity\User')
+                                ->find($userId);
+
+                if(!$user){
+                    // return an error if the user was not found
+                    return array(
+                        'error'=> 'userNotExists'
+                    );
+                }
+                
+
+                // create the activity
+                $activity = new Activity( $title , $content, $user, $isFromClassroom);
+
+                // if the activity belongs to vittasciences resources, set the resources id 
+                if ($forkedActivityId != null) {
                     $fork = $this->entityManager->getRepository('Learn\Entity\Activity')
-                        ->find($data['id']);
+                        ->find($forkedActivityId);
                     $activity->setFork($fork);
                 }
+
+                // persist and save the activity, then return the activity
                 $this->entityManager->persist($activity);
                 $this->entityManager->flush();
                 return $activity;
-            }, 'add_several' => function ($data) {
+
+            }, 
+            'add_several' => function ($data) {
                 $activities = [];
                 foreach ($data["array"] as $d) {
                     $isFromClassroom = false;
