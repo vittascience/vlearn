@@ -90,13 +90,55 @@ class ControllerCourse extends Controller
                 return $this->entityManager->getRepository('Learn\Entity\Course')->countByFilter($data['filter'], $id, $search);
             },
             'add' => function () {
+                // accept only POST request
+                if($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error"=> "Method not Allowed"];
+
+                // accept only connected user
+                if(empty($_SESSION['id'])) return ["error"=> "Not Authenticated"];
+
                 try {
+
                     $tutorialParts = json_decode($_POST['tutorialParts']);
                     $chapters = json_decode($_POST['chapters']);
                     $linked = json_decode($_POST['linkedTuto']);
                     unset($_POST['linkedTuto']);
                     unset($_POST['tutorialParts']);
                     unset($_POST['chapters']);
+
+                    // translate first $tutorialPart content from $name and url to full bbcode
+                    for($i=0 ; $i < count($tutorialParts); $i++){
+
+                        if($i === 0 ){
+                            // initialize $content to be concatenated with sanitized values later
+                            $content = "[fa-list]";
+
+                            // first content property is an array of names and urls
+                            $nameAndUrlPairs = $tutorialParts[$i]->content;
+
+                            foreach($nameAndUrlPairs as $nameAndUrlPair){
+                                // bind and sanitize incoming data
+                                $name = htmlspecialchars(strip_tags(trim($nameAndUrlPair->name)));
+                                $url = htmlspecialchars(strip_tags(trim($nameAndUrlPair->url)));
+
+                                // fill content with sanitized values
+                                $content .= empty($name) 
+                                            ? "[fa-*]{$name}[\/*]" 
+                                            : "[*][fa-url={$url}]{$name}[/url][/*]";
+                            }
+                            $content .= "[/list]";
+                            $tutorialParts[$i]->content = $content;
+                        }
+                        else {
+                            // bind and sanitize incoming data
+                            $title = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->title)));
+                            $content = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->content)));
+
+                            // replace values by the same values but sanitized
+                            $tutorialParts[$i]->title =  $title;
+                            $tutorialParts[$i]->content =  $content;
+                        }
+                    }
+                
                     $tutorial = Course::jsonDeserialize($_POST);
                     if (isset($_FILES['imgFile'])) {
                         $tutorial->setImg($_FILES['imgFile']);
@@ -148,6 +190,13 @@ class ControllerCourse extends Controller
                 }
             },
             'update' => function () {
+
+                // accept only POST request
+                if($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error"=> "Method not Allowed"];
+
+                // accept only connected user
+                if(empty($_SESSION['id'])) return ["error"=> "Not Authenticated"];
+
                 //prepare the data
                 $tutorialParts = json_decode($_POST['tutorialParts']);
                 $linked = json_decode($_POST['linkedTuto']);
@@ -155,6 +204,41 @@ class ControllerCourse extends Controller
                 unset($_POST['tutorialParts']);
                 unset($_POST['chapters']);
                 unset($_POST['linkedTuto']);
+                
+                // translate first $tutorialPart content from $name and url to full bbcode
+                for($i=0 ; $i < count($tutorialParts); $i++){
+
+                    if($i === 0 ){
+                        // initialize $content to be concatenated with sanitized values later
+                        $content = "[fa-list]";
+
+                        // first content property is an array of names and urls
+                        $nameAndUrlPairs = $tutorialParts[$i]->content;
+
+                        foreach($nameAndUrlPairs as $nameAndUrlPair){
+                            // bind and sanitize incoming data
+                            $name = htmlspecialchars(strip_tags(trim($nameAndUrlPair->name)));
+                            $url = htmlspecialchars(strip_tags(trim($nameAndUrlPair->url)));
+
+                            // fill content with sanitized values
+                            $content .= empty($name) 
+                                        ? "[fa-*]{$name}[\/*]" 
+                                        : "[*][fa-url={$url}]{$name}[/url][/*]";
+                        }
+                        $content .= "[/list]";
+                        $tutorialParts[$i]->content = $content;
+                    }
+                    else {
+                         // bind and sanitize incoming data
+                        $title = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->title)));
+                        $content = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->content)));
+
+                        // replace values by the same values but sanitized
+                        $tutorialParts[$i]->title =  $title;
+                        $tutorialParts[$i]->content =  $content;
+                    }
+                }
+                
                 $tutorial = Course::jsonDeserialize($_POST);
                 //get the matching tutorial from database
                 $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $tutorial->getId()));
@@ -193,6 +277,7 @@ class ControllerCourse extends Controller
                 for ($index = 0; $index < count($tutorialParts); $index++) {
                     $activity = new Activity($tutorialParts[$index]->title, $tutorialParts[$index]->content, $this->entityManager->getRepository('User\Entity\User')
                         ->find($this->user['id']));
+                       
                     $this->entityManager->persist($activity);
                     $this->entityManager->flush();
                     $courseLinkActivity = new CourseLinkActivity($databaseCourse, $activity, $index);
