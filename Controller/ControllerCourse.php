@@ -195,7 +195,28 @@ class ControllerCourse extends Controller
                 if($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error"=> "Method not Allowed"];
 
                 // accept only connected user
-                if(empty($_SESSION['id'])) return ["error"=> "Not Authenticated"];
+                if(empty($_SESSION['id'])) return ["errorType"=> "courseNotUpdatedNotAuthenticated"];
+
+                // bind and sanitize data
+                $userId = intval($_SESSION['id']);
+                $courseId = intval($_POST['id']);
+
+                // check if user is admin
+                $isAdmin = $this->entityManager->getRepository(Regular::class)->findOneBy(array(
+                    'user'=> $userId,
+                    'isAdmin' => true
+                ));
+
+                //check if the userr is the owner of the course
+                $isOwnerOfCourse = $this->entityManager->getRepository(Course::class)->findOneBy(array(
+                    'id' => $courseId,
+                    'user'=> $userId
+                ));
+
+               // user is not admin and not the owner of the course
+                if(!$isAdmin && !$isOwnerOfCourse ){
+                    return ["errorType"=> "courseNotUpdatedNotAuthorized"];
+                }
 
                 //prepare the data
                 $tutorialParts = json_decode($_POST['tutorialParts']);
@@ -204,15 +225,13 @@ class ControllerCourse extends Controller
                 unset($_POST['tutorialParts']);
                 unset($_POST['chapters']);
                 unset($_POST['linkedTuto']);
-                
+               
                 // translate first $tutorialPart content from $name and url to full bbcode
                 for($i=0 ; $i < count($tutorialParts); $i++){
 
                     if($i === 0 ){
-                        // initialize $content to be concatenated with sanitized values later
+                        // initialize values
                         $content = "[fa-list]";
-
-                        // first content property is an array of names and urls
                         $nameAndUrlPairs = $tutorialParts[$i]->content;
 
                         foreach($nameAndUrlPairs as $nameAndUrlPair){
