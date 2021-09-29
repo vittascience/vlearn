@@ -19,22 +19,26 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
     // REG_CONTENT: Only letters and digits and length of string is between 1 and 10000
     const REG_CONTENT = "/.{0,9999}/";
 
+
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
      */
     private $id;
+
     /**
      * @ORM\Column(name="is_from_classroom", type="boolean", nullable=false, options={"default":false})
      * @var bool
      */
     private $isFromClassroom = false;
+
     /**
      * @ORM\Column(name="title", type="string", length=1000, nullable=true, options={"default":"No title"})
      * @var string
      */
     private $title = "No title";
+
     /**
      * @ORM\Column(name="content", type="string", length=10000, nullable=false, options={"default":"No content"})
      * @var string
@@ -55,6 +59,11 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
      */
     private $user = null;
 
+    /**
+     * @ORM\Column(name="type", type="string", length=255, nullable=true)
+     * @var string
+     */
+    private $type;
 
 
     public function __construct($title, $content, $user = null, $isFromClassroom = false)
@@ -64,8 +73,6 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
         $this->user = $user;
         $this->isFromClassroom = $isFromClassroom;
     }
-
-
 
     /**
      * @return string
@@ -107,7 +114,6 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
             throw new EntityDataIntegrityException("content needs to be string and have between 1 and 10000 characters");
         }
     }
-
 
     public function getFork()
     {
@@ -185,6 +191,24 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
+    /**
+     * @var String $type
+     * @return Object Activity
+     */
+    public function setType(String $type): Activity
+    {
+        $this->type = $type;
+        return $this;
+    }
+
+    /**
+     * @return String type
+     */
+    public function getType(): String
+    {
+        return $this->type;
+    }
+
 
     public function copy($objectToCopyFrom)
     {
@@ -194,6 +218,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
         $this->setUser($objectToCopyFrom->getUser());
         $this->setIsFromClassroom($objectToCopyFrom->isFromClassroom());
     }
+
     public function jsonSerialize()
     {
         if ($this->getFork() != null) {
