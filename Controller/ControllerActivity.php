@@ -19,10 +19,7 @@ class ControllerActivity extends Controller
         $this->actions = array(
 
             'get_mine' => function () {
-                return $this->entityManager->getRepository(Activity::class)
-                    ->findBy(
-                        array("user" => $this->user)
-                    );
+                return $this->entityManager->getRepository(Activity::class)->findBy(array("user" => $this->user));
             },
             'get_mine_for_classroom' => function () {
                 return $this->entityManager->getRepository(Activity::class)
@@ -36,18 +33,23 @@ class ControllerActivity extends Controller
             },
             'delete' => function ($data) {
 
+                // This function can be accessed by post method only
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
                 $Activity_id = htmlspecialchars($data['id']);
                 $activity = $this->entityManager->getRepository(Activity::class)->find($Activity_id);
 
                 $creator_id = $activity->getUser();
                 $requester_id = $_SESSION['id'];
 
-                $regular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $user_id]);
-                if ($activity) {
+                $Allowed = $this->isAllowed($creator_id, $requester_id);
+
+                $name = ["name" => "unknow", "id" => "unknow", "message" => "notAllowed"];
+                if ($activity && $Allowed) {
                     $this->entityManager->remove($activity);
                     $this->entityManager->flush();
+                    $name = ["name" => $activity->getTitle(), "id" => $activity->getId()];
                 }
-                $name = ["name" => $activity->getTitle(), "id" => $activity->getId()];
                 return $name;
             },
             'add' => function () {
@@ -149,6 +151,24 @@ class ControllerActivity extends Controller
         );
     }
 
+    private function isAllowed(Int $creator_id, Int $requester_id)
+    {
+        $Allowed = false;
+        $regular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $requester_id]);
+
+        if ($regular) {
+            if ($regular->getIsAdmin()) {
+                $Allowed = true;
+            }
+        }
+
+        if ($creator_id == $requester_id) {
+            $Allowed = true;
+        }
+
+        return $Allowed;
+    }
+
     /**
      * Return the limit status (true if limited)
      * @var $activity_id
@@ -166,7 +186,7 @@ class ControllerActivity extends Controller
 
             if ($Activity) {
                 $activity_type = $Activity->getType();
-                // Only
+                // Only check if the activity have a type
                 if (!empty($Activity->getType())) {
                     $myActivities = $this->entityManager->getRepository(Activity::class)->findBy(["user" => $this->user]);
                     $Applications = $this->entityManager->getRepository(UsersLinkApplications::class)->findBy(['user' => $user_id]);

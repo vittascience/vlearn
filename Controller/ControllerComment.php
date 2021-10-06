@@ -34,6 +34,9 @@ class ControllerComment extends Controller
                 return  $arrayComment;
             },
             'update' => function ($data) {
+                // This function can be accessed by post method only
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
                 $comment = $this->entityManager->getRepository('Learn\Entity\Comment')
                     ->find($data['comid']);
                 $comment->setMessage($data['message']);
@@ -62,9 +65,13 @@ class ControllerComment extends Controller
                 ];
             },
             'delete' => function ($data) {
+                // This function can be accessed by post method only
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
                 $comment = $this->entityManager->getRepository('Learn\Entity\Comment')->find($data['comid']);
                 $this->entityManager->remove($comment);
                 $this->entityManager->flush();
+
                 return true;
             },
             'alert' => function ($data) {
