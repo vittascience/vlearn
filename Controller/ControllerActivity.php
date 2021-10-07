@@ -178,14 +178,16 @@ class ControllerActivity extends Controller
     {
         if (!empty(htmlspecialchars($activity_id))) {
 
-            include_once(__DIR__ . "/../../../../../default-restrictions/constants.php");
             $Restrictions = [];
             $Activities = [];
             $user_id = $_SESSION['id'];
 
-            // get the default restrictions
-            if (!empty(activitiesRestrictions)) {
-                $Restrictions = activitiesRestrictions;
+            // Get the default user restrictions in the database and set it in parameters
+            $activitiesDefaultRestrictions = $this->getEntityManager()->getRepository(Restrictions::class)->findOneBy(['name' => "activitiesRestrictions"]);
+            $activitiesRestrictions = (array)json_decode($activitiesDefaultRestrictions->getRestrictions());
+
+            if (!empty($activitiesRestrictions)) {
+                $Restrictions = $activitiesRestrictions;
             }
 
             // get the actual activity
