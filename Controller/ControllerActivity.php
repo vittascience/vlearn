@@ -36,13 +36,13 @@ class ControllerActivity extends Controller
                 // This function can be accessed by post method only
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
-                $Activity_id = htmlspecialchars($data['id']);
-                $activity = $this->entityManager->getRepository(Activity::class)->find($Activity_id);
+                $Activity_id = (int)htmlspecialchars($data['id']);
+                $activity = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $Activity_id]);
 
                 $creator_id = $activity->getUser();
                 $requester_id = $_SESSION['id'];
 
-                $Allowed = $this->isAllowed($creator_id, $requester_id);
+                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
 
                 $name = ["name" => "unknow", "id" => "unknow", "message" => "notAllowed"];
                 if ($activity && $Allowed) {
