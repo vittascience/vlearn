@@ -237,7 +237,8 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
             'content' => $this->getContent(),
             'isFromClassroom' => $this->isFromClassroom(),
             'user' => $user,
-            "fork" => $fork
+            "fork" => $fork,
+            "type" => $this->getType()
         ];
     }
 
