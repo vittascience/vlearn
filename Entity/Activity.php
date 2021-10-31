@@ -204,7 +204,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @return String type
      */
-    public function getType(): String
+    public function getType(): ?string
     {
         return $this->type;
     }
