@@ -364,11 +364,12 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             if (!$arrayPicture['success']) {
             }
             $tmpPath = $img['tmp_name'];
-            $realPath = __DIR__ . "/../../public/content/user_data/tuto_img/";
+            $realPath = __DIR__ . "/../../../../public/content/user_data/tuto_img/";
             while (true) {
-                $filename = uniqid(rand(), true) . '_' . $img['name'] . '.' . $arrayPicture['ext'];
+                $filename = uniqid(rand(), true) . '_' . $img['name'];
                 if (!file_exists($realPath . "" . $filename)) break;
             }
+           
             move_uploaded_file($tmpPath, $realPath . "" . $filename);
             //création d'une image de poids réduite
             /* resize_img($realPath . $filename, $realPath . 'lazy_' . $filename); */
