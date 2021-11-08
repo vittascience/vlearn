@@ -381,7 +381,7 @@ class ControllerCourse extends Controller
         );
     }
     private function bindIncomingTutorialData($incomingData){
-        $tutorial = new stdClass;
+        $tutorial = new \stdClass;
         
         $tutorial->title = !empty($incomingData['title']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '',$incomingData['title']))) : '';
         $tutorial->description = !empty($incomingData['description']) ?trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '',$incomingData['description']))) : '';
