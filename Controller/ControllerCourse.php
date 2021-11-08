@@ -91,6 +91,7 @@ class ControllerCourse extends Controller
                 return $this->entityManager->getRepository('Learn\Entity\Course')->countByFilter($data['filter'], $id, $search);
             },
             'add' => function () {
+                
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -98,6 +99,13 @@ class ControllerCourse extends Controller
                 if (empty($_SESSION['id'])) return ["error" => "Not Authenticated"];
 
                 try {
+                    // bind incoming tutorial data
+                    $incomingTutorial = $this->bindIncomingTutorialData($_POST);
+
+                    // check for errors and return them if any
+                    $tutorialErrors = $this->validateIncomingTutorialData($incomingTutorial);
+                    if(!empty($tutorialErrors)) return array('errors' => $tutorialErrors);
+
 
                     $tutorialParts = json_decode($_POST['tutorialParts']);
                     $chapters = json_decode($_POST['chapters']);
@@ -105,7 +113,7 @@ class ControllerCourse extends Controller
                     unset($_POST['linkedTuto']);
                     unset($_POST['tutorialParts']);
                     unset($_POST['chapters']);
-
+                   
                     // translate first $tutorialPart content from $name and url to full bbcode
                     for ($i = 0; $i < count($tutorialParts); $i++) {
 
@@ -139,7 +147,8 @@ class ControllerCourse extends Controller
                         }
                     }
 
-                    $tutorial = Course::jsonDeserialize($_POST);
+                    $tutorial = Course::jsonDeserialize($incomingTutorial);
+                    
                     if (isset($_FILES['imgFile'])) {
                         $tutorial->setImg($_FILES['imgFile']);
                     }
@@ -190,7 +199,7 @@ class ControllerCourse extends Controller
                 }
             },
             'update' => function () {
-
+                
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -212,12 +221,12 @@ class ControllerCourse extends Controller
                     'id' => $courseId,
                     'user' => $userId
                 ));
-
+                
                 // user is not admin and not the owner of the course
                 if (!$isAdmin && !$isOwnerOfCourse) {
                     return ["errorType" => "courseNotUpdatedNotAuthorized"];
                 }
-
+ 
                 //prepare the data
                 $tutorialParts = json_decode($_POST['tutorialParts']);
                 $linked = json_decode($_POST['linkedTuto']);
@@ -258,13 +267,20 @@ class ControllerCourse extends Controller
                 }
 
                 $tutorial = Course::jsonDeserialize($_POST);
+               
+                $errors = [];
+                if(empty($tutorial->getDescription())) array_push($errors,array('type' =>'descriptionInvalid'));
+
+                if(!empty($errors)) return array('errors' =>$errors);
+
                 //get the matching tutorial from database
                 $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $tutorial->getId()));
-
+ 
                 //if we uploaded a picture, set it on the database & tutorial
                 if (isset($_FILES['imgFile'])) {
                     $tutorial->setImg($_FILES['imgFile']);
-                }
+                } 
+               
                 //delete previous lessons & parts & linked from the database
                 $lessonsDatabase = $this->entityManager->getRepository('Learn\Entity\Lesson')->findBy(array("tutorial" => $tutorial));
                 foreach ($lessonsDatabase as $val) {
@@ -363,5 +379,36 @@ class ControllerCourse extends Controller
                 }
             }
         );
+    }
+    private function bindIncomingTutorialData($incomingData){
+        $tutorial = new stdClass;
+        
+        $tutorial->title = !empty($incomingData['title']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '',$incomingData['title']))) : '';
+        $tutorial->description = !empty($incomingData['description']) ?trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '',$incomingData['description']))) : '';
+        $tutorial->difficulty = !empty($incomingData['difficulty']) ? intval($incomingData['difficulty']) : 0;
+        $tutorial->duration = !empty($incomingData['duration']) ? intval($incomingData['duration']) : 3600;
+        $tutorial->lang = !empty($incomingData['lang']) ? htmlspecialchars(strip_tags(trim($incomingData['lang']))) : '';
+        $tutorial->support = !empty($incomingData['support']) ? intval($incomingData['support']) : 0;
+        $tutorial->rights = !empty($incomingData['rights']) ? intval($incomingData['rights']) : 0;
+
+        return $tutorial;
+    }
+
+    private function validateIncomingTutorialData($tutorial){
+        $errors = [];
+
+        // check for errors
+        if(empty($tutorial->title)) array_push($errors, array('type' => 'titleInvalid'));
+        if(empty($tutorial->description)) array_push($errors, array('type' => 'descriptionInvalid'));
+        if(!is_numeric($tutorial->difficulty)) array_push($errors, array('type' => 'difficultyInvalid'));
+        elseif($tutorial->difficulty < 0 || $tutorial->difficulty > 3) array_push($errors, array('type' => 'difficultyInvalid'));
+        if(empty($tutorial->duration)) array_push($errors, array('type' => 'durationInvalid'));
+        if(empty($tutorial->lang)) array_push($errors, array('type' => 'langInvalid'));
+        if(!is_numeric($tutorial->support)) array_push($errors, array('type' => 'supportInvalid'));
+        elseif(empty($tutorial->support)) array_push($errors, array('type' => 'supportInvalid'));
+        if($tutorial->rights <0 || $tutorial->rights > 2) array_push($errors, array('type' => 'rightsInvalid'));
+
+        return $errors;
+
     }
 }
