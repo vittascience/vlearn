@@ -353,6 +353,17 @@ class ControllerCourse extends Controller
                 foreach ($favoriteDatabase as $val) {
                     $this->entityManager->remove($val);
                 }
+
+                $linkedCourses = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(
+                    array(
+                        'tutorial1'=> $databaseCourse
+                    )
+                );
+                foreach($linkedCourses as $linkedCourse){
+                    $this->entityManager->remove($linkedCourse);
+                    $this->entityManager->flush();
+                }
+                
                 $this->entityManager->flush();
                 $this->entityManager->remove($databaseCourse);
                 $this->entityManager->flush();
