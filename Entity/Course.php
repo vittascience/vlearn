@@ -118,7 +118,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @ORM\Column(name="rights", type="integer", nullable=false, options={"default":0})
      * @var integer
-     * values are between 0 and 2
+     * values are between 0 and 3
      */
     private $rights = 0;
 

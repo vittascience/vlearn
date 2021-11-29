@@ -417,7 +417,7 @@ class ControllerCourse extends Controller
         if(empty($tutorial->lang)) array_push($errors, array('type' => 'langInvalid'));
         if(!is_numeric($tutorial->support)) array_push($errors, array('type' => 'supportInvalid'));
         elseif(empty($tutorial->support)) array_push($errors, array('type' => 'supportInvalid'));
-        if($tutorial->rights <0 || $tutorial->rights > 2) array_push($errors, array('type' => 'rightsInvalid'));
+        if($tutorial->rights <0 || $tutorial->rights > 3) array_push($errors, array('type' => 'rightsInvalid'));
 
         return $errors;
 
