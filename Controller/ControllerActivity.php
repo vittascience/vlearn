@@ -5,6 +5,7 @@ namespace Learn\Controller;
 use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
+use Learn\Controller\Controller;
 use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
@@ -148,6 +149,11 @@ class ControllerActivity extends Controller
 
                 return $activity;
             },
+            'isActivitiesLimited' => function ($data) {
+                $activityId = htmlspecialchars($data['activityId']);
+                $activityType = htmlspecialchars($data['activityType']);
+                return $this->isActivitiesLimited($activityId, $activityType);
+            }
         );
     }
 
@@ -174,9 +180,12 @@ class ControllerActivity extends Controller
      * @var $activity_id
      * @return Array
      */
-    private function isActivitiesLimited(String $activity_id): array
+    private function isActivitiesLimited(String $activity_id = null, String $activity_type = null): array
     {
-        if (!empty(htmlspecialchars($activity_id))) {
+        if (!empty(($activity_id)) || !empty(($activity_type))) {
+
+            $activity_id = htmlspecialchars($activity_id);
+            $activity_type = htmlspecialchars($activity_type);
 
             $Restrictions = [];
             $Activities = [];
@@ -191,12 +200,14 @@ class ControllerActivity extends Controller
             }
 
             // get the actual activity
-            $Activity = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity_id]);
+            $Activity = $this->getEntityManager()->getRepository(Activity::class)->findOneBy(['id' => $activity_id]);
 
-            if ($Activity) {
-                $activity_type = $Activity->getType();
+            if ($Activity || $activity_type) {
+                if (empty($activity_type)) {
+                    $activity_type = $Activity->getType();
+                }
                 // Only check if the activity have a type
-                if (!empty($Activity->getType())) {
+                if ($activity_type) {
                     $myActivities = $this->entityManager->getRepository(Activity::class)->findBy(["user" => $this->user]);
                     $Applications = $this->entityManager->getRepository(UsersLinkApplications::class)->findBy(['user' => $user_id]);
                     $ApplicationFromGroup = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findBy(['user' => $user_id]);
