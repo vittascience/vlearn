@@ -254,8 +254,13 @@ class ControllerActivity extends Controller
                         }
                     }
 
-                    if ($Activities[$activity_type] >= $Restrictions[$activity_type]) {
-                        return ['Limited' => true];
+                    if (array_key_exists($activity_type, $Restrictions)) {
+                        if ($Restrictions[$activity_type] > $Activities[$activity_type]) {
+                            return [
+                                'status' => false,
+                                'message' => 'You have reached the limit of ' . $Restrictions[$activity_type] . ' ' . $activity_type . ' activities'
+                            ];
+                        }
                     } else {
                         return ['Limited' => false];
                     }
