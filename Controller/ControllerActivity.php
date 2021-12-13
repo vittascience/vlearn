@@ -9,6 +9,7 @@ use Learn\Controller\Controller;
 use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
+use Classroom\Entity\Restrictions;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
