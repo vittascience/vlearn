@@ -5,9 +5,11 @@ namespace Learn\Controller;
 use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
+use Learn\Controller\Controller;
 use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
+use Classroom\Entity\Restrictions;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -148,6 +150,11 @@ class ControllerActivity extends Controller
 
                 return $activity;
             },
+            'isActivitiesLimited' => function ($data) {
+                $activityId = htmlspecialchars($data['activityId']);
+                $activityType = htmlspecialchars($data['activityType']);
+                return $this->isActivitiesLimited($activityId, $activityType);
+            }
         );
     }
 
@@ -174,16 +181,19 @@ class ControllerActivity extends Controller
      * @var $activity_id
      * @return Array
      */
-    private function isActivitiesLimited(String $activity_id): array
+    private function isActivitiesLimited(String $activity_id = null, String $activity_type = null): array
     {
-        if (!empty(htmlspecialchars($activity_id))) {
+        if (!empty(($activity_id)) || !empty(($activity_type))) {
+
+            $activity_id = htmlspecialchars($activity_id);
+            $activity_type = htmlspecialchars($activity_type);
 
             $Restrictions = [];
             $Activities = [];
             $user_id = $_SESSION['id'];
 
             // Get the default user restrictions in the database and set it in parameters
-            $activitiesDefaultRestrictions = $this->getEntityManager()->getRepository(Restrictions::class)->findOneBy(['name' => "activitiesDefaultRestrictions"]);
+            $activitiesDefaultRestrictions = $this->entityManager->getRepository(Restrictions::class)->findOneBy(['name' => "activitiesDefaultRestrictions"]);
             $activitiesRestrictions = (array)json_decode($activitiesDefaultRestrictions->getRestrictions());
 
             if (!empty($activitiesRestrictions)) {
@@ -191,12 +201,14 @@ class ControllerActivity extends Controller
             }
 
             // get the actual activity
-            $Activity = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity_id]);
+            $Activity = $this->entityManager->getRepository(Activity::class)->findOneBy(['id' => $activity_id]);
 
-            if ($Activity) {
-                $activity_type = $Activity->getType();
+            if ($Activity || $activity_type) {
+                if (empty($activity_type)) {
+                    $activity_type = $Activity->getType();
+                }
                 // Only check if the activity have a type
-                if (!empty($Activity->getType())) {
+                if ($activity_type) {
                     $myActivities = $this->entityManager->getRepository(Activity::class)->findBy(["user" => $this->user]);
                     $Applications = $this->entityManager->getRepository(UsersLinkApplications::class)->findBy(['user' => $user_id]);
                     $ApplicationFromGroup = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findBy(['user' => $user_id]);
@@ -242,8 +254,10 @@ class ControllerActivity extends Controller
                         }
                     }
 
-                    if ($Activities[$activity_type] >= $Restrictions[$activity_type]) {
-                        return ['Limited' => true];
+                    if (array_key_exists($activity_type, $Restrictions)) {
+                        if ($Restrictions[$activity_type] > $Activities[$activity_type]) {
+                            return ['Limited' => true];
+                        }
                     } else {
                         return ['Limited' => false];
                     }
@@ -252,7 +266,7 @@ class ControllerActivity extends Controller
                 }
             }
         } else {
-            return ['Limited' => false];
+            return ['missing data' => false];
         }
     }
 }
