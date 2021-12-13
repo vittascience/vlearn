@@ -256,10 +256,7 @@ class ControllerActivity extends Controller
 
                     if (array_key_exists($activity_type, $Restrictions)) {
                         if ($Restrictions[$activity_type] > $Activities[$activity_type]) {
-                            return [
-                                'status' => false,
-                                'message' => 'You have reached the limit of ' . $Restrictions[$activity_type] . ' ' . $activity_type . ' activities'
-                            ];
+                            return ['Limited' => true];
                         }
                     } else {
                         return ['Limited' => false];
