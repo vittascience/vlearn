@@ -180,6 +180,7 @@ class ControllerActivity extends Controller
      * Return the limit status (true if limited)
      * @var $activity_id
      * @return Array
+     * // -1 : no limit
      */
     private function isActivitiesLimited(String $activity_id = null, String $activity_type = null): array
     {
@@ -255,7 +256,9 @@ class ControllerActivity extends Controller
                     }
 
                     if (array_key_exists($activity_type, $Restrictions)) {
-                        if ($Restrictions[$activity_type] > $Activities[$activity_type]) {
+                        if ($Restrictions[$activity_type] == -1) {
+                            return ['Limited' => false];
+                        } else if ($Restrictions[$activity_type] > $Activities[$activity_type]) {
                             return ['Limited' => true];
                         }
                     } else {
