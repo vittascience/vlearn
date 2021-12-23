@@ -194,8 +194,8 @@ class ControllerActivity extends Controller
             $user_id = $_SESSION['id'];
 
             // Get the default user restrictions in the database and set it in parameters
-            $activitiesDefaultRestrictions = $this->entityManager->getRepository(Restrictions::class)->findOneBy(['name' => "activitiesDefaultRestrictions"]);
-            $activitiesRestrictions = (array)json_decode($activitiesDefaultRestrictions->getRestrictions());
+            //$activitiesDefaultRestrictions = $this->entityManager->getRepository(Restrictions::class)->findOneBy(['name' => "activitiesDefaultRestrictions"]);
+            //$activitiesRestrictions = (array)json_decode($activitiesDefaultRestrictions->getRestrictions());
 
             if (!empty($activitiesRestrictions)) {
                 $Restrictions = $activitiesRestrictions;
