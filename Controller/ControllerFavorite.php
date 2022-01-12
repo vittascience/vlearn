@@ -2,6 +2,7 @@
 
 namespace Learn\Controller;
 
+use User\Entity\User;
 use Learn\Entity\Favorite;
 
 class ControllerFavorite extends Controller
@@ -25,8 +26,9 @@ class ControllerFavorite extends Controller
                 }
             },
             'update' => function ($data) {
+                $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
                 $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['tutorial']);
-                $favorite = new Favorite($this->user, $tutorial);
+                $favorite = new Favorite($user, $tutorial);
                 $this->entityManager->persist($favorite);
                 $this->entityManager->flush();
                 return true;
