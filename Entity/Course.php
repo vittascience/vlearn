@@ -2,12 +2,13 @@
 
 namespace Learn\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
-use Utils\Exceptions\EntityDataIntegrityException;
-use Utils\Exceptions\EntityOperatorException;
-use Utils\MetaDataMatcher;
-use Doctrine\Common\Collections\ArrayCollection;
 use User\Entity\User;
+use Learn\Entity\Comment;
+use Utils\MetaDataMatcher;
+use Doctrine\ORM\Mapping as ORM;
+use Utils\Exceptions\EntityOperatorException;
+use Doctrine\Common\Collections\ArrayCollection;
+use Utils\Exceptions\EntityDataIntegrityException;
 
 /**
  * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryCourse")
@@ -45,6 +46,12 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
      * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="tutorial")
      */
     private $lesson;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Comment::class, mappedBy="tutorial")
+     */
+    private $comment;
+
     /**
      * @ORM\ManyToOne(targetEntity="User\Entity\User")
      * @ORM\JoinColumn(name="user", nullable=false, referencedColumnName="id", onDelete="CASCADE")
