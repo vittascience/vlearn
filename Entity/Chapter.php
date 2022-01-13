@@ -31,7 +31,7 @@ class Chapter
      */
     private $collection;
     /**
-     * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="chapter_id")
+     * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="chapter")
      */
     private $lesson;
     /**
