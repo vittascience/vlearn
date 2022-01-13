@@ -27,8 +27,8 @@ class Comment
     /**
      * @ORM\ManyToOne(targetEntity=Course::class, inversedBy="comment")
      */
-
     private $tutorial;
+    
     /**
      * @ORM\ManyToOne(targetEntity="User\Entity\User")
      * @ORM\JoinColumn(name="user", referencedColumnName="id", onDelete="CASCADE")

@@ -25,7 +25,7 @@ class Collection implements \JsonSerializable, \Utils\JsonDeserializer
     private $id;
 
     /**
-     * @ORM\OneToMany(targetEntity=Chapter::class, cascade={"persist", "remove"}, mappedBy="collection_id")
+     * @ORM\OneToMany(targetEntity=Chapter::class, cascade={"persist", "remove"}, mappedBy="collection")
      */
     private $chapter;
 

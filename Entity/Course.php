@@ -36,13 +36,13 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
     private $id;
     public $activities = [];
     /**
-     * @ORM\OneToMany(targetEntity=Favorite::class, mappedBy="tutorial_id")
+     * @ORM\OneToMany(targetEntity=Favorite::class, mappedBy="tutorial")
      */
 
     private $favorite;
 
     /**
-     * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="tutorial_id")
+     * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="tutorial")
      */
     private $lesson;
     /**
