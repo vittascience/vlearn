@@ -66,6 +66,19 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
     private $type;
 
 
+    /**
+     * @ORM\Column(name="solution", type="text", nullable=true)
+     * @var String
+     */
+    private $solution;
+
+    /**
+     * @ORM\Column(name="tolerance", type="int", length=11, nullable=true)
+     * @var int
+     */
+    private $tolerance;
+
+
     public function __construct($title, $content, $user = null, $isFromClassroom = false)
     {
         $this->title = $title;
@@ -209,6 +222,42 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
         return $this->type;
     }
 
+    /**
+     * @return String type
+     */
+    public function getSolution(): ?string
+    {
+        return $this->solution;
+    }
+
+    /**
+     * @param String $solution
+     * @return Activity
+     */
+    public function setSolution(String $solution): Activity
+    {
+        $this->solution = $solution;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTolerance(): ?int
+    {
+        return $this->tolerance;
+    }
+
+    /**
+     * @param int $tolerance
+     * @return Activity
+     */
+    public function setTolerance(int $tolerance): Activity
+    {
+        $this->tolerance = $tolerance;
+        return $this;
+    }
+
 
     public function copy($objectToCopyFrom)
     {
@@ -238,7 +287,9 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
             'isFromClassroom' => $this->isFromClassroom(),
             'user' => $user,
             "fork" => $fork,
-            "type" => $this->getType()
+            "type" => $this->getType(),
+            "solution" => $this->getSolution(),
+            "tolerance" => $this->getTolerance()
         ];
     }
 
