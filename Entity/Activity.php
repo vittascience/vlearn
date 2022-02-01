@@ -73,7 +73,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
     private $solution;
 
     /**
-     * @ORM\Column(name="tolerance", type="int", length=11, nullable=true)
+     * @ORM\Column(name="tolerance", type="integer", length=11, nullable=true)
      * @var int
      */
     private $tolerance;
