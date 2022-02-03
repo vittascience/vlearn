@@ -25,9 +25,12 @@ class ControllerNewActivities extends Controller
                 $title = !empty($data['title']) ? htmlspecialchars($data['title']) : null;
                 $type = !empty($data['type']) ? htmlspecialchars($data['type']) : null;
                 $content = !empty($data['content']) ? htmlspecialchars($data['content']) : null;
-                $solution = !empty($data['solution']) ? htmlspecialchars($data['solution']) : null;
+                $solution = !empty($data['solution']) ? json_encode($data['solution']) : null;
                 $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
-                $indice = !empty($data['indice']) ? htmlspecialchars($data['indice']) : null;
+
+                $content = implode(",", $content);
+                var_dump($content);
+                die();
 
                 $exercice = new Activity($title, $content, $this->user, false);
                 $exercice->setSolution($solution);
