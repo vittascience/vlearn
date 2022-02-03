@@ -25,9 +25,8 @@ class ControllerNewActivities extends Controller
                 $title = !empty($data['title']) ? htmlspecialchars($data['title']) : null;
                 $type = !empty($data['type']) ? htmlspecialchars($data['type']) : null;
                 $content = !empty($data['content']) ? json_decode($data['content'], true) : null;
-                $solution = !empty($data['solution']) ? json_decode($data['solution'], true) : null;
+                $solution = !empty($data['solution']) ? htmlspecialchars($data['solution']) : null;
                 $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
-
 
                 $exercice = new Activity($title, serialize($content), $this->user, false);
                 $exercice->setSolution($solution);
@@ -35,6 +34,7 @@ class ControllerNewActivities extends Controller
                 $exercice->setTolerance($tolerance);
                 $this->entityManager->persist($exercice);
                 $this->entityManager->flush();
+                
                 return ['success' => true, 'id' => $exercice->getId()];
             },
             'get_one_activity' => function ($data) {
