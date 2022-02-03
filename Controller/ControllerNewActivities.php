@@ -24,21 +24,18 @@ class ControllerNewActivities extends Controller
                 
                 $title = !empty($data['title']) ? htmlspecialchars($data['title']) : null;
                 $type = !empty($data['type']) ? htmlspecialchars($data['type']) : null;
-                $content = !empty($data['content']) ? htmlspecialchars($data['content']) : null;
-                $solution = !empty($data['solution']) ? json_encode($data['solution']) : null;
+                $content = !empty($data['content']) ? json_decode($data['content'], true) : null;
+                $solution = !empty($data['solution']) ? json_decode($data['solution'], true) : null;
                 $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
 
-                $content = implode(",", $content);
-                var_dump($content);
-                die();
 
-                $exercice = new Activity($title, $content, $this->user, false);
+                $exercice = new Activity($title, serialize($content), $this->user, false);
                 $exercice->setSolution($solution);
                 $exercice->setType($type);
                 $exercice->setTolerance($tolerance);
                 $this->entityManager->persist($exercice);
                 $this->entityManager->flush();
-                return ['success' => true];
+                return ['success' => true, 'id' => $exercice->getId()];
             },
             'get_one_activity' => function ($data) {
                 $id = !empty($data['id']) ? htmlspecialchars($data['id']): null;
