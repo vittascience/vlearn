@@ -2,6 +2,7 @@
 
 namespace Learn\Controller;
 
+use User\Entity\User;
 use Learn\Entity\Activity;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
@@ -28,10 +29,16 @@ class ControllerNewActivities extends Controller
                 $solution = !empty($data['solution']) ? htmlspecialchars($data['solution']) : null;
                 $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
 
-                $exercice = new Activity($title, serialize($content), $this->user, false);
-                $exercice->setSolution($solution);
+                $regular = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $this->user['id']]);
+
+                $exercice = new Activity($title, serialize($content), $regular, false);
+
+                if ($solution) {
+                    $exercice->setSolution($solution);
+                }
                 $exercice->setType($type);
                 $exercice->setTolerance($tolerance);
+
                 $this->entityManager->persist($exercice);
                 $this->entityManager->flush();
                 
