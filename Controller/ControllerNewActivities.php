@@ -31,7 +31,7 @@ class ControllerNewActivities extends Controller
 
                 $regular = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $this->user['id']]);
 
-                
+
                 $exercice = new Activity($title, serialize($content), $regular, true);
                 if ($solution) {
                     $exercice->setSolution($solution);
@@ -77,16 +77,21 @@ class ControllerNewActivities extends Controller
                 if ($id) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($id);
                     if ($activity) {
+
                         $title = !empty($data['title']) ? htmlspecialchars($data['title']) : null;
                         $type = !empty($data['type']) ? htmlspecialchars($data['type']) : null;
-                        $content = !empty($data['content']) ? htmlspecialchars($data['content']) : null;
+                        $content = !empty($data['content']) ? json_decode($data['content'], true) : null;
                         $solution = !empty($data['solution']) ? htmlspecialchars($data['solution']) : null;
                         $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
+
                         $activity->setTitle($title);
                         $activity->setType($type);
-                        $activity->setContent($content);
+                        $activity->setContent(serialize($content));
                         $activity->setSolution($solution);
                         $activity->setTolerance($tolerance);
+                        $activity->setType($type);
+                        $activity->setTolerance($tolerance);
+
                         $this->entityManager->persist($activity);
                         $this->entityManager->flush();
                         return ['success' => true];

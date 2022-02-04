@@ -283,7 +283,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
         return [
             'id' => $this->getId(),
             'title' => $this->getTitle(),
-            'content' => $this->getContent(),
+            'content' => json_encode(unserialize($this->getContent())),
             'isFromClassroom' => $this->isFromClassroom(),
             'user' => $user,
             "fork" => $fork,
