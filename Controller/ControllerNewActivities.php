@@ -31,8 +31,8 @@ class ControllerNewActivities extends Controller
 
                 $regular = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $this->user['id']]);
 
-                $exercice = new Activity($title, serialize($content), $regular, false);
-
+                
+                $exercice = new Activity($title, serialize($content), $regular, true);
                 if ($solution) {
                     $exercice->setSolution($solution);
                 }
