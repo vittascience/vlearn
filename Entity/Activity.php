@@ -280,10 +280,10 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
         } else {
             $user = null;
         }
-        
+
+        $unserialized = @unserialize($this->getContent());
         // Handle the previous format
-        $unserialized = unserialize($this->getContent());
-        if (gettype($unserialized) == "array") {
+        if ($unserialized) {
             $content = json_encode($unserialized);
         } else {
             $content = $this->getContent();
