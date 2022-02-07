@@ -280,10 +280,19 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
         } else {
             $user = null;
         }
+        
+        // Handle the previous format
+        $unserialized = unserialize($this->getContent());
+        if (gettype($unserialized) == "array") {
+            $content = json_encode($unserialized);
+        } else {
+            $content = $this->getContent();
+        }
+
         return [
             'id' => $this->getId(),
             'title' => $this->getTitle(),
-            'content' => json_encode(unserialize($this->getContent())),
+            'content' => $content,
             'isFromClassroom' => $this->isFromClassroom(),
             'user' => $user,
             "fork" => $fork,
