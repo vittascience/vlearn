@@ -87,7 +87,9 @@ class ControllerNewActivities extends Controller
                         $activity->setTitle($title);
                         $activity->setType($type);
                         $activity->setContent(serialize($content));
-                        $activity->setSolution($solution);
+                        if ($solution) {
+                            $activity->setSolution($solution);
+                        }
                         $activity->setTolerance($tolerance);
                         $activity->setType($type);
                         $activity->setTolerance($tolerance);
