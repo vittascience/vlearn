@@ -36,8 +36,10 @@ class ControllerNewActivities extends Controller
                 if ($solution) {
                     $exercice->setSolution($solution);
                 }
+                if ($tolerance) {
+                    $exercice->setTolerance($tolerance);
+                }
                 $exercice->setType($type);
-                $exercice->setTolerance($tolerance);
 
                 $this->entityManager->persist($exercice);
                 $this->entityManager->flush();
@@ -90,9 +92,9 @@ class ControllerNewActivities extends Controller
                         if ($solution) {
                             $activity->setSolution($solution);
                         }
-                        $activity->setTolerance($tolerance);
-                        $activity->setType($type);
-                        $activity->setTolerance($tolerance);
+                        if ($tolerance) {
+                            $activity->setTolerance($tolerance);
+                        }
 
                         $this->entityManager->persist($activity);
                         $this->entityManager->flush();
