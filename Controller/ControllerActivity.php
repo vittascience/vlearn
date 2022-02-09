@@ -2,6 +2,11 @@
 
 namespace Learn\Controller;
 
+//show php errors
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+
 use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
@@ -182,7 +187,7 @@ class ControllerActivity extends Controller
      * @return Array
      * // -1 : no limit
      */
-    private function isActivitiesLimited(String $activity_id = null, String $activity_type = null)
+    private function isActivitiesLimited(String $activity_id = null, String $activity_type = null): array
     {
         if (!empty(($activity_id)) || !empty(($activity_type))) {
 
@@ -201,8 +206,10 @@ class ControllerActivity extends Controller
                 $Restrictions = $activitiesRestrictions;
             }
 
+            
             // get the actual activity
             $Activity = $this->entityManager->getRepository(Activity::class)->findOneBy(['id' => $activity_id]);
+
 
             if ($Activity || $activity_type) {
                 if (empty($activity_type)) {
@@ -228,6 +235,11 @@ class ControllerActivity extends Controller
                                 }
                             }
                         }
+                    } else {
+                        $ActivityRestrictionsDefault = $this->entityManager->getRepository(ActivityRestrictions::class)->findOneBy(['activityType' => $activity_type]);
+                        if ($ActivityRestrictionsDefault) {
+                            $Restrictions[$activity_type] = $ActivityRestrictionsDefault->getMaxPerTeachers();
+                        }
                     }
 
                     // Get all the restrictions from his group's applications
@@ -246,6 +258,7 @@ class ControllerActivity extends Controller
                         }
                     }
 
+
                     // Sort the activities by type and count them
                     foreach ($myActivities as $activity) {
                         if (array_key_exists($activity->getType(), $Activities)) {
@@ -254,19 +267,23 @@ class ControllerActivity extends Controller
                             $Activities[$activity->getType()] = 1;
                         }
                     }
-
+                    
                     if (array_key_exists($activity_type, $Restrictions)) {
                         if ($Restrictions[$activity_type] == -1) {
-                            return ['Limited' => false];
-                        } else if ($Restrictions[$activity_type] > $Activities[$activity_type]) {
-                            return ['Limited' => true];
+                            return ['Limited' => false, 'Restrictions' => $Restrictions];
+                        } else if ($Restrictions[$activity_type] <= $Activities[$activity_type]) {
+                            return ['Limited' => true, 'Restrictions' => $Restrictions, 'ActualActivity' => $Activities[$activity_type]];
+                        } else {
+                            return ['Limited' => false, 'Restrictions' => $Restrictions, 'ActualActivity' => $Activities[$activity_type]];
                         }
                     } else {
-                        return ['Limited' => false];
+                        return ['Limited' => false, 'Restrictions' => $Restrictions];
                     }
                 } else {
                     return ['Limited' => false];
                 }
+            } else {
+                return ['missing data' => false];
             }
         } else {
             return ['missing data' => false];
