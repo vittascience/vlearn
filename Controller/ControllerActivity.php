@@ -182,7 +182,7 @@ class ControllerActivity extends Controller
      * @return Array
      * // -1 : no limit
      */
-    private function isActivitiesLimited(String $activity_id = null, String $activity_type = null): array
+    private function isActivitiesLimited(String $activity_id = null, String $activity_type = null)
     {
         if (!empty(($activity_id)) || !empty(($activity_type))) {
 
@@ -272,4 +272,6 @@ class ControllerActivity extends Controller
             return ['missing data' => false];
         }
     }
+
 }
+
