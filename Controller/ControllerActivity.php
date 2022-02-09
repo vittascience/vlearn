@@ -271,10 +271,16 @@ class ControllerActivity extends Controller
                     if (array_key_exists($activity_type, $Restrictions)) {
                         if ($Restrictions[$activity_type] == -1) {
                             return ['Limited' => false, 'Restrictions' => $Restrictions];
-                        } else if ($Restrictions[$activity_type] <= $Activities[$activity_type]) {
-                            return ['Limited' => true, 'Restrictions' => $Restrictions, 'ActualActivity' => $Activities[$activity_type]];
                         } else {
-                            return ['Limited' => false, 'Restrictions' => $Restrictions, 'ActualActivity' => $Activities[$activity_type]];
+                            if (array_key_exists($activity_type, $Activities)) {
+                                if ($Restrictions[$activity_type] <= $Activities[$activity_type]) {
+                                    return ['Limited' => true, 'Restrictions' => $Restrictions, 'ActualActivity' => $Activities[$activity_type]];
+                                } else {
+                                    return ['Limited' => false, 'Restrictions' => $Restrictions, 'ActualActivity' => $Activities[$activity_type]];
+                                }
+                            } else {
+                                return ['Limited' => false, 'Restrictions' => $Restrictions, 'ActualActivity' => 'none'];
+                            }
                         }
                     } else {
                         return ['Limited' => false, 'Restrictions' => $Restrictions];
