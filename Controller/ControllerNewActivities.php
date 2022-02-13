@@ -6,6 +6,7 @@ use User\Entity\User;
 use Learn\Entity\Activity;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
+use Classroom\Entity\ActivityRestrictions;
 
 class ControllerNewActivities extends Controller
 {
@@ -15,11 +16,18 @@ class ControllerNewActivities extends Controller
         $this->actions = array(            
             'get_all_apps' => function () {
                 $Apps = $this->entityManager->getRepository(Applications::class)->findAll();
-                $AppsArray = [];
+
+                $Applications = [];
                 foreach ($Apps as $app) {
-                    $AppsArray[] = $app->jsonSerialize();
+                    $appli = $app->jsonSerialize();
+                    $appsRestri = $this->entityManager->getRepository(ActivityRestrictions::class)->findOneBy(["application" => $appli["id"]]);
+                    if ($appsRestri) {
+                        $appli["type"] = $appsRestri->getActivityType();
+                    }
+                    $Applications[] = $appli;
                 }
-                return $AppsArray;
+
+                return $Applications;
             },
             'create_exercice' => function ($data) {
                 
