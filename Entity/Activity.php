@@ -79,6 +79,13 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
     private $tolerance;
 
 
+    /**
+     * @ORM\Column(name="is_autocorrect", type="boolean", nullable=true)
+     * @var bool
+     */
+    private $isAutocorrect;
+
+
     public function __construct($title, $content, $user = null, $isFromClassroom = false)
     {
         $this->title = $title;
@@ -259,6 +266,25 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
     }
 
 
+    /**
+     * @return bool
+     */
+    public function isAutocorrect(): ?bool
+    {
+        return $this->isAutocorrect;
+    }
+
+    /**
+     * @param bool $isAutocorrect
+     * @return Activity
+     */
+    public function setIsAutocorrect(bool $isAutocorrect): Activity
+    {
+        $this->isAutocorrect = $isAutocorrect;
+        return $this;
+    }
+
+
     public function copy($objectToCopyFrom)
     {
         $this->setTitle($objectToCopyFrom->getTitle());
@@ -298,7 +324,8 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
             "fork" => $fork,
             "type" => $this->getType(),
             "solution" => $this->getSolution(),
-            "tolerance" => $this->getTolerance()
+            "tolerance" => $this->getTolerance(),
+            "isAutocorrect" => $this->isAutocorrect()
         ];
     }
 

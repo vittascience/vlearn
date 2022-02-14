@@ -36,6 +36,7 @@ class ControllerNewActivities extends Controller
                 $content = !empty($data['content']) ? json_decode($data['content'], true) : null;
                 $solution = !empty($data['solution']) ? htmlspecialchars($data['solution']) : null;
                 $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
+                $autocorrect = !empty($data['autocorrect']) ? htmlspecialchars($data['autocorrect']) : null;
 
                 $regular = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $this->user['id']]);
 
@@ -47,6 +48,12 @@ class ControllerNewActivities extends Controller
                 if ($tolerance) {
                     $exercice->setTolerance($tolerance);
                 }
+                if ($autocorrect) {
+                    $exercice->setIsAutocorrect($autocorrect);
+                } else {
+                    $exercice->setIsAutocorrect(false);
+                }
+
                 $exercice->setType($type);
 
                 $this->entityManager->persist($exercice);
@@ -93,6 +100,7 @@ class ControllerNewActivities extends Controller
                         $content = !empty($data['content']) ? json_decode($data['content'], true) : null;
                         $solution = !empty($data['solution']) ? htmlspecialchars($data['solution']) : null;
                         $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
+                        $autocorrect = !empty($data['autocorrect']) ? htmlspecialchars($data['autocorrect']) : null;
 
                         $activity->setTitle($title);
                         $activity->setType($type);
@@ -102,6 +110,11 @@ class ControllerNewActivities extends Controller
                         }
                         if ($tolerance) {
                             $activity->setTolerance($tolerance);
+                        }
+                        if ($autocorrect) {
+                            $activity->setIsAutocorrect($autocorrect);
+                        } else {
+                            $activity->setIsAutocorrect(false);
                         }
 
                         $this->entityManager->persist($activity);
