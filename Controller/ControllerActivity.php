@@ -70,6 +70,7 @@ class ControllerActivity extends Controller
                     ? intval($this->user['id'])
                     : null;
                 $forkedActivityId = isset($_POST['id']) ? intval($_POST['id']) : null;
+                $type = isset($_POST['type']) ? htmlspecialchars(strip_tags(trim($_POST['type']))) : null;
                 if (isset($_POST['isFromClassroom']) && filter_var($_POST['isFromClassroom'], FILTER_VALIDATE_BOOLEAN)) {
                     $isFromClassroom = $_POST['isFromClassroom']
                         ? (bool) $_POST['isFromClassroom']
@@ -106,6 +107,7 @@ class ControllerActivity extends Controller
 
                 // create the activity
                 $activity = new Activity($title, $content, $user, $isFromClassroom);
+                $activity->setType($type);
 
                 // if the activity belongs to vittasciences resources, set the resources id 
                 if ($forkedActivityId != null) {
