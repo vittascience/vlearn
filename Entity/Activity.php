@@ -7,7 +7,7 @@ use Utils\Exceptions\EntityOperatorException;
 use Doctrine\ORM\Mapping as ORM;
 use Utils\MetaDataMatcher;
 use User\Entity\User;
-use User\Entity\Regular;
+
 
 /**
  * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryActivity")
