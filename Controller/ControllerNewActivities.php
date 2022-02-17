@@ -144,12 +144,9 @@ class ControllerNewActivities extends Controller
                 // Basics data 
                 $activityId = !empty($_POST['id']) ? intval($_POST['id']) : 0;
                 $timePassed = !empty($_POST['timePassed']) ? intval($_POST['timePassed']) : 0;
-                $autocorrect = !empty($_POST['autocorrect']) ? htmlspecialchars($_POST['autocorrect']) : null;
                 // Student's part 
                 $response = !empty($_POST['response']) ? htmlspecialchars($_POST['response']) : null;
                 // Teacher's part
-                // Correction 0 = correction, 1 = no correction
-                $correction = !empty($_POST['correction']) ? intval($_POST['correction']) : null;
                 $commentary = !empty($_POST['commentary']) ? htmlspecialchars(strip_tags(trim($_POST['commentary']))) : '';
                 $note = !empty($_POST['note']) ? intval($_POST['note']) : 0;
 
@@ -157,7 +154,6 @@ class ControllerNewActivities extends Controller
                 // initiate an empty errors array 
                 $errors = [];
                 if (empty($activityId)) $errors['invalidActivityId'] = true;
-                //if (empty($correction)) $errors['invalidCorrection'] = true;
 
                 // some errors found, return them
                 if (!empty($errors)) return array('errors' => $errors);
@@ -166,6 +162,7 @@ class ControllerNewActivities extends Controller
                 $acti = $this->entityManager->getRepository(Activity::class)->find($activityId);
                 $activity = $this->entityManager->getRepository('Classroom\Entity\ActivityLinkUser')->findOneBy(["activity" => $activityId, "user" => $_SESSION['id']]);
 
+                // Correction 0 = no correction, 1 =  waiting correction, 2 correction
                 if ($acti) {
                     if ($isRegular) {
                         $activity->setCorrection(2);
@@ -176,6 +173,9 @@ class ControllerNewActivities extends Controller
                     }
                     $activity->setResponse($response);
     
+                    if ($timePassed) {
+                        $activity->setTimePassed($timePassed);
+                    }
                     // Basic autocorrect management
                     if ($acti->getIsAutocorrect() == true) {
                         $solution = $acti->getSolution();
