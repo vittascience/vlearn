@@ -167,32 +167,33 @@ class ControllerNewActivities extends Controller
                 $activity = $this->entityManager->getRepository('Classroom\Entity\ActivityLinkUser')->findOneBy(["activity" => $activityId, "user" => $_SESSION['id']]);
 
                 if ($acti) {
-
-                } else {
-
-                }
-                if ($isRegular) {
-                    $activity->setCorrection(1);
-                    $activity->setNote($note);
-                    $activity->setCommentary($commentary);
-                }
-                $activity->setResponse($response);
-
-                // Basic autocorrect management
-                if ($acti->getIsAutocorrect() == true) {
-                    $solution = $acti->getSolution();
-                    if ($solution == $response) {
-                        $activity->setNote(3);
+                    if ($isRegular) {
+                        $activity->setCorrection(2);
+                        $activity->setNote($note);
+                        $activity->setCommentary($commentary);
                     } else {
-                        $activity->setNote(0);
+                        $activity->setCorrection(1);
                     }
-                    $activity->setCorrection(0);
-                }
-            
-                $this->entityManager->persist($activity);
-                $this->entityManager->flush();
-
-                return  $activity;
+                    $activity->setResponse($response);
+    
+                    // Basic autocorrect management
+                    if ($acti->getIsAutocorrect() == true) {
+                        $solution = $acti->getSolution();
+                        if ($solution == $response) {
+                            $activity->setNote(3);
+                        } else {
+                            $activity->setNote(0);
+                        }
+                        $activity->setCorrection(2);
+                    }
+                
+                    $this->entityManager->persist($activity);
+                    $this->entityManager->flush();
+    
+                    return  $activity;
+                } else {
+                    return ["error" => "Activity not found"];
+                }  
             },
         );
     }
