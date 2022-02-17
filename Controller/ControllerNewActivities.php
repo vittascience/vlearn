@@ -163,8 +163,14 @@ class ControllerNewActivities extends Controller
                 if (!empty($errors)) return array('errors' => $errors);
 
                 // no errors, get the activity
+                $acti = $this->entityManager->getRepository(Activity::class)->find($activityId);
                 $activity = $this->entityManager->getRepository('Classroom\Entity\ActivityLinkUser')->findOneBy(["activity" => $activityId, "user" => $_SESSION['id']]);
 
+                if ($acti) {
+
+                } else {
+
+                }
                 if ($isRegular) {
                     $activity->setCorrection(1);
                     $activity->setNote($note);
@@ -173,7 +179,7 @@ class ControllerNewActivities extends Controller
                 $activity->setResponse($response);
 
                 // Basic autocorrect management
-                if ($autocorrect) {
+                if ($acti->getIsAutocorrect() == true) {
                     $solution = $activity->getSolution();
                     if ($solution == $response) {
                         $activity->setNote(3);

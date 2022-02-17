@@ -270,7 +270,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @return bool
      */
-    public function isAutocorrect(): ?bool
+    public function getIsAutocorrect(): ?bool
     {
         return $this->isAutocorrect;
     }
