@@ -146,7 +146,7 @@ class ControllerNewActivities extends Controller
                 $timePassed = !empty($_POST['timePassed']) ? intval($_POST['timePassed']) : 0;
                 $autocorrect = !empty($_POST['autocorrect']) ? htmlspecialchars($_POST['autocorrect']) : null;
                 // Student's part 
-                $response = !empty($_POST['response']) ? json_decode($_POST['response'], true) : null;
+                $response = !empty($_POST['response']) ? htmlspecialchars($_POST['response']) : null;
                 // Teacher's part
                 // Correction 0 = correction, 1 = no correction
                 $correction = !empty($_POST['correction']) ? intval($_POST['correction']) : null;
@@ -163,14 +163,14 @@ class ControllerNewActivities extends Controller
                 if (!empty($errors)) return array('errors' => $errors);
 
                 // no errors, get the activity
-                $activity = $this->entityManager->getRepository('Classroom\Entity\ActivityLinkUser')->findOneBy(array("id" => $activityId));
+                $activity = $this->entityManager->getRepository('Classroom\Entity\ActivityLinkUser')->findOneBy(["activity" => $activityId, "user" => $_SESSION['id']]);
 
                 if ($isRegular) {
                     $activity->setCorrection(1);
                     $activity->setNote($note);
                     $activity->setCommentary($commentary);
                 }
-                $activity->setResponse(serialize($response));
+                $activity->setResponse($response);
 
                 // Basic autocorrect management
                 if ($autocorrect) {
