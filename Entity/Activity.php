@@ -326,7 +326,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
             "type" => $this->getType(),
             "solution" => $this->getSolution(),
             "tolerance" => $this->getTolerance(),
-            "isAutocorrect" => $this->isAutocorrect()
+            "isAutocorrect" => $this->getIsAutocorrect()
         ];
     }
 
