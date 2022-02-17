@@ -180,7 +180,7 @@ class ControllerNewActivities extends Controller
 
                 // Basic autocorrect management
                 if ($acti->getIsAutocorrect() == true) {
-                    $solution = $activity->getSolution();
+                    $solution = $acti->getSolution();
                     if ($solution == $response) {
                         $activity->setNote(3);
                     } else {
