@@ -127,6 +127,64 @@ class ControllerNewActivities extends Controller
                     return ['error' => 'No id provided'];
                 }
             },
+            "save_new_activity" => function () {
+
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
+
+
+                $isRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(['id' => $_SESSION['id']]);
+
+                // Basics data 
+                $activityId = !empty($_POST['id']) ? intval($_POST['id']) : 0;
+                $timePassed = !empty($_POST['timePassed']) ? intval($_POST['timePassed']) : 0;
+                $autocorrect = !empty($_POST['autocorrect']) ? htmlspecialchars($_POST['autocorrect']) : null;
+                // Student's part 
+                $response = !empty($_POST['response']) ? json_decode($_POST['response'], true) : null;
+                // Teacher's part
+                // Correction 0 = correction, 1 = no correction
+                $correction = !empty($_POST['correction']) ? intval($_POST['correction']) : null;
+                $commentary = !empty($_POST['commentary']) ? htmlspecialchars(strip_tags(trim($_POST['commentary']))) : '';
+                $note = !empty($_POST['note']) ? intval($_POST['note']) : 0;
+
+
+                // initiate an empty errors array 
+                $errors = [];
+                if (empty($activityId)) $errors['invalidActivityId'] = true;
+                if (empty($correction)) $errors['invalidCorrection'] = true;
+
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+
+                // no errors, get the activity
+                $activity = $this->entityManager->getRepository('Classroom\Entity\ActivityLinkUser')->findOneBy(array("id" => $activityId));
+
+                if ($isRegular) {
+                    $activity->setCorrection($correction);
+                    $activity->setNote($note);
+                    $activity->setCommentary($commentary);
+                }
+                $activity->setResponse(serialize($response));
+
+                // Basic autocorrect management
+                if ($autocorrect) {
+                    $solution = $activity->getSolution();
+                    if ($solution == $response) {
+                        $activity->setNote(3);
+                    } else {
+                        $activity->setNote(0);
+                    }
+                }
+            
+                $this->entityManager->persist($activity);
+                $this->entityManager->flush();
+
+                return  $activity;
+            },
         );
     }
 }
