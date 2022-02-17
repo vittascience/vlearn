@@ -138,7 +138,8 @@ class ControllerNewActivities extends Controller
                 if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
 
 
-                $isRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(['id' => $_SESSION['id']]);
+                $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
+                $isRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $user]);
 
                 // Basics data 
                 $activityId = !empty($_POST['id']) ? intval($_POST['id']) : 0;
@@ -156,7 +157,7 @@ class ControllerNewActivities extends Controller
                 // initiate an empty errors array 
                 $errors = [];
                 if (empty($activityId)) $errors['invalidActivityId'] = true;
-                if (empty($correction)) $errors['invalidCorrection'] = true;
+                //if (empty($correction)) $errors['invalidCorrection'] = true;
 
                 // some errors found, return them
                 if (!empty($errors)) return array('errors' => $errors);
@@ -165,7 +166,7 @@ class ControllerNewActivities extends Controller
                 $activity = $this->entityManager->getRepository('Classroom\Entity\ActivityLinkUser')->findOneBy(array("id" => $activityId));
 
                 if ($isRegular) {
-                    $activity->setCorrection($correction);
+                    $activity->setCorrection(1);
                     $activity->setNote($note);
                     $activity->setCommentary($commentary);
                 }
@@ -179,6 +180,7 @@ class ControllerNewActivities extends Controller
                     } else {
                         $activity->setNote(0);
                     }
+                    $activity->setCorrection(0);
                 }
             
                 $this->entityManager->persist($activity);
