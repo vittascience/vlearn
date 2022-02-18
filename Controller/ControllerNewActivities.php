@@ -8,6 +8,7 @@ use Learn\Entity\Activity;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
 use Classroom\Entity\ActivityRestrictions;
+use Classroom\Entity\ActivityLinkUser;
 
 class ControllerNewActivities extends Controller
 {
@@ -179,7 +180,7 @@ class ControllerNewActivities extends Controller
                     // Basic autocorrect management
                     if ($acti->getIsAutocorrect() == true) {
                         $solution = $acti->getSolution();
-                        if ($solution == $response) {
+                        if (strtolower($solution) == strtolower($response)) {
                             $activity->setNote(3);
                         } else {
                             $activity->setNote(0);
@@ -194,6 +195,17 @@ class ControllerNewActivities extends Controller
                 } else {
                     return ["error" => "Activity not found"];
                 }  
+            },
+            'get_student_link_activity' => function ($data) {
+                $activityId = !empty($data['activityId']) ? htmlspecialchars($data['activityId']): null;
+                $studentId = !empty($data['studentId']) ? htmlspecialchars($data['studentId']): null;
+
+                if ($activityId && $studentId) {
+                    $activityLinkUser = $this->entityManager->getRepository(ActivityLinkClassroom::class)->findOneBy(["activity" => $activityId, "user" => $studentId]);
+                    return $activityLinkUser;
+                } else {
+                        return ['error' => 'Activity not found'];
+                }     
             },
         );
     }
