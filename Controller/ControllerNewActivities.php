@@ -50,8 +50,13 @@ class ControllerNewActivities extends Controller
                 if ($tolerance) {
                     $exercice->setTolerance($tolerance);
                 }
+
                 if ($autocorrect) {
-                    $exercice->setIsAutocorrect($autocorrect);
+                    if ($autocorrect == "true") {
+                        $exercice->setIsAutocorrect(true);
+                    } else {
+                        $exercice->setIsAutocorrect(false);
+                    }
                 } else {
                     $exercice->setIsAutocorrect(false);
                 }
@@ -195,18 +200,7 @@ class ControllerNewActivities extends Controller
                 } else {
                     return ["error" => "Activity not found"];
                 }  
-            },
-            'get_student_link_activity' => function ($data) {
-                $activityId = !empty($data['activityId']) ? htmlspecialchars($data['activityId']): null;
-                $studentId = !empty($data['studentId']) ? htmlspecialchars($data['studentId']): null;
-
-                if ($activityId && $studentId) {
-                    $activityLinkUser = $this->entityManager->getRepository(ActivityLinkClassroom::class)->findOneBy(["activity" => $activityId, "user" => $studentId]);
-                    return $activityLinkUser;
-                } else {
-                        return ['error' => 'Activity not found'];
-                }     
-            },
+            }
         );
     }
 }
