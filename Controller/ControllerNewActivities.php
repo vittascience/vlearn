@@ -126,7 +126,7 @@ class ControllerNewActivities extends Controller
 
                         $this->entityManager->persist($activity);
                         $this->entityManager->flush();
-                        return ['success' => true];
+                        return ['success' => true, 'id' => $activity->getId()];
                     } else {
                         return ['error' => 'Activity not found'];
                     }
