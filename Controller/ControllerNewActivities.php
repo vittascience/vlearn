@@ -17,6 +17,10 @@ class ControllerNewActivities extends Controller
         parent::__construct($entityManager, $user);
         $this->actions = array(            
             'get_all_apps' => function () {
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
                 $Apps = $this->entityManager->getRepository(Applications::class)->findAll();
 
                 $Applications = [];
@@ -32,7 +36,10 @@ class ControllerNewActivities extends Controller
                 return $Applications;
             },
             'create_exercice' => function ($data) {
-                
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
                 $title = !empty($data['title']) ? htmlspecialchars($data['title']) : null;
                 $type = !empty($data['type']) ? htmlspecialchars($data['type']) : null;
                 $content = !empty($data['content']) ? json_decode($data['content'], true) : null;
@@ -69,6 +76,10 @@ class ControllerNewActivities extends Controller
                 return ['success' => true, 'id' => $exercice->getId()];
             },
             'get_one_activity' => function ($data) {
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
                 $id = !empty($data['id']) ? htmlspecialchars($data['id']): null;
                 if ($id) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($id);
@@ -82,6 +93,10 @@ class ControllerNewActivities extends Controller
                 }
             },
             'delete_activity' => function ($data) {
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
                 $id = !empty($data['id']) ? htmlspecialchars($data['id']): null;
                 if ($id) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($id);
@@ -97,6 +112,10 @@ class ControllerNewActivities extends Controller
                 }
             },
             'update_activity' => function ($data) {
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
                 $id = !empty($data['id']) ? htmlspecialchars($data['id']): null;
                 if ($id) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($id);
