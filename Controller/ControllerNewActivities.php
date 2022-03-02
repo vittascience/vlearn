@@ -154,8 +154,6 @@ class ControllerNewActivities extends Controller
                 }
             },
             "save_new_activity" => function () {
-
-
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -170,7 +168,7 @@ class ControllerNewActivities extends Controller
                 $activityId = !empty($_POST['id']) ? intval($_POST['id']) : 0;
                 $timePassed = !empty($_POST['timePassed']) ? intval($_POST['timePassed']) : 0;
                 // Student's part 
-                $response = !empty($_POST['response']) ? htmlspecialchars($_POST['response']) : null;
+                $response = !empty($_POST['response']) ? $_POST['response'] : null;
                 // Teacher's part
                 $commentary = !empty($_POST['commentary']) ? htmlspecialchars(strip_tags(trim($_POST['commentary']))) : '';
                 $note = !empty($_POST['note']) ? intval($_POST['note']) : 0;
@@ -187,8 +185,12 @@ class ControllerNewActivities extends Controller
                 $acti = $this->entityManager->getRepository(Activity::class)->find($activityId);
                 $activity = $this->entityManager->getRepository('Classroom\Entity\ActivityLinkUser')->findOneBy(["activity" => $activityId, "user" => $_SESSION['id']]);
 
+
                 // Correction 0 = no correction, 1 =  waiting correction, 2 correction
+
                 if ($acti) {
+
+                    // If it's the teacher who send the request
                     if ($isRegular) {
                         $activity->setCorrection(2);
                         $activity->setNote($note);
@@ -201,14 +203,16 @@ class ControllerNewActivities extends Controller
                     if ($timePassed) {
                         $activity->setTimePassed($timePassed);
                     }
-                    // Basic autocorrect management
+
+                    // Manage auto correction for every activity type
                     if ($acti->getIsAutocorrect() == true) {
-                        $solution = $acti->getSolution();
-                        if (strtolower($solution) == strtolower($response)) {
-                            $activity->setNote(3);
-                        } else {
-                            $activity->setNote(0);
+                        var_dump($acti->getType());
+                        if ($acti->getType() == "fillIn") {
+                            $activity = $this->manageFillInAutocorrection($acti, $activity, $response);
+                        } else if ($acti->getType() == "free" || $acti->getType() == "") {
+                            $activity = $this->manageFreeAutocorrection($acti, $activity, $response);      
                         }
+                        // Set the correction to 2 (activity corrected)
                         $activity->setCorrection(2);
                     }
                 
@@ -222,4 +226,40 @@ class ControllerNewActivities extends Controller
             }
         );
     }
+
+    private function manageFreeAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
+        $solution = $activity->getSolution();
+        if (strtolower($solution) == strtolower($response)) {
+            $activityLinkUser->setNote(3);
+        } else {
+            $activityLinkUser->setNote(0);
+        }
+        return $activityLinkUser;
+    }
+
+    private function manageFillInAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
+    
+
+        $solution = json_decode($activity->getSolution(), true);
+
+        var_dump($solution);
+        $tolerance = $activity->getTolerance();
+        $isCorrect = true;
+        foreach ($solution as $key => $value) {
+            if ($response[$key] != $value) {
+                $isCorrect = false;
+            }
+        }
+        if ($isCorrect) {
+            $activityLinkUser->setNote(3);
+        } else {
+            $activityLinkUser->setNote(0);
+        }
+        die();
+        return $activityLinkUser;
+
+
+    }
+
+
 }
