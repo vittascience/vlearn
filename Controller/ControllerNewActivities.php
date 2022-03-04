@@ -285,7 +285,9 @@ class ControllerNewActivities extends Controller
                             $content = $activity->getContent();
                         }
                         $content = json_decode($content, true);
-                        $content["description"] = "&duplicate=1";
+                        if (!str_contains($content["description"], "&duplicate=1")) {
+                            $content["description"] = "&duplicate=1";
+                        }
                         $content = json_encode($content);
                     }
 
