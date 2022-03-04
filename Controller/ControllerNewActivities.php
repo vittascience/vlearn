@@ -286,14 +286,14 @@ class ControllerNewActivities extends Controller
                         }
                         $content = json_decode($content, true);
                         if (!str_contains($content["description"], "&duplicate=1")) {
-                            $content["description"] = "&duplicate=1";
+                            $content["description"] .= "&duplicate=1";
                         }
                         $content = json_encode($content);
                     }
 
 
                     $duplicatedActivity = new Activity( $newTitle,  
-                                                        $activity->getContent(), 
+                                                        $content, 
                                                         $activity->getUser(), 
                                                         $activity->isFromClassroom());
 
