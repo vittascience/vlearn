@@ -130,6 +130,10 @@ class ControllerNewActivities extends Controller
                         $activity->setTitle($title);
                         $activity->setType($type);
                         $activity->setContent(serialize($content));
+                        
+                        var_dump($content);
+                        die();
+
                         if ($solution) {
                             $activity->setSolution(serialize($solution));
                         }
@@ -233,7 +237,6 @@ class ControllerNewActivities extends Controller
                 // accept only connected user
                 if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
 
-
                 $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
                 $isRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $user]);
 
@@ -242,7 +245,52 @@ class ControllerNewActivities extends Controller
                
                 if ($activityId && $isRegular) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($activityId);
-                    $duplicatedActivity = new Activity($activity->getTitle() . " - duplicate",  
+
+                    $title = "";
+                    $newTitle = "";
+                    $regexTrigger = "";
+
+                    if ($activity->getTitle()) {
+                        $title = $activity->getTitle();
+                        $regexTrigger = preg_match('/\(.*?\)/', $activity->getTitle(), $title);
+                        if ($regexTrigger) {
+                            $result = str_replace('(', '', $title);
+                            $number = str_replace(')', '', $result);
+                            $increment = (intval($number[0]) + 1);
+                            $newTitle = str_replace($title, "(" . $increment . ")", $activity->getTitle());
+                        } else {
+                            $title = 1;
+                            $newTitle = $activity->getTitle() . " (1)";
+                        }
+                    }
+
+                    $isLti = false;
+                    if ($activity->getType()) {
+                        // get activity restriction by type
+                        $restriction = $this->entityManager->getRepository(ActivityRestrictions::class)->findOneBy(['activityType' => $activity->getType()]);
+                        // get application from the restriction
+                        $application = $this->entityManager->getRepository(Applications::class)->findOneBy(['id' => $restriction->getApplication()]);
+                        // check if the application is lti
+                        if ($application->getIsLti() == true) {
+                            $isLti = true;
+                        }
+                    }
+
+                    // Add duplicate parameter if we are in lti activity case
+                    if ($isLti) {
+                        $unserialized = @unserialize($activity->getContent());
+                        if ($unserialized) {
+                            $content = json_encode($unserialized);
+                        } else {
+                            $content = $activity->getContent();
+                        }
+                        $content = json_decode($content, true);
+                        $content["description"] = "&duplicate=1";
+                        $content = json_encode($content);
+                    }
+
+
+                    $duplicatedActivity = new Activity( $newTitle,  
                                                         $activity->getContent(), 
                                                         $activity->getUser(), 
                                                         $activity->isFromClassroom());
