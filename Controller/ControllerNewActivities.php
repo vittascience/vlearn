@@ -43,16 +43,15 @@ class ControllerNewActivities extends Controller
                 $title = !empty($data['title']) ? htmlspecialchars($data['title']) : null;
                 $type = !empty($data['type']) ? htmlspecialchars($data['type']) : null;
                 $content = !empty($data['content']) ? json_decode($data['content'], true) : null;
-                $solution = !empty($data['solution']) ? htmlspecialchars($data['solution']) : null;
+                $solution = !empty($data['solution']) ? json_decode($data['solution'], true) : null;
                 $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
                 $autocorrect = !empty($data['autocorrect']) ? htmlspecialchars($data['autocorrect']) : null;
 
                 $regular = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $this->user['id']]);
 
-
                 $exercice = new Activity($title, serialize($content), $regular, true);
                 if ($solution) {
-                    $exercice->setSolution($solution);
+                    $exercice->setSolution(serialize($solution));
                 }
                 if ($tolerance) {
                     $exercice->setTolerance($tolerance);
@@ -124,7 +123,7 @@ class ControllerNewActivities extends Controller
                         $title = !empty($data['title']) ? htmlspecialchars($data['title']) : null;
                         $type = !empty($data['type']) ? htmlspecialchars($data['type']) : null;
                         $content = !empty($data['content']) ? json_decode($data['content'], true) : null;
-                        $solution = !empty($data['solution']) ? htmlspecialchars($data['solution']) : null;
+                        $solution = !empty($data['solution']) ? json_decode($data['solution'], true) : null;
                         $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
                         $autocorrect = !empty($data['autocorrect']) ? htmlspecialchars($data['autocorrect']) : null;
 
@@ -132,7 +131,7 @@ class ControllerNewActivities extends Controller
                         $activity->setType($type);
                         $activity->setContent(serialize($content));
                         if ($solution) {
-                            $activity->setSolution($solution);
+                            $activity->setSolution(serialize($solution));
                         }
                         if ($tolerance) {
                             $activity->setTolerance($tolerance);
@@ -174,6 +173,10 @@ class ControllerNewActivities extends Controller
                 $note = !empty($_POST['note']) ? intval($_POST['note']) : 0;
 
 
+                if($this->isJson($response)) {
+                    $response = json_decode($response, true);
+                }
+
                 // initiate an empty errors array 
                 $errors = [];
                 if (empty($activityId)) $errors['invalidActivityId'] = true;
@@ -198,7 +201,7 @@ class ControllerNewActivities extends Controller
                     } else {
                         $activity->setCorrection(1);
                     }
-                    $activity->setResponse($response);
+                    $activity->setResponse(serialize($response));
     
                     if ($timePassed) {
                         $activity->setTimePassed($timePassed);
@@ -206,7 +209,6 @@ class ControllerNewActivities extends Controller
 
                     // Manage auto correction for every activity type
                     if ($acti->getIsAutocorrect() == true) {
-                        var_dump($acti->getType());
                         if ($acti->getType() == "fillIn") {
                             $activity = $this->manageFillInAutocorrection($acti, $activity, $response);
                         } else if ($acti->getType() == "free" || $acti->getType() == "") {
@@ -222,7 +224,55 @@ class ControllerNewActivities extends Controller
                     return  $activity;
                 } else {
                     return ["error" => "Activity not found"];
-                }  
+                } 
+            },
+            "duplicate_activity" => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
+
+
+                $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
+                $isRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $user]);
+
+                // Basics data 
+                $activityId = !empty($_POST['activityId']) ? intval($_POST['activityId']) : 0;
+               
+                if ($activityId && $isRegular) {
+                    $activity = $this->entityManager->getRepository(Activity::class)->find($activityId);
+                    $duplicatedActivity = new Activity($activity->getTitle() . " - duplicate",  
+                                                        $activity->getContent(), 
+                                                        $activity->getUser(), 
+                                                        $activity->isFromClassroom());
+
+
+                    if ($activity->getType()) {
+                        $duplicatedActivity->setType($activity->getType());
+                    }
+                    if ($activity->getSolution()) {
+                        $duplicatedActivity->setSolution($activity->getSolution());
+                    }
+                    if ($activity->getTolerance()) {
+                        $duplicatedActivity->setTolerance($activity->getTolerance());
+                    }
+                    if ($activity->getIsAutocorrect()) {
+                        $duplicatedActivity->setIsAutocorrect($activity->getIsAutocorrect());
+                    }
+                    if ($activity->getFork() != null) {
+                        $duplicatedActivity->setFork($activity->getFork()->jsonSerialize());
+                    } else {
+                        $duplicatedActivity->setFork(null);
+                    }
+
+                    $this->entityManager->persist($duplicatedActivity);
+                    $this->entityManager->flush();
+                    
+                    return  ['success' => true, 'id' => $duplicatedActivity->getId()];
+                } else {
+                    return ["error" => "Activity not found"];
+                } 
             }
         );
     }
@@ -239,27 +289,43 @@ class ControllerNewActivities extends Controller
 
     private function manageFillInAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
     
-
-        $solution = json_decode($activity->getSolution(), true);
-
-        var_dump($solution);
+        $solution = unserialize($activity->getSolution());
         $tolerance = $activity->getTolerance();
-        $isCorrect = true;
+        $isCorrect = false;
+        $isOverAllCorrect = false;
+
         foreach ($solution as $key => $value) {
-            if ($response[$key] != $value) {
+            //if (!in_array(strtolower(trim($response[$key])), $value)) {
+            foreach ($value as $val) {
+                $a_first_str = str_split(strtolower(trim($response[$key])));
+                $a_second_str = str_split($val);
+                $diff=array_diff_assoc($a_second_str, $a_first_str);
+                if (count($diff) <= $tolerance) {
+                    $isCorrect = true;
+                    break;
+                }
+            }
+            if ($isCorrect) {
                 $isCorrect = false;
+                $isOverAllCorrect = true;
+            } else {
+                $isOverAllCorrect = false;
+                break;
             }
         }
-        if ($isCorrect) {
+
+        if ($isOverAllCorrect) {
             $activityLinkUser->setNote(3);
         } else {
             $activityLinkUser->setNote(0);
         }
-        die();
+
         return $activityLinkUser;
-
-
     }
 
+    private function isJson($string) {
+        json_decode($string);
+        return (json_last_error() == JSON_ERROR_NONE);
+    }
 
 }
