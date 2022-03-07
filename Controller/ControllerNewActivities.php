@@ -50,9 +50,11 @@ class ControllerNewActivities extends Controller
                 $regular = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $this->user['id']]);
 
                 $exercice = new Activity($title, serialize($content), $regular, true);
+
                 if ($solution) {
                     $exercice->setSolution(serialize($solution));
                 }
+
                 if ($tolerance) {
                     $exercice->setTolerance($tolerance);
                 }
@@ -130,9 +132,6 @@ class ControllerNewActivities extends Controller
                         $activity->setTitle($title);
                         $activity->setType($type);
                         $activity->setContent(serialize($content));
-                        
-                        var_dump($content);
-                        die();
 
                         if ($solution) {
                             $activity->setSolution(serialize($solution));
@@ -298,6 +297,7 @@ class ControllerNewActivities extends Controller
                                                         $activity->isFromClassroom());
 
 
+
                     if ($activity->getType()) {
                         $duplicatedActivity->setType($activity->getType());
                     }
@@ -344,17 +344,21 @@ class ControllerNewActivities extends Controller
         $isCorrect = false;
         $isOverAllCorrect = false;
 
+
         foreach ($solution as $key => $value) {
-            //if (!in_array(strtolower(trim($response[$key])), $value)) {
-            foreach ($value as $val) {
+
+            $splitedSolution = explode(",", $value);
+            foreach ($splitedSolution as $val) {
                 $a_first_str = str_split(strtolower(trim($response[$key])));
-                $a_second_str = str_split($val);
+                $a_second_str = str_split(strtolower(trim($val)));
+
                 $diff=array_diff_assoc($a_second_str, $a_first_str);
                 if (count($diff) <= $tolerance) {
                     $isCorrect = true;
                     break;
                 }
             }
+
             if ($isCorrect) {
                 $isCorrect = false;
                 $isOverAllCorrect = true;
