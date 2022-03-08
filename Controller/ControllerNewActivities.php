@@ -216,6 +216,8 @@ class ControllerNewActivities extends Controller
                             $activity = $this->manageFillInAutocorrection($acti, $activity, $response);
                         } else if ($acti->getType() == "free" || $acti->getType() == "") {
                             $activity = $this->manageFreeAutocorrection($acti, $activity, $response);      
+                        } else if ($acti->getType() == "quiz") {
+                            $activity = $this->manageQuizAutocorrection($acti, $activity, $response);
                         }
                         // Set the correction to 2 (activity corrected)
                         $activity->setCorrection(2);
@@ -297,7 +299,6 @@ class ControllerNewActivities extends Controller
                                                         $activity->isFromClassroom());
 
 
-
                     if ($activity->getType()) {
                         $duplicatedActivity->setType($activity->getType());
                     }
@@ -334,6 +335,26 @@ class ControllerNewActivities extends Controller
         } else {
             $activityLinkUser->setNote(0);
         }
+        return $activityLinkUser;
+    }
+
+    private function manageQuizAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
+        $solution = unserialize($activity->getSolution());
+        $correct = 0;
+        $total = 0;
+        foreach ($solution as $key => $value) {
+            $total++;
+            if ($value['isCorrect'] == $response[$key]['isCorrect'] && $value['inputVal'] == $response[$key]['inputVal']) {
+                $correct++;
+            }
+        }
+
+        if ($correct == $total) {
+            $activityLinkUser->setNote(3);
+        } else {
+            $activityLinkUser->setNote(0);
+        }
+
         return $activityLinkUser;
     }
 
