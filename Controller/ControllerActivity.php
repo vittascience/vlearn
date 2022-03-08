@@ -35,8 +35,24 @@ class ControllerActivity extends Controller
                     );
             },
             'get' => function ($data) {
-                return $this->entityManager->getRepository(Activity::class)
+                $activity = $this->entityManager->getRepository(Activity::class)
                     ->find($data['id']);
+
+                $classroom = $this->entityManager->getRepository(Classroom::class)
+                    ->findByLink($_POST['classroomLink']);
+                
+                $activityRetroAttributed = $this->entityManager->getRepository(ActivityLinkClassroom::class)->findBy(array(
+                    'activity'=> $activity,
+                    'classroom' => $classroom,
+                    "reference" => $_POST['reference']
+                ));
+
+                
+                $isRetroAttributed = $activityRetroAttributed ? true : false;
+                $activityToSend = json_decode(json_encode($activity));
+                $activityToSend->isRetroAttributed = $isRetroAttributed;
+                    
+                return $activityToSend;
             },
             'delete' => function ($data) {
 
