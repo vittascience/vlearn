@@ -66,7 +66,7 @@ class ControllerActivity extends Controller
                         ->findByLink($classroomLink);
                     
                     // check whether or not the activity appear in classroom_activities_link_classroom table
-                    $activityRetroAttributed = $this->entityManager->getRepository(ActivityLinkClassroom::class)->findBy(array(
+                    $activityRetroAttributed = $this->entityManager->getRepository(ActivityLinkClassroom::class)->findOneBy(array(
                         'activity'=> $activity,
                         'classroom' => $classroom,
                         "reference" => $reference
