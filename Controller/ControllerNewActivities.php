@@ -102,6 +102,23 @@ class ControllerNewActivities extends Controller
                 if ($id) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($id);
                     if ($activity) {
+                        // step 1 database cleaning
+                        // get all students activity matching with the activity 
+                        $studentsActivity = $this->entityManager
+                            ->getRepository(ActivityLinkUser::class)
+                            ->findBy(array(
+                                'activity' => $activity
+                            ));
+                        
+                        // some record found, delete them from classroom_activities_link_classroom_users
+                        if($studentsActivity){
+                            foreach($studentsActivity as $studentActivity){
+                                $this->entityManager->remove($studentActivity);
+                                $this->entityManager->flush();
+                            }
+                        }
+                       
+                        // step 2 database cleaned, we can delete the activity
                         $this->entityManager->remove($activity);
                         $this->entityManager->flush();
                         return ['success' => true];

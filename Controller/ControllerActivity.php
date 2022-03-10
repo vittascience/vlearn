@@ -10,8 +10,10 @@ ini_set('display_errors', 1);
 use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
+use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
 use Classroom\Entity\ActivityRestrictions;
+use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
 use Classroom\Entity\Restrictions;
@@ -34,24 +36,47 @@ class ControllerActivity extends Controller
                         array("user" => $this->user, "isFromClassroom" => true)
                     );
             },
-            'get' => function ($data) {
+            'get' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "getNotRetrievedNotAuthenticated"];
+
+                // bind and sanitize incoming data
+                $activityId = !empty($_POST['id']) ? intval($_POST['id']) : null;
+                $classroomLink = !empty($_POST['classroomLink']) ? htmlspecialchars((strip_tags(trim($_POST['classroomLink'])))) :'';
+                $reference = !empty($_POST['reference']) ? htmlspecialchars(strip_tags(trim($_POST['reference']))) : '';
+
+                // check for errors
+                $errors = [];
+                if(empty($activityId)) array_push($errors, array('errorType'=>'InvalidId'));
+
+                // some errors found, return them
+                if(!empty($errors)) return array('errors'=> $errors);
+                
+                //get the activity and convert it to a php object
                 $activity = $this->entityManager->getRepository(Activity::class)
-                    ->find($data['id']);
-
-                $classroom = $this->entityManager->getRepository(Classroom::class)
-                    ->findByLink($_POST['classroomLink']);
-                
-                $activityRetroAttributed = $this->entityManager->getRepository(ActivityLinkClassroom::class)->findBy(array(
-                    'activity'=> $activity,
-                    'classroom' => $classroom,
-                    "reference" => $_POST['reference']
-                ));
-
-                
-                $isRetroAttributed = $activityRetroAttributed ? true : false;
+                    ->find($activityId);
                 $activityToSend = json_decode(json_encode($activity));
-                $activityToSend->isRetroAttributed = $isRetroAttributed;
+                
+                // a classroomLink is provided to know if the activity is retro attributed to all new students
+                if(!empty($classroomLink)){
+                    $classroom = $this->entityManager->getRepository(Classroom::class)
+                        ->findByLink($classroomLink);
                     
+                    // check whether or not the activity appear in classroom_activities_link_classroom table
+                    $activityRetroAttributed = $this->entityManager->getRepository(ActivityLinkClassroom::class)->findOneBy(array(
+                        'activity'=> $activity,
+                        'classroom' => $classroom,
+                        "reference" => $reference
+                    ));
+
+                    // compute and bind the new property
+                    $isRetroAttributed = $activityRetroAttributed ? true : false;
+                    $activityToSend->isRetroAttributed = $isRetroAttributed;
+                }
+                   
                 return $activityToSend;
             },
             'delete' => function ($data) {
