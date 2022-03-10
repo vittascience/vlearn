@@ -216,7 +216,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
      * @var String $type
      * @return Object Activity
      */
-    public function setType(String $type): Activity
+    public function setType(?String $type): Activity
     {
         $this->type = $type;
         return $this;
