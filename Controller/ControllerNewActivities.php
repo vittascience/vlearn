@@ -297,20 +297,19 @@ class ControllerNewActivities extends Controller
                     }
 
                     // Add duplicate parameter if we are in lti activity case
+                    $unserialized = @unserialize($activity->getContent());
+                    if ($unserialized) {
+                        $content = json_encode($unserialized);
+                    } else {
+                        $content = $activity->getContent();
+                    }
                     if ($isLti) {
-                        $unserialized = @unserialize($activity->getContent());
-                        if ($unserialized) {
-                            $content = json_encode($unserialized);
-                        } else {
-                            $content = $activity->getContent();
-                        }
                         $content = json_decode($content, true);
                         if (!str_contains($content["description"], "&duplicate=1")) {
                             $content["description"] .= "&duplicate=1";
                         }
                         $content = json_encode($content);
                     }
-
 
                     $duplicatedActivity = new Activity( $newTitle,  
                                                         $content, 
