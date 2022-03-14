@@ -235,6 +235,8 @@ class ControllerNewActivities extends Controller
                             $activity = $this->manageFreeAutocorrection($acti, $activity, $response);      
                         } else if ($acti->getType() == "quiz") {
                             $activity = $this->manageQuizAutocorrection($acti, $activity, $response);
+                        } else if ($acti->getType() == "dragAndDrop") {
+                            $activity = $this->manageDragAndDropAutocorrection($acti, $activity, $response);
                         }
                         // Set the correction to 2 (activity corrected)
                         $activity->setCorrection(2);
@@ -347,7 +349,7 @@ class ControllerNewActivities extends Controller
 
     private function manageFreeAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
         $solution = $activity->getSolution();
-        if (strtolower($solution) == strtolower($response)) {
+        if (mb_strtolower($solution) == mb_strtolower($response)) {
             $activityLinkUser->setNote(3);
         } else {
             $activityLinkUser->setNote(0);
@@ -375,6 +377,28 @@ class ControllerNewActivities extends Controller
         return $activityLinkUser;
     }
 
+    private function manageDragAndDropAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
+        $solution = unserialize($activity->getSolution());
+        $correct = 0;
+        $total = 0;
+
+        foreach ($solution as $key => $value) {
+            var_dump([mb_strtolower(trim($value)), mb_strtolower(trim($response[$key]['string']))]);
+            $total++;
+            if (mb_strtolower(trim($value)) == mb_strtolower(trim($response[$key]['string']))) {
+                $correct++;
+            }
+        }
+
+        if ($correct == $total) {
+            $activityLinkUser->setNote(3);
+        } else {
+            $activityLinkUser->setNote(0);
+        }
+
+        return $activityLinkUser;
+    }
+
     private function manageFillInAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
     
         $solution = unserialize($activity->getSolution());
@@ -387,8 +411,8 @@ class ControllerNewActivities extends Controller
 
             $splitedSolution = explode(",", $value);
             foreach ($splitedSolution as $val) {
-                $a_first_str = str_split(strtolower(trim($response[$key])));
-                $a_second_str = str_split(strtolower(trim($val)));
+                $a_first_str = str_split(mb_strtolower(trim($response[$key])));
+                $a_second_str = str_split(mb_strtolower(trim($val)));
 
                 $diff=array_diff_assoc($a_second_str, $a_first_str);
                 if (count($diff) <= $tolerance) {
