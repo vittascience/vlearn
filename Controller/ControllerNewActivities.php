@@ -382,7 +382,6 @@ class ControllerNewActivities extends Controller
         $total = 0;
 
         foreach ($solution as $key => $value) {
-            var_dump([mb_strtolower(trim($value)), mb_strtolower(trim($response[$key]['string']))]);
             $total++;
             if (mb_strtolower(trim($value)) == mb_strtolower(trim($response[$key]['string']))) {
                 $correct++;
