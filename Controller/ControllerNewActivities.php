@@ -156,8 +156,12 @@ class ControllerNewActivities extends Controller
                         if ($tolerance) {
                             $activity->setTolerance($tolerance);
                         }
-                        if ($autocorrect) {
-                            $activity->setIsAutocorrect($autocorrect);
+                        if ($autocorrect != null) {
+                            if ($autocorrect == "true") {
+                                $activity->setIsAutocorrect(true);
+                            } else {
+                                $activity->setIsAutocorrect(false);
+                            }
                         } else {
                             $activity->setIsAutocorrect(false);
                         }
