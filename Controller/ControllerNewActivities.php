@@ -212,8 +212,26 @@ class ControllerNewActivities extends Controller
                 $acti = $this->entityManager->getRepository(Activity::class)->find($activityId);
                 $activity = $this->entityManager->getRepository('Classroom\Entity\ActivityLinkUser')->findOneBy(["activity" => $activityId, "user" => $_SESSION['id']]);
 
+                
+                $actualTries = $activity->getTries();
+                $activity->setTries($actualTries + 1);
 
-                // Correction 0 = no correction, 1 =  waiting correction, 2 correction
+                $content = "";
+                $unserialized = @unserialize($acti->getContent());
+                if ($unserialized) {
+                    $content = $unserialized;
+                } else {
+                    $content = $acti->getContent();
+                }
+
+                $hint = "";
+                if (array_key_exists('hint', $content)) {
+                    $hint = $content['hint'];
+                }
+
+                if ($actualTries > 1 && $activity->getEvaluation() == 1) {
+                    return false;
+                }
 
                 if ($acti) {
 
@@ -222,8 +240,6 @@ class ControllerNewActivities extends Controller
                         $activity->setCorrection(2);
                         $activity->setNote($note);
                         $activity->setCommentary($commentary);
-                    } else {
-                        $activity->setCorrection(1);
                     }
                     $activity->setResponse(serialize($response));
     
@@ -232,24 +248,39 @@ class ControllerNewActivities extends Controller
                     }
 
                     // Manage auto correction for every activity type
-                    if ($acti->getIsAutocorrect() == true) {
-                        if ($acti->getType() == "fillIn") {
-                            $activity = $this->manageFillInAutocorrection($acti, $activity, $response);
-                        } else if ($acti->getType() == "free" || $acti->getType() == "") {
-                            $activity = $this->manageFreeAutocorrection($acti, $activity, $response);      
-                        } else if ($acti->getType() == "quiz") {
-                            $activity = $this->manageQuizAutocorrection($acti, $activity, $response);
-                        } else if ($acti->getType() == "dragAndDrop") {
-                            $activity = $this->manageDragAndDropAutocorrection($acti, $activity, $response);
-                        }
-                        // Set the correction to 2 (activity corrected)
+                    $errorsArray = [];
+
+                    if ($acti->getType() == "fillIn") {
+                        $fillInReturn = $this->manageFillInAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
+                        $activity = $fillInReturn[0];
+                        $errorsArray = $fillInReturn[1];
+                    } else if ($acti->getType() == "free" || $acti->getType() == "") {
+                        $activity = $this->manageFreeAutocorrection($acti, $activity, $response);      
+                    } else if ($acti->getType() == "quiz") {
+                        $quizReturn = $this->manageQuizAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
+                        $activity = $quizReturn[0];
+                        $errorsArray = $quizReturn[1];
+                    } else if ($acti->getType() == "dragAndDrop") {
+                        $dragAndDropReturn = $this->manageDragAndDropAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
+                        $activity = $dragAndDropReturn[0];
+                        $errorsArray = $dragAndDropReturn[1];
+                    }
+                    // Set the correction to 2 (activity corrected)
+                    if ($acti->getIsAutocorrect()) {
                         $activity->setCorrection(2);
                     }
                 
                     $this->entityManager->persist($activity);
                     $this->entityManager->flush();
-    
+
+                    if (count($errorsArray) > 0 && $activity->getEvaluation() != 1) {
+                        return ['badResponse' => $errorsArray, 'hint' => $hint];
+                    } else if (!$isRegular && $activity->getEvaluation() != 1) {
+                        $activity->setCorrection(1);
+                    }
+
                     return  $activity;
+
                 } else {
                     return ["error" => "Activity not found"];
                 } 
@@ -360,28 +391,32 @@ class ControllerNewActivities extends Controller
         return $activityLinkUser;
     }
 
-    private function manageQuizAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
+    private function manageQuizAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
         $solution = unserialize($activity->getSolution());
+        $errorsArray = [];
         $correct = 0;
         $total = 0;
         foreach ($solution as $key => $value) {
             $total++;
             if ($value['isCorrect'] == $response[$key]['isCorrect'] && $value['inputVal'] == $response[$key]['inputVal']) {
                 $correct++;
+            } else {
+                $errorsArray[] = $key;
             }
         }
 
-        if ($correct == $total) {
+        if ($correct == $total && $autocorrect) {
             $activityLinkUser->setNote(3);
-        } else {
+        } else if ($autocorrect) {
             $activityLinkUser->setNote(0);
         }
 
-        return $activityLinkUser;
+        return [$activityLinkUser, $errorsArray];
     }
 
-    private function manageDragAndDropAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
+    private function manageDragAndDropAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
         $solution = unserialize($activity->getSolution());
+        $errorsArray = [];
         $correct = 0;
         $total = 0;
 
@@ -389,24 +424,26 @@ class ControllerNewActivities extends Controller
             $total++;
             if (mb_strtolower(trim($value)) == mb_strtolower(trim($response[$key]['string']))) {
                 $correct++;
+            } else {
+                $errorsArray[] = $key;
             }
         }
 
-        if ($correct == $total) {
+        if ($correct == $total && $autocorrect) {
             $activityLinkUser->setNote(3);
-        } else {
+        } else if ($autocorrect) {
             $activityLinkUser->setNote(0);
         }
 
-        return $activityLinkUser;
+        return [$activityLinkUser, $errorsArray];
     }
 
-    private function manageFillInAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
+    private function manageFillInAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
     
         $solution = unserialize($activity->getSolution());
+        $errorsArray = [];
         $tolerance = $activity->getTolerance();
         $isCorrect = false;
-        $isOverAllCorrect = false;
 
 
         foreach ($solution as $key => $value) {
@@ -425,20 +462,18 @@ class ControllerNewActivities extends Controller
 
             if ($isCorrect) {
                 $isCorrect = false;
-                $isOverAllCorrect = true;
             } else {
-                $isOverAllCorrect = false;
-                break;
+                $errorsArray[] = $key;
             }
         }
 
-        if ($isOverAllCorrect) {
+        if (count($errorsArray) == 0 && $autocorrect) {
             $activityLinkUser->setNote(3);
-        } else {
+        } else if ($autocorrect) {
             $activityLinkUser->setNote(0);
         }
 
-        return $activityLinkUser;
+        return [$activityLinkUser, $errorsArray];
     }
 
     private function isJson($string) {
