@@ -348,7 +348,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         if (is_int($support) && ($support >= 0)) {
             $this->support = $support;
         } else {
-            throw new EntityDataIntegrityException("support needs to be integer and between 0 and 2");
+            throw new EntityDataIntegrityException("support needs to be integer higher than 0");
         }
     }
 
