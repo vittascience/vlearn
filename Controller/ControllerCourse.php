@@ -388,6 +388,50 @@ class ControllerCourse extends Controller
                             ->findBy(array("user" => $userFetched, "deleted" => false));
                     }
                 }
+            },
+            'upload_from_text_editor' => function(){
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "uploadFromTextEditorNotAuthenticated"];
+
+                // bind and sanitize incoming data and 
+                $incomingData = $_FILES['image'];
+                $imageName = !empty($incomingData['name']) ? htmlspecialchars(strip_tags(trim($incomingData['name']))) : "";
+                $imageTempName = !empty($incomingData['tmp_name']) ? htmlspecialchars(strip_tags(trim($incomingData['tmp_name']))) : "";
+                $imageError = intval($incomingData['error']);
+                
+                // initialize $errors array and check for errors if any
+                $errors = [];
+                if ($imageError !== 0) array_push($errors, array("errorType" => "uploadError"));
+                if(empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
+                if(empty($imageName)) array_push($errors, array("errorType" => "invalidImageTempName"));
+
+                // some errors found, return them
+                if(!empty($errors)) return $errors;
+
+                // no errors, we can process the data
+                $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
+
+                // remove whitespace and data to create filename to store
+                list($filenameWithoutSpaces,$extension) = explode('.', str_replace(' ', '', $imageName) );
+                $filenameToUpload = time()."_$filenameWithoutSpaces.$extension" ;
+
+                $success = move_uploaded_file($imageTempName, "$uploadDir/$filenameToUpload");
+
+                // something went wrong while storing the image, return an error
+                if(!$success){
+                    array_push($errors, array('errorType' => "imageNotStored"));
+                    return $errors;
+                }
+               
+                // no errors, return data
+                return array(
+                    "filename" => $filenameToUpload,
+                    "src" => "{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['HTTP_HOST']}/public/content/user_data/resources/$filenameToUpload"
+                );
             }
         );
     }
