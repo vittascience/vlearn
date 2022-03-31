@@ -407,7 +407,7 @@ class ControllerCourse extends Controller
                 $errors = [];
                 if ($imageError !== 0) array_push($errors, array("errorType" => "uploadError"));
                 if(empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
-                if(empty($imageName)) array_push($errors, array("errorType" => "invalidImageTempName"));
+                if(empty($imageTempName)) array_push($errors, array("errorType" => "invalidImageTempName"));
 
                 // some errors found, return them
                 if(!empty($errors)) return $errors;
