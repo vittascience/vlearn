@@ -183,15 +183,17 @@ class ControllerNewActivities extends Controller
                 // accept only connected user
                 if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
 
-
                 $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
                 $isRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $user]);
 
                 // Basics data 
                 $activityId = !empty($_POST['id']) ? intval($_POST['id']) : 0;
                 $timePassed = !empty($_POST['timePassed']) ? intval($_POST['timePassed']) : 0;
+                $correction = !empty($_POST['correction']) ? intval($_POST['correction']) : null;
+
                 // Student's part 
                 $response = !empty($_POST['response']) ? $_POST['response'] : null;
+
                 // Teacher's part
                 $commentary = !empty($_POST['commentary']) ? htmlspecialchars(strip_tags(trim($_POST['commentary']))) : '';
                 $note = !empty($_POST['note']) ? intval($_POST['note']) : 0;
@@ -225,22 +227,27 @@ class ControllerNewActivities extends Controller
                 }
 
                 $hint = "";
-                if (array_key_exists('hint', $content)) {
-                    $hint = $content['hint'];
+                if (is_array($content)) {
+                    if (array_key_exists('hint', $content)) {
+                        $hint = $content['hint'];
+                    }
                 }
-
+                   
                 if ($actualTries > 1 && $activity->getEvaluation() == 1) {
                     return false;
                 }
+
+
 
                 if ($acti) {
 
                     // If it's the teacher who send the request
                     if ($isRegular) {
-                        $activity->setCorrection(2);
                         $activity->setNote($note);
                         $activity->setCommentary($commentary);
                     }
+
+                    $activity->setCorrection($correction);
                     $activity->setResponse(serialize($response));
     
                     if ($timePassed) {
@@ -265,9 +272,12 @@ class ControllerNewActivities extends Controller
                         $activity = $dragAndDropReturn[0];
                         $errorsArray = $dragAndDropReturn[1];
                     }
+
                     // Set the correction to 2 (activity corrected)
-                    if ($acti->getIsAutocorrect()) {
+                    if ($acti->getIsAutocorrect() && $activity->getEvaluation() == 1) {
                         $activity->setCorrection(2);
+                    } else if ($acti->getIsAutocorrect() && $activity->getEvaluation() != 1) {
+                        $activity->setCorrection(1);
                     }
                 
                     $this->entityManager->persist($activity);
@@ -275,8 +285,6 @@ class ControllerNewActivities extends Controller
 
                     if (count($errorsArray) > 0 && $activity->getEvaluation() != 1) {
                         return ['badResponse' => $errorsArray, 'hint' => $hint];
-                    } else if (!$isRegular && $activity->getEvaluation() != 1) {
-                        $activity->setCorrection(1);
                     }
 
                     return  $activity;
@@ -443,26 +451,15 @@ class ControllerNewActivities extends Controller
         $solution = unserialize($activity->getSolution());
         $errorsArray = [];
         $tolerance = $activity->getTolerance();
-        $isCorrect = false;
-
 
         foreach ($solution as $key => $value) {
 
-            $splitedSolution = explode(",", $value);
-            foreach ($splitedSolution as $val) {
-                $a_first_str = str_split(mb_strtolower(trim($response[$key])));
-                $a_second_str = str_split(mb_strtolower(trim($val)));
+            $a_first_str = str_split(mb_strtolower(trim($response[$key])));
+            $a_second_str = str_split(mb_strtolower(trim($value)));
+            
+            $diff=array_diff_assoc($a_second_str, $a_first_str);
 
-                $diff=array_diff_assoc($a_second_str, $a_first_str);
-                if (count($diff) <= $tolerance) {
-                    $isCorrect = true;
-                    break;
-                }
-            }
-
-            if ($isCorrect) {
-                $isCorrect = false;
-            } else {
+            if (count($diff) > $tolerance) {
                 $errorsArray[] = $key;
             }
         }
