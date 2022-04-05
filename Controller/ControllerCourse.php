@@ -390,7 +390,7 @@ class ControllerCourse extends Controller
                 }
             },
             'upload_from_text_editor' => function(){
-
+                
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -409,15 +409,21 @@ class ControllerCourse extends Controller
                 if(empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
                 if(empty($imageTempName)) array_push($errors, array("errorType" => "invalidImageTempName"));
 
+                // remove whitespace and data to create filename to store
+                list($filenameWithoutSpaces,$extension) = explode('.', str_replace(' ', '', $imageName) );
+                $filenameToUpload = time()."_$filenameWithoutSpaces.$extension" ;
+                
+                if(!in_array($extension, array("jpg","jpeg","jfif","pjpeg","pjp","png","apng","avif","gif","svg","webp"))){
+                    array_push($errors, array("errorType" => "invalidImageExtension"));
+                }
+
                 // some errors found, return them
-                if(!empty($errors)) return $errors;
+                if(!empty($errors)) return array('errors'=>$errors);
 
                 // no errors, we can process the data
                 $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
 
-                // remove whitespace and data to create filename to store
-                list($filenameWithoutSpaces,$extension) = explode('.', str_replace(' ', '', $imageName) );
-                $filenameToUpload = time()."_$filenameWithoutSpaces.$extension" ;
+                
 
                 $success = move_uploaded_file($imageTempName, "$uploadDir/$filenameToUpload");
 
