@@ -189,7 +189,7 @@ class ControllerNewActivities extends Controller
                 // Basics data 
                 $activityId = !empty($_POST['id']) ? intval($_POST['id']) : 0;
                 $timePassed = !empty($_POST['timePassed']) ? intval($_POST['timePassed']) : 0;
-                $correction = !empty($_POST['correction']) ? intval($_POST['correction']) : null;
+                $correction = !empty($_POST['correction']) ? intval($_POST['correction']) : 0;
 
                 // Student's part 
                 $response = !empty($_POST['response']) ? $_POST['response'] : null;
@@ -247,7 +247,6 @@ class ControllerNewActivities extends Controller
                         $activity->setCommentary($commentary);
                     }
 
-                    $activity->setCorrection($correction);
                     $activity->setResponse(serialize($response));
     
                     if ($timePassed) {
@@ -272,16 +271,24 @@ class ControllerNewActivities extends Controller
                         $activity = $dragAndDropReturn[0];
                         $errorsArray = $dragAndDropReturn[1];
                     }
-
+  
                     // Set the correction to 2 (activity corrected)
-                    if ($acti->getIsAutocorrect() && $activity->getEvaluation() == 1) {
+                    if ($acti->getIsAutocorrect() && $activity->getEvaluation() == 1 && $correction > 0) {
                         $activity->setCorrection(2);
-                    } else if ($acti->getIsAutocorrect() && $activity->getEvaluation() != 1) {
-                        $activity->setCorrection(1);
+                    } else if ($acti->getIsAutocorrect() && $activity->getEvaluation() != 1 && $correction > 0) {
+                        if (count($errorsArray) > 0) {
+                            $activity->setCorrection($correction);
+                        } else {
+                            $activity->setCorrection(2);
+                        }
                     }
                 
                     $this->entityManager->persist($activity);
                     $this->entityManager->flush();
+
+                    if ($correction == 0) {
+                        return ['success' => true, 'message' => "activitySaved"];
+                    }
 
                     if (count($errorsArray) > 0 && $activity->getEvaluation() != 1) {
                         return ['badResponse' => $errorsArray, 'hint' => $hint];
