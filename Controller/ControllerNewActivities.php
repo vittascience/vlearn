@@ -261,7 +261,9 @@ class ControllerNewActivities extends Controller
                         $activity = $fillInReturn[0];
                         $errorsArray = $fillInReturn[1];
                     } else if ($acti->getType() == "free" || $acti->getType() == "") {
-                        $activity = $this->manageFreeAutocorrection($acti, $activity, $response);      
+                        $freeReturn = $this->manageFreeAutocorrection($acti, $activity, $response);     
+                        $activity = $freeReturn[0];
+                        $errorsArray = $freeReturn[1]; 
                     } else if ($acti->getType() == "quiz") {
                         $quizReturn = $this->manageQuizAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
                         $activity = $quizReturn[0];
@@ -397,13 +399,17 @@ class ControllerNewActivities extends Controller
     }
 
     private function manageFreeAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
-        $solution = $activity->getSolution();
+        $solution = unserialize($activity->getSolution());
+        $errorsArray = [];
+
         if (mb_strtolower($solution) == mb_strtolower($response)) {
             $activityLinkUser->setNote(3);
         } else {
             $activityLinkUser->setNote(0);
+            $errorsArray[] = "faux";
         }
-        return $activityLinkUser;
+
+        return [$activityLinkUser, $errorsArray];
     }
 
     private function manageQuizAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
