@@ -438,6 +438,62 @@ class ControllerCourse extends Controller
                     "filename" => $filenameToUpload,
                     "src" => "{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['HTTP_HOST']}/public/content/user_data/resources/$filenameToUpload"
                 );
+            },
+            'upload_file_from_text_editor' => function(){
+                
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "uploadFromTextEditorNotAuthenticated"];
+                
+                // bind and sanitize incoming data and 
+                $incomingData = $_FILES['file'];
+                $fileError = intval($incomingData['error']);
+                $fileName = !empty($incomingData['name']) ? htmlspecialchars(strip_tags(trim($incomingData['name']))) : "";
+                $fileTempName = !empty($incomingData['tmp_name']) ? htmlspecialchars(strip_tags(trim($incomingData['tmp_name']))) : "";
+                $extension = !empty($incomingData['type']) 
+                    ? htmlspecialchars(strip_tags(trim(
+                        explode('/',$incomingData['type'])[1]
+                    ))) 
+                    : "";
+                $fileSize = !empty($incomingData['size']) ? intval($incomingData['size']): 0;
+
+                // initialize $errors array and check for errors if any
+                $errors = [];
+                if ($fileError !== 0) array_push($errors, array("errorType" => "fileUploadError"));
+                if(empty($fileName)) array_push($errors, array("errorType" => "invalidFileName"));
+                if(empty($fileTempName)) array_push($errors, array("errorType" => "invalidFileTempName"));
+                if(empty($extension)) array_push($errors, array("errorType" => "invalidFileExtension"));
+                if(!in_array($extension, array("pdf"))){
+                    array_push($errors, array("errorType" => "invalidFileExtension"));
+                }
+                if(empty($fileSize)) array_push($errors, array("errorType" => "invalidFileSize"));
+                elseif($fileSize > 10000000) array_push($errors, array("errorType" => "fileSizeToLarge"));
+               
+                // some errors found, return them
+                if(!empty($errors)) return array('errors'=>$errors);
+                
+                // no errors, we can process the data
+                // replace whitespaces by _ and get the first chunk in case of duplicated ".someMisleadingExtensionBeforeTheRealFileExtension"
+                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $fileName) )[0];
+                $filenameToUpload = time()."_$filenameWithoutSpaces.$extension" ;
+
+                // set the target dir and move file
+                $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
+                $success = move_uploaded_file($fileTempName, "$uploadDir/$filenameToUpload");
+
+                // something went wrong while storing the file, return an error
+                if(!$success){
+                    array_push($errors, array('errorType' => "fileNotStored"));
+                    return $errors;
+                }
+               
+                // no errors, return data
+                return array(
+                    "filename" => $filenameToUpload,
+                    "src" => "{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['HTTP_HOST']}/public/content/user_data/resources/$filenameToUpload"
+                );
             }
         );
     }
