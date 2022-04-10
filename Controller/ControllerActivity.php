@@ -10,6 +10,7 @@ use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
 use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
+use Classroom\Entity\UsersLinkApplicationsFromGroups;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
