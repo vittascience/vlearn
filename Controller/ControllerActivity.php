@@ -6,6 +6,7 @@ namespace Learn\Controller;
 use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
+use Classroom\Entity\Applications;
 use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
 use Classroom\Entity\ActivityLinkClassroom;
