@@ -7,7 +7,6 @@ use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
-use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\ActivityLinkUser;
 
 class ControllerNewActivities extends Controller
@@ -26,12 +25,8 @@ class ControllerNewActivities extends Controller
                 $Applications = [];
                 foreach ($Apps as $app) {
                     $appli = $app->jsonSerialize();
-                    $appsRestri = $this->entityManager->getRepository(ActivityRestrictions::class)->findOneBy(["application" => $appli["id"]]);
-                    if ($appsRestri) {
-                        $appli["type"] = $appsRestri->getActivityType();
-                    }
                     $Applications[] = $appli;
-                }
+                } 
 
                 return $Applications;
             },
@@ -338,10 +333,8 @@ class ControllerNewActivities extends Controller
 
                     $isLti = false;
                     if ($activity->getType()) {
-                        // get activity restriction by type
-                        $restriction = $this->entityManager->getRepository(ActivityRestrictions::class)->findOneBy(['activityType' => $activity->getType()]);
                         // get application from the restriction
-                        $application = $this->entityManager->getRepository(Applications::class)->findOneBy(['id' => $restriction->getApplication()]);
+                        $application = $this->entityManager->getRepository(Applications::class)->findOneBy(['title' => $activity->getType()]);
                         // check if the application is lti
                         if ($application->getIsLti() == true) {
                             $isLti = true;
