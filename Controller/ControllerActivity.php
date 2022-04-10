@@ -264,17 +264,17 @@ class ControllerActivity extends Controller
                         foreach ($UsersApplications as $application) {
                             $applicationRestrictions = $this->entityManager->getRepository(Applications::class)->findBy(['id' => $$application->getId()]);
                             if ($applicationRestrictions) {
-                                if (array_key_exists($applicationRestrictions->getTitle(), $Restrictions)) {
-                                    if ($Restrictions[$applicationRestrictions->getTitle()] < $applicationRestrictions->getMaxPerTeachers()) {
-                                        $Restrictions[$applicationRestrictions->getTitle()] = $applicationRestrictions->getMaxPerTeachers();
+                                if (array_key_exists($applicationRestrictions->getName(), $Restrictions)) {
+                                    if ($Restrictions[$applicationRestrictions->getName()] < $applicationRestrictions->getMaxPerTeachers()) {
+                                        $Restrictions[$applicationRestrictions->getName()] = $applicationRestrictions->getMaxPerTeachers();
                                     }
                                 } else {
-                                    $Restrictions[$applicationRestrictions->getTitle()] = $applicationRestrictions->getMaxPerTeachers();
+                                    $Restrictions[$applicationRestrictions->getName()] = $applicationRestrictions->getMaxPerTeachers();
                                 }
                             }
                         }
                     } else {
-                        $ActivityRestrictionsDefault = $this->entityManager->getRepository(Applications::class)->findOneBy(['title' => $activity_type]);
+                        $ActivityRestrictionsDefault = $this->entityManager->getRepository(Applications::class)->findOneBy(['name' => $activity_type]);
                         if ($ActivityRestrictionsDefault) {
                             $Restrictions[$activity_type] = $ActivityRestrictionsDefault->getMaxPerTeachers();
                         }
@@ -285,12 +285,12 @@ class ControllerActivity extends Controller
                         foreach ($GroupsApplications as $applicationFromGroup) {
                             $applicationRestrictionsFromGroup = $this->entityManager->getRepository(Applications::class)->findBy(['id' => $applicationFromGroup->getId()]);
                             if ($applicationRestrictionsFromGroup) {
-                                if (array_key_exists($applicationRestrictionsFromGroup->getTitle(), $Restrictions)) {
-                                    if ($Restrictions[$applicationRestrictionsFromGroup->getTitle()] < $applicationRestrictionsFromGroup->getMaxPerTeachers()) {
-                                        $Restrictions[$applicationRestrictionsFromGroup->getTitle()] = $applicationRestrictionsFromGroup->getMaxPerTeachers();
+                                if (array_key_exists($applicationRestrictionsFromGroup->getName(), $Restrictions)) {
+                                    if ($Restrictions[$applicationRestrictionsFromGroup->getName()] < $applicationRestrictionsFromGroup->getMaxPerTeachers()) {
+                                        $Restrictions[$applicationRestrictionsFromGroup->getName()] = $applicationRestrictionsFromGroup->getMaxPerTeachers();
                                     }
                                 } else {
-                                    $Restrictions[$applicationRestrictionsFromGroup->getTitle()] = $applicationRestrictionsFromGroup->getMaxPerTeachers();
+                                    $Restrictions[$applicationRestrictionsFromGroup->getName()] = $applicationRestrictionsFromGroup->getMaxPerTeachers();
                                 }
                             }
                         }
