@@ -334,7 +334,7 @@ class ControllerNewActivities extends Controller
                     $isLti = false;
                     if ($activity->getType()) {
                         // get application from the restriction
-                        $application = $this->entityManager->getRepository(Applications::class)->findOneBy(['title' => $activity->getType()]);
+                        $application = $this->entityManager->getRepository(Applications::class)->findOneBy(['name' => $activity->getType()]);
                         // check if the application is lti
                         if ($application->getIsLti() == true) {
                             $isLti = true;
