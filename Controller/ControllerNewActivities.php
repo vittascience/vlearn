@@ -183,6 +183,7 @@ class ControllerNewActivities extends Controller
 
                 // Basics data 
                 $activityId = !empty($_POST['id']) ? intval($_POST['id']) : 0;
+                $activityLinkId = !empty($_POST['activityLinkUserId']) ? intval($_POST['activityLinkUserId']) : 0;
                 $timePassed = !empty($_POST['timePassed']) ? intval($_POST['timePassed']) : 0;
                 $correction = !empty($_POST['correction']) ? intval($_POST['correction']) : 0;
 
@@ -207,7 +208,7 @@ class ControllerNewActivities extends Controller
 
                 // no errors, get the activity
                 $acti = $this->entityManager->getRepository(Activity::class)->find($activityId);
-                $activity = $this->entityManager->getRepository('Classroom\Entity\ActivityLinkUser')->findOneBy(["activity" => $activityId, "user" => $_SESSION['id']]);
+                $activity = $this->entityManager->getRepository(ActivityLinkUser::class)->findOneBy(["id" => $activityLinkId]);
 
                 
                 $actualTries = $activity->getTries();
@@ -258,7 +259,7 @@ class ControllerNewActivities extends Controller
                     } else if ($acti->getType() == "free" || $acti->getType() == "") {
                         $freeReturn = $this->manageFreeAutocorrection($acti, $activity, $response);     
                         $activity = $freeReturn[0];
-                        $errorsArray = $freeReturn[1]; 
+                        $errorsArray = $freeReturn[1];
                     } else if ($acti->getType() == "quiz") {
                         $quizReturn = $this->manageQuizAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
                         $activity = $quizReturn[0];
@@ -387,6 +388,47 @@ class ControllerNewActivities extends Controller
                 } else {
                     return ["error" => "Activity not found"];
                 } 
+            },
+            "get_autocorrect_result" => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
+
+
+                // get id activity and id activity link user
+                $activityId = !empty($_POST['activityId']) ? intval($_POST['activityId']) : 0;
+                $activityLinkId = !empty($_POST['activityLinkId']) ? intval($_POST['activityLinkId']) : 0;
+
+                if ($activityId && $activityLinkId) {
+                    $activity = $this->entityManager->getRepository(Activity::class)->find($activityId);
+                    $activityLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findOneBy(["id" => $activityLinkId]);
+
+                    if ($activity && $activityLinkUser) {
+                        $errorsArray = [];
+                        if ($activity->getType() == "fillIn") {
+                            $errorsArray = $this->manageFillInAutocorrection($activity, $activityLinkUser, unserialize($activityLinkUser->getResponse()), false)[1]; 
+                        } else if ($activity->getType() == "quiz") {
+                            $errorsArray = $this->manageQuizAutocorrection($activity, $activityLinkUser, unserialize($activityLinkUser->getResponse()), false)[1];
+                        } else if ($activity->getType() == "dragAndDrop") {
+                            $errorsArray = $this->manageDragAndDropAutocorrection($activity, $activityLinkUser, unserialize($activityLinkUser->getResponse()), false)[1];
+                        }
+
+                        return ['success' => $errorsArray];
+                    } else {
+                        return ["error" => "Activity not found"];
+                    }
+                } else {
+                    return ["error" => "Activity not found"];
+                }
+
+                $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
+                $isRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $user]);
+
+                
+
+                return ["error" => "Activity not found"];
             }
         );
     }
@@ -483,5 +525,4 @@ class ControllerNewActivities extends Controller
         json_decode($string);
         return (json_last_error() == JSON_ERROR_NONE);
     }
-
 }
