@@ -469,8 +469,8 @@ class ControllerCourse extends Controller
                     array_push($errors, array("errorType" => "invalidFileExtension"));
                 }
                 if(empty($fileSize)) array_push($errors, array("errorType" => "invalidFileSize"));
-                elseif($fileSize > 10000000) array_push($errors, array("errorType" => "fileSizeToLarge"));
-               
+                elseif($fileSize > 5000000) array_push($errors, array("errorType" => "fileSizeToLarge"));
+             
                 // some errors found, return them
                 if(!empty($errors)) return array('errors'=>$errors);
                 
