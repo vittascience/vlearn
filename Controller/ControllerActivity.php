@@ -3,6 +3,7 @@
 namespace Learn\Controller;
 
 use User\Entity\Regular;
+use User\Entity\User;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
 use Classroom\Entity\Classroom;
