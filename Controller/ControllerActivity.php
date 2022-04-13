@@ -2,21 +2,16 @@
 
 namespace Learn\Controller;
 
-//show php errors
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-use User\Entity\User;
 use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
 use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
-use Classroom\Entity\ActivityRestrictions;
+use Classroom\Entity\Applications;
 use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
+use Classroom\Entity\GroupsLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
-use Classroom\Entity\Restrictions;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -300,41 +295,42 @@ class ControllerActivity extends Controller
                 // Only check if the activity have a type
                 if ($activity_type) {
                     $myActivities = $this->entityManager->getRepository(Activity::class)->findBy(["user" => $this->user]);
-                    $Applications = $this->entityManager->getRepository(UsersLinkApplications::class)->findBy(['user' => $user_id]);
-                    $ApplicationFromGroup = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findBy(['user' => $user_id]);
+                    $UsersApplications = $this->entityManager->getRepository(UsersLinkApplications::class)->findBy(['user' => $user_id]);
+                    $GroupsApplications = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findBy(['user' => $user_id]);
 
                     // Get all the restrictions from his applications
-                    if ($Applications) {
-                        foreach ($Applications as $application) {
-                            $applicationRestrictions = $this->entityManager->getRepository(ActivityRestrictions::class)->findBy(['application' => $$application->getId()]);
+                    if ($UsersApplications) {
+                        foreach ($UsersApplications as $application) {
+                            $applicationRestrictions = $this->entityManager->getRepository(Applications::class)->findOneBy(['id' => $application->getApplication()]);
                             if ($applicationRestrictions) {
-                                if (array_key_exists($applicationRestrictions->getActivityType(), $Restrictions)) {
-                                    if ($Restrictions[$applicationRestrictions->getActivityType()] < $applicationRestrictions->getMaxPerTeachers()) {
-                                        $Restrictions[$applicationRestrictions->getActivityType()] = $applicationRestrictions->getMaxPerTeachers();
+                                if (array_key_exists($applicationRestrictions->getName(), $Restrictions)) {
+                                    if ($Restrictions[$applicationRestrictions->getName()] < $application->getmaxActivitiesPerTeachers()) {
+                                        $Restrictions[$applicationRestrictions->getName()] = $application->getmaxActivitiesPerTeachers();
                                     }
                                 } else {
-                                    $Restrictions[$applicationRestrictions->getActivityType()] = $applicationRestrictions->getMaxPerTeachers();
+                                    $Restrictions[$applicationRestrictions->getName()] = $application->getmaxActivitiesPerTeachers();
                                 }
                             }
                         }
                     } else {
-                        $ActivityRestrictionsDefault = $this->entityManager->getRepository(ActivityRestrictions::class)->findOneBy(['activityType' => $activity_type]);
+                        $ActivityRestrictionsDefault = $this->entityManager->getRepository(Applications::class)->findOneBy(['name' => $activity_type]);
                         if ($ActivityRestrictionsDefault) {
                             $Restrictions[$activity_type] = $ActivityRestrictionsDefault->getMaxPerTeachers();
                         }
                     }
 
                     // Get all the restrictions from his group's applications
-                    if ($ApplicationFromGroup) {
-                        foreach ($ApplicationFromGroup as $applicationFromGroup) {
-                            $applicationRestrictionsFromGroup = $this->entityManager->getRepository(ActivityRestrictions::class)->findBy(['application' => $$application->getId()]);
+                    if ($GroupsApplications) {
+                        foreach ($GroupsApplications as $applicationFromGroup) {
+                            $App = $this->entityManager->getRepository(Applications::class)->findOneBy(['id' => $applicationFromGroup->getApplication()]);
+                            $applicationRestrictionsFromGroup = $this->entityManager->getRepository(GroupsLinkApplications::class)->findOneBy(['group' => $applicationFromGroup->getGroup(), 'application' => $applicationFromGroup->getApplication()]);
                             if ($applicationRestrictionsFromGroup) {
-                                if (array_key_exists($applicationRestrictionsFromGroup->getActivityType(), $Restrictions)) {
-                                    if ($Restrictions[$applicationRestrictionsFromGroup->getActivityType()] < $applicationRestrictionsFromGroup->getMaxPerTeachers()) {
-                                        $Restrictions[$applicationRestrictionsFromGroup->getActivityType()] = $applicationRestrictionsFromGroup->getMaxPerTeachers();
+                                if (array_key_exists($App->getName(), $Restrictions)) {
+                                    if ($Restrictions[$App->getName()] < $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers()) {
+                                        $Restrictions[$App->getName()] = $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers();
                                     }
                                 } else {
-                                    $Restrictions[$applicationRestrictionsFromGroup->getActivityType()] = $applicationRestrictionsFromGroup->getMaxPerTeachers();
+                                    $Restrictions[$App->getName()] = $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers();
                                 }
                             }
                         }

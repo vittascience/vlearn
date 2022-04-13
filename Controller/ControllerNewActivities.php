@@ -7,7 +7,6 @@ use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
-use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\ActivityLinkUser;
 
 class ControllerNewActivities extends Controller
@@ -26,12 +25,8 @@ class ControllerNewActivities extends Controller
                 $Applications = [];
                 foreach ($Apps as $app) {
                     $appli = $app->jsonSerialize();
-                    $appsRestri = $this->entityManager->getRepository(ActivityRestrictions::class)->findOneBy(["application" => $appli["id"]]);
-                    if ($appsRestri) {
-                        $appli["type"] = $appsRestri->getActivityType();
-                    }
                     $Applications[] = $appli;
-                }
+                } 
 
                 return $Applications;
             },
@@ -183,15 +178,18 @@ class ControllerNewActivities extends Controller
                 // accept only connected user
                 if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
 
-
                 $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
                 $isRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $user]);
 
                 // Basics data 
                 $activityId = !empty($_POST['id']) ? intval($_POST['id']) : 0;
+                $activityLinkId = !empty($_POST['activityLinkUserId']) ? intval($_POST['activityLinkUserId']) : 0;
                 $timePassed = !empty($_POST['timePassed']) ? intval($_POST['timePassed']) : 0;
+                $correction = !empty($_POST['correction']) ? intval($_POST['correction']) : 0;
+
                 // Student's part 
                 $response = !empty($_POST['response']) ? $_POST['response'] : null;
+
                 // Teacher's part
                 $commentary = !empty($_POST['commentary']) ? htmlspecialchars(strip_tags(trim($_POST['commentary']))) : '';
                 $note = !empty($_POST['note']) ? intval($_POST['note']) : 0;
@@ -210,7 +208,7 @@ class ControllerNewActivities extends Controller
 
                 // no errors, get the activity
                 $acti = $this->entityManager->getRepository(Activity::class)->find($activityId);
-                $activity = $this->entityManager->getRepository('Classroom\Entity\ActivityLinkUser')->findOneBy(["activity" => $activityId, "user" => $_SESSION['id']]);
+                $activity = $this->entityManager->getRepository(ActivityLinkUser::class)->findOneBy(["id" => $activityLinkId]);
 
                 
                 $actualTries = $activity->getTries();
@@ -225,22 +223,26 @@ class ControllerNewActivities extends Controller
                 }
 
                 $hint = "";
-                if (array_key_exists('hint', $content)) {
-                    $hint = $content['hint'];
+                if (is_array($content)) {
+                    if (array_key_exists('hint', $content)) {
+                        $hint = $content['hint'];
+                    }
                 }
-
+                   
                 if ($actualTries > 1 && $activity->getEvaluation() == 1) {
                     return false;
                 }
+
+
 
                 if ($acti) {
 
                     // If it's the teacher who send the request
                     if ($isRegular) {
-                        $activity->setCorrection(2);
                         $activity->setNote($note);
                         $activity->setCommentary($commentary);
                     }
+
                     $activity->setResponse(serialize($response));
     
                     if ($timePassed) {
@@ -255,7 +257,9 @@ class ControllerNewActivities extends Controller
                         $activity = $fillInReturn[0];
                         $errorsArray = $fillInReturn[1];
                     } else if ($acti->getType() == "free" || $acti->getType() == "") {
-                        $activity = $this->manageFreeAutocorrection($acti, $activity, $response);      
+                        $freeReturn = $this->manageFreeAutocorrection($acti, $activity, $response);     
+                        $activity = $freeReturn[0];
+                        $errorsArray = $freeReturn[1];
                     } else if ($acti->getType() == "quiz") {
                         $quizReturn = $this->manageQuizAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
                         $activity = $quizReturn[0];
@@ -265,18 +269,27 @@ class ControllerNewActivities extends Controller
                         $activity = $dragAndDropReturn[0];
                         $errorsArray = $dragAndDropReturn[1];
                     }
+  
                     // Set the correction to 2 (activity corrected)
-                    if ($acti->getIsAutocorrect()) {
+                    if ($acti->getIsAutocorrect() && $activity->getEvaluation() == 1 && $correction > 0) {
                         $activity->setCorrection(2);
+                    } else if ($acti->getIsAutocorrect() && $activity->getEvaluation() != 1 && $correction > 0) {
+                        if (count($errorsArray) > 0) {
+                            $activity->setCorrection($correction);
+                        } else {
+                            $activity->setCorrection(2);
+                        }
                     }
                 
                     $this->entityManager->persist($activity);
                     $this->entityManager->flush();
 
+                    if ($correction == 0) {
+                        return ['success' => true, 'message' => "activitySaved"];
+                    }
+
                     if (count($errorsArray) > 0 && $activity->getEvaluation() != 1) {
                         return ['badResponse' => $errorsArray, 'hint' => $hint];
-                    } else if (!$isRegular && $activity->getEvaluation() != 1) {
-                        $activity->setCorrection(1);
                     }
 
                     return  $activity;
@@ -321,10 +334,8 @@ class ControllerNewActivities extends Controller
 
                     $isLti = false;
                     if ($activity->getType()) {
-                        // get activity restriction by type
-                        $restriction = $this->entityManager->getRepository(ActivityRestrictions::class)->findOneBy(['activityType' => $activity->getType()]);
                         // get application from the restriction
-                        $application = $this->entityManager->getRepository(Applications::class)->findOneBy(['id' => $restriction->getApplication()]);
+                        $application = $this->entityManager->getRepository(Applications::class)->findOneBy(['name' => $activity->getType()]);
                         // check if the application is lti
                         if ($application->getIsLti() == true) {
                             $isLti = true;
@@ -377,18 +388,63 @@ class ControllerNewActivities extends Controller
                 } else {
                     return ["error" => "Activity not found"];
                 } 
+            },
+            "get_autocorrect_result" => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
+
+
+                // get id activity and id activity link user
+                $activityId = !empty($_POST['activityId']) ? intval($_POST['activityId']) : 0;
+                $activityLinkId = !empty($_POST['activityLinkId']) ? intval($_POST['activityLinkId']) : 0;
+
+                if ($activityId && $activityLinkId) {
+                    $activity = $this->entityManager->getRepository(Activity::class)->find($activityId);
+                    $activityLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findOneBy(["id" => $activityLinkId]);
+
+                    if ($activity && $activityLinkUser) {
+                        $errorsArray = [];
+                        if ($activity->getType() == "fillIn") {
+                            $errorsArray = $this->manageFillInAutocorrection($activity, $activityLinkUser, unserialize($activityLinkUser->getResponse()), false)[1]; 
+                        } else if ($activity->getType() == "quiz") {
+                            $errorsArray = $this->manageQuizAutocorrection($activity, $activityLinkUser, unserialize($activityLinkUser->getResponse()), false)[1];
+                        } else if ($activity->getType() == "dragAndDrop") {
+                            $errorsArray = $this->manageDragAndDropAutocorrection($activity, $activityLinkUser, unserialize($activityLinkUser->getResponse()), false)[1];
+                        }
+
+                        return ['success' => $errorsArray];
+                    } else {
+                        return ["error" => "Activity not found"];
+                    }
+                } else {
+                    return ["error" => "Activity not found"];
+                }
+
+                $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
+                $isRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $user]);
+
+                
+
+                return ["error" => "Activity not found"];
             }
         );
     }
 
     private function manageFreeAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
-        $solution = $activity->getSolution();
+        $solution = unserialize($activity->getSolution());
+        $errorsArray = [];
+
         if (mb_strtolower($solution) == mb_strtolower($response)) {
             $activityLinkUser->setNote(3);
         } else {
             $activityLinkUser->setNote(0);
+            $errorsArray[] = "faux";
         }
-        return $activityLinkUser;
+
+        return [$activityLinkUser, $errorsArray];
     }
 
     private function manageQuizAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
@@ -443,26 +499,15 @@ class ControllerNewActivities extends Controller
         $solution = unserialize($activity->getSolution());
         $errorsArray = [];
         $tolerance = $activity->getTolerance();
-        $isCorrect = false;
-
 
         foreach ($solution as $key => $value) {
 
-            $splitedSolution = explode(",", $value);
-            foreach ($splitedSolution as $val) {
-                $a_first_str = str_split(mb_strtolower(trim($response[$key])));
-                $a_second_str = str_split(mb_strtolower(trim($val)));
+            $a_first_str = str_split(mb_strtolower(trim($response[$key])));
+            $a_second_str = str_split(mb_strtolower(trim($value)));
+            
+            $diff=array_diff_assoc($a_second_str, $a_first_str);
 
-                $diff=array_diff_assoc($a_second_str, $a_first_str);
-                if (count($diff) <= $tolerance) {
-                    $isCorrect = true;
-                    break;
-                }
-            }
-
-            if ($isCorrect) {
-                $isCorrect = false;
-            } else {
+            if (count($diff) > $tolerance) {
                 $errorsArray[] = $key;
             }
         }
@@ -480,5 +525,4 @@ class ControllerNewActivities extends Controller
         json_decode($string);
         return (json_last_error() == JSON_ERROR_NONE);
     }
-
 }
