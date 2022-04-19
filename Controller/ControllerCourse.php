@@ -399,31 +399,38 @@ class ControllerCourse extends Controller
 
                 // bind and sanitize incoming data and 
                 $incomingData = $_FILES['image'];
+                $imageError = intval($incomingData['error']);
                 $imageName = !empty($incomingData['name']) ? htmlspecialchars(strip_tags(trim($incomingData['name']))) : "";
                 $imageTempName = !empty($incomingData['tmp_name']) ? htmlspecialchars(strip_tags(trim($incomingData['tmp_name']))) : "";
-                $imageError = intval($incomingData['error']);
-                
+                $extension = !empty($incomingData['type']) 
+                    ? htmlspecialchars(strip_tags(trim(
+                        explode('/',$incomingData['type'])[1]
+                    ))) 
+                    : "";
+                $imageSize = !empty($incomingData['size']) ? intval($incomingData['size']): 0;
+
                 // initialize $errors array and check for errors if any
                 $errors = [];
-                if ($imageError !== 0) array_push($errors, array("errorType" => "uploadError"));
+                if ($imageError !== 0) array_push($errors, array("errorType" => "imageUploadError"));
                 if(empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
                 if(empty($imageTempName)) array_push($errors, array("errorType" => "invalidImageTempName"));
-
-                // remove whitespace and data to create filename to store
-                list($filenameWithoutSpaces,$extension) = explode('.', str_replace(' ', '', $imageName) );
-                $filenameToUpload = time()."_$filenameWithoutSpaces.$extension" ;
-                
+                if(empty($extension)) array_push($errors, array("errorType" => "invalidImageExtension"));
                 if(!in_array($extension, array("jpg","jpeg","png","svg","webp","gif","apng"))){
                     array_push($errors, array("errorType" => "invalidImageExtension"));
                 }
+                if(empty($imageSize)) array_push($errors, array("errorType" => "invalidImageSize"));
+                elseif($imageSize > 1000000) array_push($errors, array("errorType" => "imageSizeToLarge"));
 
                 // some errors found, return them
                 if(!empty($errors)) return array('errors'=>$errors);
 
                 // no errors, we can process the data
-                $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
+                // replace whitespaces by _ and get the first chunk in case of duplicated ".someMisleadingExtensionBeforeTheRealFileExtension"
+                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $imageName) )[0];
+                $filenameToUpload = time()."_$filenameWithoutSpaces.$extension" ;
 
-                
+                // no errors, we can process the data
+                $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
 
                 $success = move_uploaded_file($imageTempName, "$uploadDir/$filenameToUpload");
 
