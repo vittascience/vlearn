@@ -389,7 +389,7 @@ class ControllerCourse extends Controller
                     }
                 }
             },
-            'upload_from_text_editor' => function(){
+            'upload_img_from_text_editor' => function(){
                 
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
@@ -413,7 +413,7 @@ class ControllerCourse extends Controller
                 list($filenameWithoutSpaces,$extension) = explode('.', str_replace(' ', '', $imageName) );
                 $filenameToUpload = time()."_$filenameWithoutSpaces.$extension" ;
                 
-                if(!in_array($extension, array("jpg","jpeg","jfif","pjpeg","pjp","png","apng","avif","gif","svg","webp"))){
+                if(!in_array($extension, array("jpg","jpeg","png","svg","webp","gif","apng"))){
                     array_push($errors, array("errorType" => "invalidImageExtension"));
                 }
 
