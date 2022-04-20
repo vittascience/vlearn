@@ -395,7 +395,7 @@ class ControllerCourse extends Controller
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
                 // accept only connected user
-                if (empty($_SESSION['id'])) return ["errorType" => "uploadFromTextEditorNotAuthenticated"];
+                if (empty($_SESSION['id'])) return ["errorType" => "uploadImgFromTextEditorNotAuthenticated"];
 
                 // bind and sanitize incoming data and 
                 $incomingData = $_FILES['image'];
@@ -452,7 +452,7 @@ class ControllerCourse extends Controller
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
                 // accept only connected user
-                if (empty($_SESSION['id'])) return ["errorType" => "uploadFromTextEditorNotAuthenticated"];
+                if (empty($_SESSION['id'])) return ["errorType" => "uploadFileFromTextEditorNotAuthenticated"];
                 
                 // bind and sanitize incoming data and 
                 $incomingData = $_FILES['file'];
