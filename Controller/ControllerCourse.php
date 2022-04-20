@@ -443,7 +443,7 @@ class ControllerCourse extends Controller
                 // no errors, return data
                 return array(
                     "filename" => $filenameToUpload,
-                    "src" => "{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['HTTP_HOST']}/public/content/user_data/resources/$filenameToUpload"
+                    "src" => "/public/content/user_data/resources/$filenameToUpload"
                 );
             },
             'upload_file_from_text_editor' => function(){
@@ -499,7 +499,7 @@ class ControllerCourse extends Controller
                 // no errors, return data
                 return array(
                     "filename" => $filenameToUpload,
-                    "src" => "{$_SERVER['REQUEST_SCHEME']}://{$_SERVER['HTTP_HOST']}/public/content/user_data/resources/$filenameToUpload"
+                    "src" => "/public/content/user_data/resources/$filenameToUpload"
                 );
             }
         );
