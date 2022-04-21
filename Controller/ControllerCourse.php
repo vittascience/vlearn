@@ -437,7 +437,7 @@ class ControllerCourse extends Controller
                 // something went wrong while storing the image, return an error
                 if(!$success){
                     array_push($errors, array('errorType' => "imageNotStored"));
-                    return $errors;
+                    return array('errors'=>$errors);
                 }
                
                 // no errors, return data
@@ -493,7 +493,7 @@ class ControllerCourse extends Controller
                 // something went wrong while storing the file, return an error
                 if(!$success){
                     array_push($errors, array('errorType' => "fileNotStored"));
-                    return $errors;
+                    return array('errors'=>$errors);
                 }
                
                 // no errors, return data
