@@ -13,6 +13,7 @@ use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\GroupsLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
+use Classroom\Entity\UsersRestrictions;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -237,15 +238,7 @@ class ControllerActivity extends Controller
             $Activities = [];
             $user_id = $_SESSION['id'];
 
-            // Get the default user restrictions in the database and set it in parameters
-            //$activitiesDefaultRestrictions = $this->entityManager->getRepository(Restrictions::class)->findOneBy(['name' => "activitiesDefaultRestrictions"]);
-            //$activitiesRestrictions = (array)json_decode($activitiesDefaultRestrictions->getRestrictions());
 
-            if (!empty($activitiesRestrictions)) {
-                $Restrictions = $activitiesRestrictions;
-            }
-
-            
             // get the actual activity
             $Activity = $this->entityManager->getRepository(Activity::class)->findOneBy(['id' => $activity_id]);
 
