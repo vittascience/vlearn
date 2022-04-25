@@ -2,13 +2,14 @@
 
 namespace Learn\Controller;
 
-
 use User\Entity\Regular;
+use User\Entity\User;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
 use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
+use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\GroupsLinkApplications;
@@ -28,11 +29,49 @@ class ControllerActivity extends Controller
                 return $this->entityManager->getRepository(Activity::class)->findBy(array("user" => $this->user));
             },
             'get_mine_for_classroom' => function () {
-                return $this->entityManager->getRepository(Activity::class)
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+ 
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "getMineForClassroomNotAuthenticated"];
+ 
+                $userId = intval($_SESSION['id']);
+ 
+                // get the user
+                $user = $this->entityManager->getRepository(User::class)->find($userId);
+ 
+                // check for errors
+                $errors = [];
+ 
+                // user not found return an error
+                if(!$user) array_push($errors, array('errorType'=>'userNotFound'));
+                if(!empty($errors)) return array('errors'=> $errors);
+ 
+                $activities = $this->entityManager
+                    ->getRepository(Activity::class)
                     ->findBy(
-                        array("user" => $this->user, "isFromClassroom" => true)
+                        array("user" => $user, "isFromClassroom" => true)
                     );
-            },
+ 
+                $activitiesToSend = json_decode(json_encode($activities));
+ 
+                foreach($activitiesToSend as $activity){
+                     // get the activity restriction by type
+                     $application = $this->entityManager
+                     ->getRepository(Applications::class)
+                     ->findOneBy(array(
+                         'name'=> $activity->type
+                     ));
+                    
+                     // bind isLti property to $dataToSend
+                     $activity->isLti = $application
+                     ? $application->getIsLti()
+                     : false;
+                    
+                }
+                
+                return $activitiesToSend;
+             },
             'get' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
