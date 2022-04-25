@@ -134,7 +134,7 @@ class ControllerNewActivities extends Controller
                     $activity = $this->entityManager->getRepository(Activity::class)->find($id);
                     if ($activity) {
 
-                        $title = !empty($data['title']) ? htmlspecialchars($data['title']) : null;
+                        $title = !empty($data['title']) ? $data['title'] : null;
                         $type = !empty($data['type']) ? htmlspecialchars($data['type']) : null;
                         $content = !empty($data['content']) ? json_decode($data['content'], true) : null;
                         $solution = !empty($data['solution']) ? json_decode($data['solution'], true) : null;
