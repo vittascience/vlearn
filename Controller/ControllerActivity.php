@@ -2,19 +2,18 @@
 
 namespace Learn\Controller;
 
-//show php errors
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
 
 use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
+use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
-use Classroom\Entity\ActivityRestrictions;
+use Classroom\Entity\Applications;
+use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
+use Classroom\Entity\GroupsLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
-use Classroom\Entity\Restrictions;
+use Classroom\Entity\UsersRestrictions;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -34,9 +33,48 @@ class ControllerActivity extends Controller
                         array("user" => $this->user, "isFromClassroom" => true)
                     );
             },
-            'get' => function ($data) {
-                return $this->entityManager->getRepository(Activity::class)
-                    ->find($data['id']);
+            'get' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "getNotRetrievedNotAuthenticated"];
+
+                // bind and sanitize incoming data
+                $activityId = !empty($_POST['id']) ? intval($_POST['id']) : null;
+                $classroomLink = !empty($_POST['classroomLink']) ? htmlspecialchars((strip_tags(trim($_POST['classroomLink'])))) :'';
+                $reference = !empty($_POST['reference']) ? htmlspecialchars(strip_tags(trim($_POST['reference']))) : '';
+
+                // check for errors
+                $errors = [];
+                if(empty($activityId)) array_push($errors, array('errorType'=>'InvalidId'));
+
+                // some errors found, return them
+                if(!empty($errors)) return array('errors'=> $errors);
+                
+                //get the activity and convert it to a php object
+                $activity = $this->entityManager->getRepository(Activity::class)
+                    ->find($activityId);
+                $activityToSend = json_decode(json_encode($activity));
+                
+                // a classroomLink is provided to know if the activity is retro attributed to all new students
+                if(!empty($classroomLink)){
+                    $classroom = $this->entityManager->getRepository(Classroom::class)
+                        ->findByLink($classroomLink);
+                    
+                    // check whether or not the activity appear in classroom_activities_link_classroom table
+                    $activityRetroAttributed = $this->entityManager->getRepository(ActivityLinkClassroom::class)->findOneBy(array(
+                        'activity'=> $activity,
+                        'classroom' => $classroom,
+                        "reference" => $reference
+                    ));
+
+                    // compute and bind the new property
+                    $isRetroAttributed = $activityRetroAttributed ? true : false;
+                    $activityToSend->isRetroAttributed = $isRetroAttributed;
+                }
+                   
+                return $activityToSend;
             },
             'delete' => function ($data) {
 
@@ -200,15 +238,7 @@ class ControllerActivity extends Controller
             $Activities = [];
             $user_id = $_SESSION['id'];
 
-            // Get the default user restrictions in the database and set it in parameters
-            //$activitiesDefaultRestrictions = $this->entityManager->getRepository(Restrictions::class)->findOneBy(['name' => "activitiesDefaultRestrictions"]);
-            //$activitiesRestrictions = (array)json_decode($activitiesDefaultRestrictions->getRestrictions());
 
-            if (!empty($activitiesRestrictions)) {
-                $Restrictions = $activitiesRestrictions;
-            }
-
-            
             // get the actual activity
             $Activity = $this->entityManager->getRepository(Activity::class)->findOneBy(['id' => $activity_id]);
 
@@ -220,41 +250,42 @@ class ControllerActivity extends Controller
                 // Only check if the activity have a type
                 if ($activity_type) {
                     $myActivities = $this->entityManager->getRepository(Activity::class)->findBy(["user" => $this->user]);
-                    $Applications = $this->entityManager->getRepository(UsersLinkApplications::class)->findBy(['user' => $user_id]);
-                    $ApplicationFromGroup = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findBy(['user' => $user_id]);
+                    $UsersApplications = $this->entityManager->getRepository(UsersLinkApplications::class)->findBy(['user' => $user_id]);
+                    $GroupsApplications = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findBy(['user' => $user_id]);
 
                     // Get all the restrictions from his applications
-                    if ($Applications) {
-                        foreach ($Applications as $application) {
-                            $applicationRestrictions = $this->entityManager->getRepository(ActivityRestrictions::class)->findBy(['application' => $$application->getId()]);
+                    if ($UsersApplications) {
+                        foreach ($UsersApplications as $application) {
+                            $applicationRestrictions = $this->entityManager->getRepository(Applications::class)->findOneBy(['id' => $application->getApplication()]);
                             if ($applicationRestrictions) {
-                                if (array_key_exists($applicationRestrictions->getActivityType(), $Restrictions)) {
-                                    if ($Restrictions[$applicationRestrictions->getActivityType()] < $applicationRestrictions->getMaxPerTeachers()) {
-                                        $Restrictions[$applicationRestrictions->getActivityType()] = $applicationRestrictions->getMaxPerTeachers();
+                                if (array_key_exists($applicationRestrictions->getName(), $Restrictions)) {
+                                    if ($Restrictions[$applicationRestrictions->getName()] < $application->getmaxActivitiesPerTeachers()) {
+                                        $Restrictions[$applicationRestrictions->getName()] = $application->getmaxActivitiesPerTeachers();
                                     }
                                 } else {
-                                    $Restrictions[$applicationRestrictions->getActivityType()] = $applicationRestrictions->getMaxPerTeachers();
+                                    $Restrictions[$applicationRestrictions->getName()] = $application->getmaxActivitiesPerTeachers();
                                 }
                             }
                         }
                     } else {
-                        $ActivityRestrictionsDefault = $this->entityManager->getRepository(ActivityRestrictions::class)->findOneBy(['activityType' => $activity_type]);
+                        $ActivityRestrictionsDefault = $this->entityManager->getRepository(Applications::class)->findOneBy(['name' => $activity_type]);
                         if ($ActivityRestrictionsDefault) {
                             $Restrictions[$activity_type] = $ActivityRestrictionsDefault->getMaxPerTeachers();
                         }
                     }
 
                     // Get all the restrictions from his group's applications
-                    if ($ApplicationFromGroup) {
-                        foreach ($ApplicationFromGroup as $applicationFromGroup) {
-                            $applicationRestrictionsFromGroup = $this->entityManager->getRepository(ActivityRestrictions::class)->findBy(['application' => $$application->getId()]);
+                    if ($GroupsApplications) {
+                        foreach ($GroupsApplications as $applicationFromGroup) {
+                            $App = $this->entityManager->getRepository(Applications::class)->findOneBy(['id' => $applicationFromGroup->getApplication()]);
+                            $applicationRestrictionsFromGroup = $this->entityManager->getRepository(GroupsLinkApplications::class)->findOneBy(['group' => $applicationFromGroup->getGroup(), 'application' => $applicationFromGroup->getApplication()]);
                             if ($applicationRestrictionsFromGroup) {
-                                if (array_key_exists($applicationRestrictionsFromGroup->getActivityType(), $Restrictions)) {
-                                    if ($Restrictions[$applicationRestrictionsFromGroup->getActivityType()] < $applicationRestrictionsFromGroup->getMaxPerTeachers()) {
-                                        $Restrictions[$applicationRestrictionsFromGroup->getActivityType()] = $applicationRestrictionsFromGroup->getMaxPerTeachers();
+                                if (array_key_exists($App->getName(), $Restrictions)) {
+                                    if ($Restrictions[$App->getName()] < $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers()) {
+                                        $Restrictions[$App->getName()] = $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers();
                                     }
                                 } else {
-                                    $Restrictions[$applicationRestrictionsFromGroup->getActivityType()] = $applicationRestrictionsFromGroup->getMaxPerTeachers();
+                                    $Restrictions[$App->getName()] = $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers();
                                 }
                             }
                         }

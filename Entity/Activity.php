@@ -309,11 +309,18 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
         }
 
         $unserialized = @unserialize($this->getContent());
+        $unserializedSolution = @unserialize($this->getSolution());
         // Handle the previous format
         if ($unserialized) {
             $content = json_encode($unserialized);
         } else {
             $content = $this->getContent();
+        }
+
+        if ($unserializedSolution) {
+            $solution = json_encode($unserializedSolution);
+        } else {
+            $solution = $this->getSolution();
         }
 
         return [
@@ -324,7 +331,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
             'user' => $user,
             "fork" => $fork,
             "type" => $this->getType(),
-            "solution" => $this->getSolution(),
+            "solution" => $solution,
             "tolerance" => $this->getTolerance(),
             "isAutocorrect" => $this->getIsAutocorrect()
         ];
