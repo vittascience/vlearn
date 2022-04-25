@@ -2,12 +2,13 @@
 
 namespace Learn\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
-use Utils\Exceptions\EntityDataIntegrityException;
-use Utils\Exceptions\EntityOperatorException;
-use Utils\MetaDataMatcher;
-use Doctrine\Common\Collections\ArrayCollection;
 use User\Entity\User;
+use Learn\Entity\Comment;
+use Utils\MetaDataMatcher;
+use Doctrine\ORM\Mapping as ORM;
+use Utils\Exceptions\EntityOperatorException;
+use Doctrine\Common\Collections\ArrayCollection;
+use Utils\Exceptions\EntityDataIntegrityException;
 
 /**
  * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryCourse")
@@ -36,15 +37,21 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
     private $id;
     public $activities = [];
     /**
-     * @ORM\OneToMany(targetEntity=Favorite::class, mappedBy="tutorial_id")
+     * @ORM\OneToMany(targetEntity=Favorite::class, mappedBy="tutorial")
      */
 
     private $favorite;
 
     /**
-     * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="tutorial_id")
+     * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="tutorial")
      */
     private $lesson;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Comment::class, mappedBy="tutorial")
+     */
+    private $comment;
+
     /**
      * @ORM\ManyToOne(targetEntity="User\Entity\User")
      * @ORM\JoinColumn(name="user", nullable=false, referencedColumnName="id", onDelete="CASCADE")
@@ -338,10 +345,11 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
     public function setSupport($support)
     {
         $support = intval($support);
-        if (is_int($support) && ($support >= 0 )) {
+        if (is_int($support) && ($support >= 0)) {
+
             $this->support = $support;
         } else {
-            throw new EntityDataIntegrityException("support needs to be integer and between 0 and 2");
+            throw new EntityDataIntegrityException("support needs to be integer higher than 0");
         }
     }
 
