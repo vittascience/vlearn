@@ -2,11 +2,6 @@
 
 namespace Learn\Controller;
 
-//show php errors
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-
 use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
