@@ -4,14 +4,11 @@ namespace Learn\Controller;
 
 use User\Entity\Regular;
 use Learn\Entity\Activity;
-use Database\DataBaseManager;
 use Learn\Controller\Controller;
+use Classroom\Entity\ActivityLinkUser;
 use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
-use Classroom\Entity\Restrictions;
-
-/* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
 class ControllerActivity extends Controller
 {
@@ -49,6 +46,11 @@ class ControllerActivity extends Controller
                 $name = ["name" => "unknow", "id" => "unknow", "message" => "notAllowed"];
                 if ($activity && $Allowed) {
                     $this->entityManager->remove($activity);
+                    // Update Rémi (delete all link between activity and user)
+                    $activityLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $Activity_id]);
+                    foreach ($activityLinkUser as $activityLink) {
+                        $this->entityManager->remove($activityLink);
+                    }
                     $this->entityManager->flush();
                     $name = ["name" => $activity->getTitle(), "id" => $activity->getId()];
                 }
