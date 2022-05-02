@@ -116,7 +116,6 @@ class ControllerActivity extends Controller
                 return $activityToSend;
             },
             'delete' => function ($data) {
-
                 // This function can be accessed by post method only
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -131,6 +130,11 @@ class ControllerActivity extends Controller
                 $name = ["name" => "unknow", "id" => "unknow", "message" => "notAllowed"];
                 if ($activity && $Allowed) {
                     $this->entityManager->remove($activity);
+                    // Update Rémi (delete all link between activity and user)
+                    $activityLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $Activity_id]);
+                    foreach ($activityLinkUser as $activityLink) {
+                        $this->entityManager->remove($activityLink);
+                    }
                     $this->entityManager->flush();
                     $name = ["name" => $activity->getTitle(), "id" => $activity->getId()];
                 }
