@@ -275,7 +275,7 @@ class ControllerNewActivities extends Controller
                         $activity->setCorrection(2);
                     } else if ($acti->getIsAutocorrect() && $activity->getEvaluation() != 1 && $correction > 0) {
                         if (count($errorsArray) > 0) {
-                            $activity->setCorrection($correction);
+                            $activity->setCorrection(0);
                         } else {
                             $activity->setCorrection(2);
                         }
