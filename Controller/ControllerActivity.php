@@ -287,10 +287,10 @@ class ControllerActivity extends Controller
                 return $myFolders;
             },
             "create_folder" => function () {
-                $title = htmlspecialchars($_POST['title']);
+                $name = htmlspecialchars($_POST['name']);
                 $image = htmlspecialchars($_POST['image']);
 
-                $folder = new Folder($title, $image);
+                $folder = new Folder($name, $image);
 
                 $this->entityManager->persist($folder);
                 $this->entityManager->flush();
@@ -299,7 +299,7 @@ class ControllerActivity extends Controller
             },
             "update_folder" => function () {
 
-                $title = htmlspecialchars($_POST['title']);
+                $name = htmlspecialchars($_POST['name']);
                 $image = htmlspecialchars($_POST['image']);
                 $id = htmlspecialchars($_POST['id']);
 
@@ -311,13 +311,10 @@ class ControllerActivity extends Controller
                 $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
 
                 if (!$Allowed) {
-                    return array(
-                        'error' => 'notAllowed'
-                    );
+                    return ['error' => 'notAllowed'];
                 }
 
-
-                $folder->setTitle($title);
+                $folder->setName($name);
                 $folder->setImage($image);
 
                 $this->entityManager->persist($folder);
@@ -336,11 +333,9 @@ class ControllerActivity extends Controller
                 $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
 
                 if (!$Allowed) {
-                    return array(
-                        'error' => 'notAllowed'
-                    );
+                    return ['error' => 'notAllowed'];
                 }
-                
+
                 $this->entityManager->remove($folder);
                 $this->entityManager->flush();
 
