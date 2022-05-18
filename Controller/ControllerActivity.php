@@ -283,6 +283,12 @@ class ControllerActivity extends Controller
                 $name = htmlspecialchars($_POST['name']);
                 $image = htmlspecialchars($_POST['image']);
 
+                if (strlen($name) < 1) {
+                    return array(
+                        'error' => 'folderNameInvalid'
+                    );
+                }
+
                 $user = $this->entityManager->getRepository(User::class)->find($this->user['id']);
                 $folder = new Folder($name, $image, $user);
 
