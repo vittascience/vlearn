@@ -2,19 +2,20 @@
 
 namespace Learn\Controller;
 
-use User\Entity\Regular;
 use User\Entity\User;
+use Learn\Entity\Folder;
+use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
 use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
+use Classroom\Entity\UsersRestrictions;
 use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\GroupsLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
-use Classroom\Entity\UsersRestrictions;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -284,6 +285,42 @@ class ControllerActivity extends Controller
                     }
                 }
                 return $myFolders;
+            },
+            "create_folder" => function () {
+                $title = htmlspecialchars($_POST['title']);
+                $image = htmlspecialchars($_POST['image']);
+
+                $folder = new Folder($title, $image);
+
+                $this->entityManager->persist($folder);
+                $this->entityManager->flush();
+
+                return $folder;
+            },
+            "update_folder" => function () {
+
+                $title = htmlspecialchars($_POST['title']);
+                $image = htmlspecialchars($_POST['image']);
+                $id = htmlspecialchars($_POST['id']);
+
+                $folder = $this->entityManager->getRepository(Folder::class)->find($id);
+                $folder->setTitle($title);
+                $folder->setImage($image);
+                
+                $this->entityManager->persist($folder);
+                $this->entityManager->flush();
+
+                return $folder;
+            },
+            "delete_folder" => function () {
+                $id = htmlspecialchars($_POST['id']);
+
+                $folder = $this->entityManager->getRepository(Folder::class)->find($id);
+
+                $this->entityManager->remove($folder);
+                $this->entityManager->flush();
+
+                return $folder;
             },
         );
     }
