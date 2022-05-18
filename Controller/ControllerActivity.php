@@ -3,8 +3,8 @@
 namespace Learn\Controller;
 
 use User\Entity\User;
-use Learn\Entity\Folder;
 use User\Entity\Regular;
+use Learn\Entity\Folders;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
 use Classroom\Entity\Classroom;
@@ -276,7 +276,7 @@ class ControllerActivity extends Controller
             "get_all_user_folders" => function () {
                 // get all user's activities
                 $user = $this->entityManager->getRepository(User::class)->find($this->user['id']);
-                $myFolders = $this->entityManager->getRepository(Folder::class)->findBy(["user" => $user]);
+                $myFolders = $this->entityManager->getRepository(Folders::class)->findBy(["user" => $user]);
                 return $myFolders;
             },
             "create_folder" => function () {
@@ -290,7 +290,7 @@ class ControllerActivity extends Controller
                 }
 
                 $user = $this->entityManager->getRepository(User::class)->find($this->user['id']);
-                $folder = new Folder($name, $image, $user);
+                $folder = new Folders($name, $image, $user);
 
                 $this->entityManager->persist($folder);
                 $this->entityManager->flush();
@@ -303,7 +303,7 @@ class ControllerActivity extends Controller
                 $image = htmlspecialchars($_POST['image']);
                 $id = htmlspecialchars($_POST['id']);
 
-                $folder = $this->entityManager->getRepository(Folder::class)->find($id);
+                $folder = $this->entityManager->getRepository(Folders::class)->find($id);
 
                 // check if allowed 
                 $requester_id = $_SESSION['id'];
@@ -325,7 +325,7 @@ class ControllerActivity extends Controller
             "delete_folder" => function () {
                 $id = htmlspecialchars($_POST['id']);
 
-                $folder = $this->entityManager->getRepository(Folder::class)->find($id);
+                $folder = $this->entityManager->getRepository(Folders::class)->find($id);
 
                 // check if allowed 
                 $requester_id = $_SESSION['id'];

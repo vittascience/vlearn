@@ -9,7 +9,7 @@ use Utils\MetaDataMatcher;
  * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryFolder")
  * @ORM\Table(name="learn_folder")
  */
-class Folder implements \JsonSerializable, \Utils\JsonDeserializer
+class Folders implements \JsonSerializable, \Utils\JsonDeserializer
 {
 
     /**
@@ -26,10 +26,11 @@ class Folder implements \JsonSerializable, \Utils\JsonDeserializer
     private $name;
 
     /**
-     * @ORM\Column(name="background_image", type="string", length=255, nullable=true)
-     * @var string
-     */
-    private $backgroundImg;
+     * @ORM\OneToOne(targetEntity="Learn\Entity\Folders")
+     * @ORM\JoinColumn(name="parent_folder", nullable=true, referencedColumnName="id", onDelete="CASCADE")
+     * @var Folders
+    */
+    private $parentFolder = null;
 
 
     /**
@@ -41,11 +42,11 @@ class Folder implements \JsonSerializable, \Utils\JsonDeserializer
 
 
 
-    public function __construct($name, $backgroundImg = null, $user = null)
+    public function __construct($name, $user = null, $parentFolder = null)
     {
         $this->name = $name;
-        $this->backgroundImg = $backgroundImg;
         $this->user = $user;
+        $this->parentFoler = $parentFolder;
     }
 
     /**
@@ -73,22 +74,6 @@ class Folder implements \JsonSerializable, \Utils\JsonDeserializer
     }
 
     /**
-     * @return string
-     */
-    public function getBackgroundImg()
-    {
-        return $this->backgroundImg;
-    }
-
-    /**
-     * @param string $backgroundImg
-     */
-    public function setBackgroundImg($backgroundImg)
-    {
-        $this->backgroundImg = $backgroundImg;
-    }
-
-    /**
      * @return User
      */
     public function getUser()
@@ -104,14 +89,30 @@ class Folder implements \JsonSerializable, \Utils\JsonDeserializer
         $this->user = $user;
     }
 
+    /**
+     * @return Folders
+     */
+    public function getParentFolder()
+    {
+        return $this->parentFolder;
+    }
+
+    /**
+     * @param Folders $parentFoler
+     */
+    public function setParentFolder($parentFolder)
+    {
+        $this->parentFolder = $parentFolder;
+    }
+
 
     public function jsonSerialize()
     {
         return [
             'id' => $this->getId(),
             'name' => $this->getName(),
-            'backgroundImg' => $this->getBackgroundImg(),
-            'user' => $this->getUser()
+            'user' => $this->getUser(),
+            'parentFolder' => $this->getParentFolder(),
         ];
     }
 
