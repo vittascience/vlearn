@@ -7,7 +7,7 @@ use Utils\MetaDataMatcher;
 
 /**
  * @ORM\Entity(repositoryClass="Learn\Repository\FolderRepository")
- * @ORM\Table(name="classroom_folder")
+ * @ORM\Table(name="learn_folder")
  */
 class Folder implements \JsonSerializable, \Utils\JsonDeserializer
 {
