@@ -242,7 +242,49 @@ class ControllerActivity extends Controller
                 $activityId = htmlspecialchars($data['activityId']);
                 $activityType = htmlspecialchars($data['activityType']);
                 return $this->isActivitiesLimited($activityId, $activityType);
-            }
+            },
+            'moveToFolder'  => function ($data) {
+
+                $activityId = htmlspecialchars($data['activityId']);
+                $folderId = htmlspecialchars($data['folderId']);
+
+                $activity = $this->entityManager->getRepository(Activity::class)->find($activityId);
+
+                // check if allowed 
+                $requester_id = $_SESSION['id'];
+                $creator_id = $activity->getUser();
+                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
+
+                if (!$Allowed) {
+                    return array(
+                        'error' => 'notAllowed'
+                    );
+                }
+
+                $folder = $this->entityManager->getRepository(Folder::class)->find($folderId);
+                $activity->setFolder($folder);
+                $this->entityManager->persist($activity);
+                $this->entityManager->flush();
+
+                return [
+                    'success' => true,
+                    'activity' => $activity,
+                    'folder' => $folder
+                ];
+            },
+            "get_all_user_folders" => function () {
+                // get all user's activities
+                $Activities = $this->entityManager->getRepository(Activity::class)->findBy(["user" => $this->user]);
+                $myFolders = [];
+                foreach ($Activities as $activity) {
+                    if (in_array($activity->getFolder(), $myFolders)) {
+                        continue;
+                    } else {
+                        $myFolders[] = $activity->getFolder();
+                    }
+                }
+                return $myFolders;
+            },
         );
     }
 
