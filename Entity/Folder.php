@@ -6,7 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Utils\MetaDataMatcher;
 
 /**
- * @ORM\Entity(repositoryClass="Learn\Repository\FolderRepository")
+ * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryFolder")
  * @ORM\Table(name="learn_folder")
  */
 class Folder implements \JsonSerializable, \Utils\JsonDeserializer

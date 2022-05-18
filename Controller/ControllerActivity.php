@@ -275,22 +275,16 @@ class ControllerActivity extends Controller
             },
             "get_all_user_folders" => function () {
                 // get all user's activities
-                $Activities = $this->entityManager->getRepository(Activity::class)->findBy(["user" => $this->user]);
-                $myFolders = [];
-                foreach ($Activities as $activity) {
-                    if (in_array($activity->getFolder(), $myFolders)) {
-                        continue;
-                    } else {
-                        $myFolders[] = $activity->getFolder();
-                    }
-                }
+                $user = $this->entityManager->getRepository(User::class)->find($this->user['id']);
+                $myFolders = $this->entityManager->getRepository(Folder::class)->findBy(["user" => $user]);
                 return $myFolders;
             },
             "create_folder" => function () {
                 $name = htmlspecialchars($_POST['name']);
                 $image = htmlspecialchars($_POST['image']);
 
-                $folder = new Folder($name, $image, $this->user);
+                $user = $this->entityManager->getRepository(User::class)->find($this->user['id']);
+                $folder = new Folder($name, $image, $user);
 
                 $this->entityManager->persist($folder);
                 $this->entityManager->flush();
