@@ -2,11 +2,12 @@
 
 namespace Learn\Entity;
 
-use Utils\Exceptions\EntityDataIntegrityException;
-use Utils\Exceptions\EntityOperatorException;
-use Doctrine\ORM\Mapping as ORM;
-use Utils\MetaDataMatcher;
 use User\Entity\User;
+use Learn\Entity\Folder;
+use Utils\MetaDataMatcher;
+use Doctrine\ORM\Mapping as ORM;
+use Utils\Exceptions\EntityOperatorException;
+use Utils\Exceptions\EntityDataIntegrityException;
 
 
 /**
@@ -85,6 +86,13 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
      * @var bool
      */
     private $isAutocorrect;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Learn\Entity\Folder")
+     * @ORM\JoinColumn(name="folder", nullable=true, referencedColumnName="id", onDelete="CASCADE")
+     * @var User
+     */
+    private $folder;
 
 
     public function __construct($title, $content, $user = null, $isFromClassroom = false)
@@ -286,6 +294,24 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
     }
 
 
+    /**
+     * @return Folder
+     */
+    public function getFolder(): ?Folder
+    {
+        return $this->folder;
+    }
+
+    /**
+     * @param Folder $folders
+     * @return Activity
+     */
+    public function setFolder(Folder $folder): Activity
+    {
+        $this->folder = $folder;
+        return $this;
+    }
+
     public function copy($objectToCopyFrom)
     {
         $this->setTitle($objectToCopyFrom->getTitle());
@@ -333,7 +359,8 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
             "type" => $this->getType(),
             "solution" => $solution,
             "tolerance" => $this->getTolerance(),
-            "isAutocorrect" => $this->getIsAutocorrect()
+            "isAutocorrect" => $this->getIsAutocorrect(),
+            "folder" => $this->getFolder()
         ];
     }
 
