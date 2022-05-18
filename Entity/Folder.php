@@ -2,7 +2,6 @@
 
 namespace Learn\Entity;
 
-use Utils\Exceptions\EntityDataIntegrityException;
 use Doctrine\ORM\Mapping as ORM;
 use Utils\MetaDataMatcher;
 
@@ -32,19 +31,11 @@ class Folder implements \JsonSerializable, \Utils\JsonDeserializer
      */
     private $backgroundImg;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", nullable=false, referencedColumnName="id", onDelete="CASCADE")
-     * @var User
-     */
-    private $folderLinkUser;
 
-
-    public function __construct($name, $backgroundImg = null, $user = null)
+    public function __construct($name, $backgroundImg = null)
     {
         $this->name = $name;
         $this->backgroundImg = $backgroundImg;
-        $this->folderLinkUser = $user;
     }
 
     /**
@@ -71,7 +62,6 @@ class Folder implements \JsonSerializable, \Utils\JsonDeserializer
         $this->name = $name;
     }
 
-    // backgroundImg
     /**
      * @return string
      */
@@ -88,31 +78,12 @@ class Folder implements \JsonSerializable, \Utils\JsonDeserializer
         $this->backgroundImg = $backgroundImg;
     }
 
-    // folderLinkUser
-    /**
-     * @return User
-     */
-    public function getFolderLinkUser()
-    {
-        return $this->folderLinkUser;
-    }
-
-    /**
-     * @param User $folderLinkUser
-     */
-    public function setFolderLinkUser($folderLinkUser)
-    {
-        $this->folderLinkUser = $folderLinkUser;
-    }
-
-
     public function jsonSerialize()
     {
         return [
             'id' => $this->getId(),
             'name' => $this->getName(),
             'backgroundImg' => $this->getBackgroundImg(),
-            'user' => $this->getFolderLinkUser()->getId(),
         ];
     }
 
