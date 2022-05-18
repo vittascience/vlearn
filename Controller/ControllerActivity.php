@@ -315,7 +315,7 @@ class ControllerActivity extends Controller
                 }
 
                 $folder->setName($name);
-                $folder->setImage($image);
+                $folder->setBackgroundImg($image);
 
                 $this->entityManager->persist($folder);
                 $this->entityManager->flush();
