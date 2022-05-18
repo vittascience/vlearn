@@ -290,7 +290,7 @@ class ControllerActivity extends Controller
                 $name = htmlspecialchars($_POST['name']);
                 $image = htmlspecialchars($_POST['image']);
 
-                $folder = new Folder($name, $image);
+                $folder = new Folder($name, $image, $this->user);
 
                 $this->entityManager->persist($folder);
                 $this->entityManager->flush();

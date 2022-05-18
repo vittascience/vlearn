@@ -41,10 +41,11 @@ class Folder implements \JsonSerializable, \Utils\JsonDeserializer
 
 
 
-    public function __construct($name, $backgroundImg = null)
+    public function __construct($name, $backgroundImg = null, $user = null)
     {
         $this->name = $name;
         $this->backgroundImg = $backgroundImg;
+        $this->user = $user;
     }
 
     /**
