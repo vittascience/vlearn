@@ -281,7 +281,7 @@ class ControllerActivity extends Controller
             },
             "create_folder" => function () {
                 $name = htmlspecialchars($_POST['name']);
-                $image = htmlspecialchars($_POST['image']);
+                $parentFolder = htmlspecialchars($_POST['parent']);
 
                 if (strlen($name) < 1) {
                     return array(
@@ -290,7 +290,7 @@ class ControllerActivity extends Controller
                 }
 
                 $user = $this->entityManager->getRepository(User::class)->find($this->user['id']);
-                $folder = new Folders($name, $image, $user);
+                $folder = new Folders($name, $user, $parentFolder);
 
                 $this->entityManager->persist($folder);
                 $this->entityManager->flush();
@@ -300,7 +300,7 @@ class ControllerActivity extends Controller
             "update_folder" => function () {
 
                 $name = htmlspecialchars($_POST['name']);
-                $image = htmlspecialchars($_POST['image']);
+                $parentFolder = htmlspecialchars($_POST['parent']);
                 $id = htmlspecialchars($_POST['id']);
 
                 $folder = $this->entityManager->getRepository(Folders::class)->find($id);
@@ -315,7 +315,7 @@ class ControllerActivity extends Controller
                 }
 
                 $folder->setName($name);
-                $folder->setBackgroundImg($image);
+                $folder->getParentFolder($parentFolder);
 
                 $this->entityManager->persist($folder);
                 $this->entityManager->flush();
