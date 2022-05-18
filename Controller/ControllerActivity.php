@@ -304,9 +304,22 @@ class ControllerActivity extends Controller
                 $id = htmlspecialchars($_POST['id']);
 
                 $folder = $this->entityManager->getRepository(Folder::class)->find($id);
+
+                // check if allowed 
+                $requester_id = $_SESSION['id'];
+                $creator_id = $folder->getUser();
+                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
+
+                if (!$Allowed) {
+                    return array(
+                        'error' => 'notAllowed'
+                    );
+                }
+
+
                 $folder->setTitle($title);
                 $folder->setImage($image);
-                
+
                 $this->entityManager->persist($folder);
                 $this->entityManager->flush();
 
@@ -317,6 +330,17 @@ class ControllerActivity extends Controller
 
                 $folder = $this->entityManager->getRepository(Folder::class)->find($id);
 
+                // check if allowed 
+                $requester_id = $_SESSION['id'];
+                $creator_id = $folder->getUser();
+                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
+
+                if (!$Allowed) {
+                    return array(
+                        'error' => 'notAllowed'
+                    );
+                }
+                
                 $this->entityManager->remove($folder);
                 $this->entityManager->flush();
 
