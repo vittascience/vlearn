@@ -32,6 +32,15 @@ class Folder implements \JsonSerializable, \Utils\JsonDeserializer
     private $backgroundImg;
 
 
+    /**
+     * @ORM\ManyToOne(targetEntity="User\Entity\User")
+     * @ORM\JoinColumn(name="user", nullable=false, referencedColumnName="id", onDelete="CASCADE")
+     * @var User
+    */
+    private $user;
+
+
+
     public function __construct($name, $backgroundImg = null)
     {
         $this->name = $name;
@@ -78,12 +87,30 @@ class Folder implements \JsonSerializable, \Utils\JsonDeserializer
         $this->backgroundImg = $backgroundImg;
     }
 
+    /**
+     * @return User
+     */
+    public function getUser()
+    {
+        return $this->user;
+    }
+
+    /**
+     * @param User $user
+     */
+    public function setUser($user)
+    {
+        $this->user = $user;
+    }
+
+
     public function jsonSerialize()
     {
         return [
             'id' => $this->getId(),
             'name' => $this->getName(),
             'backgroundImg' => $this->getBackgroundImg(),
+            'user' => $this->getUser()
         ];
     }
 
