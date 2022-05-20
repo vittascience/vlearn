@@ -3,7 +3,7 @@
 namespace Learn\Entity;
 
 use User\Entity\User;
-use Learn\Entity\Folder;
+use Learn\Entity\Folders;
 use Utils\MetaDataMatcher;
 use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityOperatorException;
