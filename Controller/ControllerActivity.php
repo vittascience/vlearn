@@ -281,14 +281,16 @@ class ControllerActivity extends Controller
             },
             "create_folder" => function () {
                 $name = htmlspecialchars($_POST['name']);
-                $parentFolder = htmlspecialchars($_POST['parent']);
+                $parent = htmlspecialchars($_POST['parent']);
 
+                
                 if (strlen($name) < 1) {
                     return array(
                         'error' => 'folderNameInvalid'
                     );
                 }
 
+                $parentFolder = $this->entityManager->getRepository(Folders::class)->find($parent);
                 $user = $this->entityManager->getRepository(User::class)->find($this->user['id']);
                 $folder = new Folders($name, $user, $parentFolder);
 
@@ -335,6 +337,30 @@ class ControllerActivity extends Controller
                 if (!$Allowed) {
                     return ['error' => 'notAllowed'];
                 }
+
+                $Childrens = $this->entityManager->getRepository(Folders::class)->findBy(["parentFolder" => $folder]);
+                $Activities = $this->entityManager->getRepository(Activity::class)->findBy(["folder" => $folder]);
+                $Parent = $folder->getParentFolder();
+
+                foreach ($Childrens as $child) {
+                    if ($Parent) {
+                        $child->setParentFolder($Parent);
+                    } else {
+                        $child->setParentFolder(null);
+                    }
+                    $this->entityManager->persist($child);
+                }
+
+                
+                foreach ($Activities as $activity) {
+                    if ($Parent) {
+                        $activity->setFolder($Parent);
+                    } else {
+                        $activity->setFolder(null);
+                    }
+                    $this->entityManager->persist($activity);
+                }
+
 
                 $this->entityManager->remove($folder);
                 $this->entityManager->flush();

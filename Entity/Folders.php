@@ -46,7 +46,7 @@ class Folders implements \JsonSerializable, \Utils\JsonDeserializer
     {
         $this->name = $name;
         $this->user = $user;
-        $this->parentFoler = $parentFolder;
+        $this->parentFolder = $parentFolder;
     }
 
     /**
