@@ -292,7 +292,7 @@ class ControllerActivity extends Controller
                 }
 
 
-                $folder->setFolder($destinationFolderId);
+                $folder->setParentFolder($destinationFolderId);
                 $this->entityManager->persist($folder);
                 $this->entityManager->flush();
 
