@@ -262,7 +262,7 @@ class ControllerActivity extends Controller
                     );
                 }
 
-                $folder = $this->entityManager->getRepository(Folder::class)->find($folderId);
+                $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
                 $activity->setFolder($folder);
                 $this->entityManager->persist($activity);
                 $this->entityManager->flush();
@@ -278,7 +278,7 @@ class ControllerActivity extends Controller
                 $folderId = htmlspecialchars($data['folderId']);
                 $destinationFolderId = htmlspecialchars($data['destinationFolderId']);
 
-                $folder = $this->entityManager->getRepository(Folder::class)->find($folderId);
+                $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
 
                 // check if allowed 
                 $requester_id = $_SESSION['id'];
