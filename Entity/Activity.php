@@ -88,9 +88,9 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
     private $isAutocorrect;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Folder")
+     * @ORM\ManyToOne(targetEntity="Learn\Entity\Folders")
      * @ORM\JoinColumn(name="folder", nullable=true, referencedColumnName="id", onDelete="CASCADE")
-     * @var User
+     * @var Folders
      */
     private $folder;
 
@@ -297,7 +297,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @return Folder
      */
-    public function getFolder(): ?Folder
+    public function getFolder(): ?Folders
     {
         return $this->folder;
     }
@@ -306,7 +306,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
      * @param Folder $folders
      * @return Activity
      */
-    public function setFolder(Folder $folder): Activity
+    public function setFolder(Folders $folder): Activity
     {
         $this->folder = $folder;
         return $this;
