@@ -244,7 +244,7 @@ class ControllerActivity extends Controller
                 $activityType = htmlspecialchars($data['activityType']);
                 return $this->isActivitiesLimited($activityId, $activityType);
             },
-            'moveToFolder'  => function ($data) {
+            'moveActiToFolder'  => function ($data) {
 
                 $activityId = htmlspecialchars($data['activityId']);
                 $folderId = htmlspecialchars($data['folderId']);
@@ -271,6 +271,34 @@ class ControllerActivity extends Controller
                     'success' => true,
                     'activity' => $activity,
                     'folder' => $folder
+                ];
+            },
+            'moveFolderToFolder'  => function ($data) {
+
+                $folderId = htmlspecialchars($data['folderId']);
+                $destinationFolderId = htmlspecialchars($data['destinationFolderId']);
+
+                $folder = $this->entityManager->getRepository(Folder::class)->find($folderId);
+
+                // check if allowed 
+                $requester_id = $_SESSION['id'];
+                $creator_id = $folder->getUser();
+                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
+
+                if (!$Allowed) {
+                    return array(
+                        'error' => 'notAllowed'
+                    );
+                }
+
+
+                $folder->setFolder($destinationFolderId);
+                $this->entityManager->persist($folder);
+                $this->entityManager->flush();
+
+                return [
+                    'success' => true,
+                    'folder' => $folder,
                 ];
             },
             "get_all_user_folders" => function () {
