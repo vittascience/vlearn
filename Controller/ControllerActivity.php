@@ -330,7 +330,6 @@ class ControllerActivity extends Controller
             "update_folder" => function () {
 
                 $name = htmlspecialchars($_POST['name']);
-                $parentFolder = htmlspecialchars($_POST['parent']);
                 $id = htmlspecialchars($_POST['id']);
 
                 $folder = $this->entityManager->getRepository(Folders::class)->find($id);
@@ -345,7 +344,6 @@ class ControllerActivity extends Controller
                 }
 
                 $folder->setName($name);
-                $folder->getParentFolder($parentFolder);
 
                 $this->entityManager->persist($folder);
                 $this->entityManager->flush();
