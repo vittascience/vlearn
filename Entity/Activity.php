@@ -306,7 +306,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
      * @param Folder $folders
      * @return Activity
      */
-    public function setFolder(Folders $folder): Activity
+    public function setFolder(?Folders $folder): Activity
     {
         $this->folder = $folder;
         return $this;
