@@ -130,8 +130,8 @@ class ControllerCourse extends Controller
                                 $url = htmlspecialchars(strip_tags(trim($nameAndUrlPair->url)));
 
                                 // fill content with sanitized values
-                                $content .= empty($name)
-                                    ? "[fa-*]{$name}[\/*]"
+                                $content .= empty($url)
+                                    ? "[*][fa-*]{$name}[/*]"
                                     : "[*][fa-url={$url}]{$name}[/url][/*]";
                             }
                             $content .= "[/list]";
@@ -249,8 +249,8 @@ class ControllerCourse extends Controller
                             $url = htmlspecialchars(strip_tags(trim($nameAndUrlPair->url)));
 
                             // fill content with sanitized values
-                            $content .= empty($name)
-                                ? "[fa-*]{$name}[\/*]"
+                            $content .= empty($url)
+                                ? "[*][fa-*]{$name}[/*]"
                                 : "[*][fa-url={$url}]{$name}[/url][/*]";
                         }
                         $content .= "[/list]";
