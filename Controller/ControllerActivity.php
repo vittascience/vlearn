@@ -366,23 +366,16 @@ class ControllerActivity extends Controller
 
                 $Childrens = $this->entityManager->getRepository(Folders::class)->findBy(["parentFolder" => $folder]);
                 $Activities = $this->entityManager->getRepository(Activity::class)->findBy(["folder" => $folder]);
-                $Parent = $folder->getParentFolder();
 
                 foreach ($Childrens as $child) {
-                    if ($Parent) {
-                        $child->setParentFolder($Parent);
-                    } else {
-                        $child->setParentFolder(null);
-                    }
-                    $this->entityManager->persist($child);
+                    $this->entityManager->remove($child);
                 }
 
                 
                 foreach ($Activities as $activity) {
-                    if ($Parent) {
-                        $activity->setFolder($Parent);
-                    } else {
-                        $activity->setFolder(null);
+                    $activitiesLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $activity->getId()]);
+                    foreach ($activitiesLinkUser as $activityLinkUser) {
+                        $this->entityManager->remove($activityLinkUser);
                     }
                     $this->entityManager->persist($activity);
                 }
