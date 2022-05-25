@@ -10,6 +10,7 @@ use Database\DataBaseManager;
 use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
+use Classroom\Entity\ActivityLinkUser;
 use Classroom\Entity\UsersRestrictions;
 use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\ActivityLinkClassroom;
@@ -363,23 +364,10 @@ class ControllerActivity extends Controller
                 if (!$Allowed) {
                     return ['error' => 'notAllowed'];
                 }
-
-                $Childrens = $this->entityManager->getRepository(Folders::class)->findBy(["parentFolder" => $folder]);
-                $Activities = $this->entityManager->getRepository(Activity::class)->findBy(["folder" => $folder]);
-
-                foreach ($Childrens as $child) {
-                    $this->entityManager->remove($child);
-                }
-
                 
-                foreach ($Activities as $activity) {
-                    $activitiesLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $activity->getId()]);
-                    foreach ($activitiesLinkUser as $activityLinkUser) {
-                        $this->entityManager->remove($activityLinkUser);
-                    }
-                    $this->entityManager->persist($activity);
+                if ($this->deleteChildren($folder) == false) {
+                    return ['error' => 'error'];
                 }
-
 
                 $this->entityManager->remove($folder);
                 $this->entityManager->flush();
@@ -387,6 +375,31 @@ class ControllerActivity extends Controller
                 return $folder;
             },
         );
+    }
+
+    private function deleteChildren($folder) {
+        $Childrens = $this->entityManager->getRepository(Folders::class)->findBy(["parentFolder" => $folder]);
+        $Activities = $this->entityManager->getRepository(Activity::class)->findBy(["folder" => $folder]);
+
+
+        foreach ($Activities as $activity) {
+            $activitiesLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $activity->getId()]);
+            foreach ($activitiesLinkUser as $activityLinkUser) {
+                $this->entityManager->remove($activityLinkUser);
+            }
+            $this->entityManager->remove($activity);
+            $this->entityManager->flush();
+        }
+
+        foreach ($Childrens as $child) {
+            $recursiveChildren = $this->entityManager->getRepository(Folders::class)->findBy(["parentFolder" => $child]);
+            foreach ($recursiveChildren as $rchild) {
+                $this->deleteChildren($rchild);
+            }
+            $this->entityManager->remove($child);
+            $this->entityManager->flush();
+        }
+        return true;
     }
 
     private function isAllowed(Int $creator_id, Int $requester_id)
@@ -514,6 +527,5 @@ class ControllerActivity extends Controller
             return ['missing data' => false];
         }
     }
-
 }
 
