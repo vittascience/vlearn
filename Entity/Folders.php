@@ -20,7 +20,7 @@ class Folders implements \JsonSerializable, \Utils\JsonDeserializer
     private $id;
 
     /**
-     * @ORM\Column(name="name", type="string", length=255, nullable=false)
+     * @ORM\Column(name="name", type="string", length=30, nullable=false)
      * @var string
      */
     private $name;
