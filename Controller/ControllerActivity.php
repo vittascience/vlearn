@@ -380,25 +380,20 @@ class ControllerActivity extends Controller
     private function deleteChildren($folder) {
         $Childrens = $this->entityManager->getRepository(Folders::class)->findBy(["parentFolder" => $folder]);
         $Activities = $this->entityManager->getRepository(Activity::class)->findBy(["folder" => $folder]);
-
-
+ 
         foreach ($Activities as $activity) {
             $activitiesLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $activity->getId()]);
             foreach ($activitiesLinkUser as $activityLinkUser) {
                 $this->entityManager->remove($activityLinkUser);
             }
             $this->entityManager->remove($activity);
-            $this->entityManager->flush();
         }
 
         foreach ($Childrens as $child) {
-            $recursiveChildren = $this->entityManager->getRepository(Folders::class)->findBy(["parentFolder" => $child]);
-            foreach ($recursiveChildren as $rchild) {
-                $this->deleteChildren($rchild);
-            }
+            $this->deleteChildren($child);
             $this->entityManager->remove($child);
-            $this->entityManager->flush();
         }
+        
         return true;
     }
 
