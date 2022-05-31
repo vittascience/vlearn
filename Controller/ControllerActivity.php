@@ -2,19 +2,21 @@
 
 namespace Learn\Controller;
 
-use User\Entity\Regular;
 use User\Entity\User;
+use User\Entity\Regular;
+use Learn\Entity\Folders;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
 use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
+use Classroom\Entity\ActivityLinkUser;
+use Classroom\Entity\UsersRestrictions;
 use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\GroupsLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
-use Classroom\Entity\UsersRestrictions;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -242,8 +244,157 @@ class ControllerActivity extends Controller
                 $activityId = htmlspecialchars($data['activityId']);
                 $activityType = htmlspecialchars($data['activityType']);
                 return $this->isActivitiesLimited($activityId, $activityType);
-            }
+            },
+            'moveActiToFolder'  => function ($data) {
+
+                $activityId = htmlspecialchars($data['activityId']);
+                $folderId = htmlspecialchars($data['folderId']);
+
+                $activity = $this->entityManager->getRepository(Activity::class)->find($activityId);
+
+                // check if allowed 
+                $requester_id = $_SESSION['id'];
+                $creator_id = $activity->getUser();
+                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
+
+                if (!$Allowed) {
+                    return array(
+                        'error' => 'notAllowed'
+                    );
+                }
+
+                $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
+                $activity->setFolder($folder);
+                $this->entityManager->persist($activity);
+                $this->entityManager->flush();
+
+                return [
+                    'success' => true,
+                    'activity' => $activity,
+                    'folder' => $folder
+                ];
+            },
+            'moveFolderToFolder'  => function ($data) {
+
+                $folderId = htmlspecialchars($data['folderId']);
+                $destinationFolderId = htmlspecialchars($data['destinationFolderId']);
+
+                $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
+                $destinationFolder = $this->entityManager->getRepository(Folders::class)->find($destinationFolderId);
+
+                // check if allowed 
+                $requester_id = $_SESSION['id'];
+                $creator_id = $folder->getUser();
+                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
+
+                if (!$Allowed) {
+                    return array(
+                        'error' => 'notAllowed'
+                    );
+                }
+
+                $folder->setParentFolder($destinationFolder);
+                $this->entityManager->persist($folder);
+                $this->entityManager->flush();
+
+                return [
+                    'success' => true,
+                    'folder' => $folder,
+                ];
+            },
+            "get_all_user_folders" => function () {
+                // get all user's activities
+                $user = $this->entityManager->getRepository(User::class)->find($this->user['id']);
+                $myFolders = $this->entityManager->getRepository(Folders::class)->findBy(["user" => $user]);
+                return $myFolders;
+            },
+            "create_folder" => function () {
+                $name = htmlspecialchars($_POST['name']);
+                $parent = htmlspecialchars($_POST['parent']);
+
+                
+                if (strlen($name) < 1) {
+                    return array(
+                        'error' => 'folderNameInvalid'
+                    );
+                }
+
+                $parentFolder = $this->entityManager->getRepository(Folders::class)->find($parent);
+                $user = $this->entityManager->getRepository(User::class)->find($this->user['id']);
+                $folder = new Folders($name, $user, $parentFolder);
+
+                $this->entityManager->persist($folder);
+                $this->entityManager->flush();
+
+                return $folder;
+            },
+            "update_folder" => function () {
+
+                $name = htmlspecialchars($_POST['name']);
+                $id = htmlspecialchars($_POST['id']);
+
+                $folder = $this->entityManager->getRepository(Folders::class)->find($id);
+
+                // check if allowed 
+                $requester_id = $_SESSION['id'];
+                $creator_id = $folder->getUser();
+                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
+
+                if (!$Allowed) {
+                    return ['error' => 'notAllowed'];
+                }
+
+                $folder->setName($name);
+
+                $this->entityManager->persist($folder);
+                $this->entityManager->flush();
+
+                return $folder;
+            },
+            "delete_folder" => function () {
+                $id = htmlspecialchars($_POST['id']);
+
+                $folder = $this->entityManager->getRepository(Folders::class)->find($id);
+
+                // check if allowed 
+                $requester_id = $_SESSION['id'];
+                $creator_id = $folder->getUser();
+                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
+
+                if (!$Allowed) {
+                    return ['error' => 'notAllowed'];
+                }
+                
+                if ($this->deleteChildren($folder) == false) {
+                    return ['error' => 'error'];
+                }
+
+                $this->entityManager->remove($folder);
+                $this->entityManager->flush();
+
+                return $folder;
+            },
         );
+    }
+
+    private function deleteChildren($folder) {
+        $Childrens = $this->entityManager->getRepository(Folders::class)->findBy(["parentFolder" => $folder]);
+        $Activities = $this->entityManager->getRepository(Activity::class)->findBy(["folder" => $folder]);
+ 
+        foreach ($Activities as $activity) {
+            $activitiesLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $activity->getId()]);
+            foreach ($activitiesLinkUser as $activityLinkUser) {
+                $this->entityManager->remove($activityLinkUser);
+            }
+            $this->entityManager->remove($activity);
+        }
+
+        foreach ($Childrens as $child) {
+            $this->deleteChildren($child);
+            $this->entityManager->remove($child);
+        }
+        
+        return true;
     }
 
     private function isAllowed(Int $creator_id, Int $requester_id)
@@ -371,6 +522,5 @@ class ControllerActivity extends Controller
             return ['missing data' => false];
         }
     }
-
 }
 
