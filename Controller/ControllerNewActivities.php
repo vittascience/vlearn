@@ -256,8 +256,8 @@ class ControllerNewActivities extends Controller
                         $fillInReturn = $this->manageFillInAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
                         $activity = $fillInReturn[0];
                         $errorsArray = $fillInReturn[1];
-                    } else if ($acti->getType() == "free" || $acti->getType() == "") {
-                        $freeReturn = $this->manageFreeAutocorrection($acti, $activity, $response);     
+                    } else if (($acti->getType() == "free" || $acti->getType() == "")) {
+                        $freeReturn = $this->manageFreeAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());     
                         $activity = $freeReturn[0];
                         $errorsArray = $freeReturn[1];
                     } else if ($acti->getType() == "quiz") {
@@ -279,6 +279,8 @@ class ControllerNewActivities extends Controller
                         } else {
                             $activity->setCorrection(2);
                         }
+                    } else {
+                        $activity->setCorrection($correction);
                     }
                 
                     $this->entityManager->persist($activity);
@@ -433,13 +435,13 @@ class ControllerNewActivities extends Controller
         );
     }
 
-    private function manageFreeAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response) {
+    private function manageFreeAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
         $solution = unserialize($activity->getSolution());
         $errorsArray = [];
 
-        if (mb_strtolower($solution) == mb_strtolower($response)) {
+        if (mb_strtolower($solution) == mb_strtolower($response) && $autocorrect) {
             $activityLinkUser->setNote(3);
-        } else {
+        } else if ($autocorrect) {
             $activityLinkUser->setNote(0);
             $errorsArray[] = "faux";
         }
