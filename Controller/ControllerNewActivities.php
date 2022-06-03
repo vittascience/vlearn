@@ -280,7 +280,7 @@ class ControllerNewActivities extends Controller
                             $activity->setCorrection(2);
                         }
                     } else {
-                        $activity->setCorrection(1);
+                        $activity->setCorrection($correction);
                     }
                 
                     $this->entityManager->persist($activity);
