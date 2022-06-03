@@ -40,6 +40,29 @@ class ControllerFavorite extends Controller
                 $this->entityManager->remove($favorite);
                 $this->entityManager->flush();
                 return true;
+            },
+            'get_my_favorites_tutorials' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "userNotAuthenticated"];
+
+                // get logged user data from db and its favorite tutorials
+                $user = $this->entityManager
+                            ->getRepository(User::class)
+                            ->find($_SESSION['id']);
+
+                $favorites = $this->entityManager
+                            ->getRepository('Learn\Entity\Favorite')
+                            ->findBy(array('user' => $user));
+
+                // create empty array to return and fill it
+                $dataToReturn = [];
+                foreach ($favorites as $favorite) {
+                    array_push($dataToReturn, $favorite->getTutorial());
+                }
+                return $dataToReturn;
             }
         );
     }
