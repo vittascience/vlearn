@@ -212,7 +212,10 @@ class ControllerNewActivities extends Controller
 
                 
                 $actualTries = $activity->getTries();
-                $activity->setTries($actualTries + 1);
+
+                if ($correction > 0) {
+                    $activity->setTries($actualTries + 1);
+                }
 
                 $content = "";
                 $unserialized = @unserialize($acti->getContent());
@@ -232,8 +235,6 @@ class ControllerNewActivities extends Controller
                 if ($actualTries > 1 && $activity->getEvaluation() == 1) {
                     return false;
                 }
-
-
 
                 if ($acti) {
 
@@ -275,7 +276,7 @@ class ControllerNewActivities extends Controller
                         $activity->setCorrection(2);
                     } else if ($acti->getIsAutocorrect() && $activity->getEvaluation() != 1 && $correction > 0) {
                         if (count($errorsArray) > 0) {
-                            $activity->setCorrection(0);
+                            $activity->setCorrection(1);
                         } else {
                             $activity->setCorrection(2);
                         }
@@ -291,6 +292,10 @@ class ControllerNewActivities extends Controller
                     }
 
                     if (count($errorsArray) > 0 && $activity->getEvaluation() != 1) {
+                        if (empty($response)) {
+                            return ['success'=> false, 'message' => 'emptyAnswer'];
+                        }
+
                         return ['badResponse' => $errorsArray, 'hint' => $hint];
                     }
 
