@@ -4,6 +4,7 @@ namespace Learn\Controller;
 
 use User\Entity\User;
 use User\Entity\Regular;
+use Learn\Entity\Folders;
 use Learn\Entity\Activity;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
@@ -41,6 +42,7 @@ class ControllerNewActivities extends Controller
                 $solution = !empty($data['solution']) ? json_decode($data['solution'], true) : null;
                 $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
                 $autocorrect = !empty($data['autocorrect']) ? htmlspecialchars($data['autocorrect']) : null;
+                $folderId = !empty($data['folder']) ? htmlspecialchars($data['folder']) : null;
 
                 $regular = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $this->user['id']]);
 
@@ -52,6 +54,11 @@ class ControllerNewActivities extends Controller
 
                 if ($tolerance) {
                     $exercice->setTolerance($tolerance);
+                }
+
+                if ($folderId != null) {
+                    $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
+                    $exercice->setFolder($folder);
                 }
 
                 if ($autocorrect) {
@@ -212,7 +219,10 @@ class ControllerNewActivities extends Controller
 
                 
                 $actualTries = $activity->getTries();
-                $activity->setTries($actualTries + 1);
+
+                if ($correction > 0) {
+                    $activity->setTries($actualTries + 1);
+                }
 
                 $content = "";
                 $unserialized = @unserialize($acti->getContent());
@@ -232,8 +242,6 @@ class ControllerNewActivities extends Controller
                 if ($actualTries > 1 && $activity->getEvaluation() == 1) {
                     return false;
                 }
-
-
 
                 if ($acti) {
 
@@ -275,7 +283,7 @@ class ControllerNewActivities extends Controller
                         $activity->setCorrection(2);
                     } else if ($acti->getIsAutocorrect() && $activity->getEvaluation() != 1 && $correction > 0) {
                         if (count($errorsArray) > 0) {
-                            $activity->setCorrection(0);
+                            $activity->setCorrection(1);
                         } else {
                             $activity->setCorrection(2);
                         }
@@ -291,6 +299,10 @@ class ControllerNewActivities extends Controller
                     }
 
                     if (count($errorsArray) > 0 && $activity->getEvaluation() != 1) {
+                        if (empty($response)) {
+                            return ['success'=> false, 'message' => 'emptyAnswer'];
+                        }
+
                         return ['badResponse' => $errorsArray, 'hint' => $hint];
                     }
 
@@ -381,6 +393,10 @@ class ControllerNewActivities extends Controller
                         $duplicatedActivity->setFork($activity->getFork()->jsonSerialize());
                     } else {
                         $duplicatedActivity->setFork(null);
+                    }
+
+                    if ($activity->getFolder() != null) {
+                        $duplicatedActivity->setFolder($activity->getFolder());
                     }
 
                     $this->entityManager->persist($duplicatedActivity);
