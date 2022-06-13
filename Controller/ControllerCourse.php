@@ -389,6 +389,41 @@ class ControllerCourse extends Controller
                     }
                 }
             },
+            'get_courses_sorted_by'=> function(){
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // parse and sanitize incoming data
+                list($incomingDoctrineProperty,$incomingOrderByValue) = explode('-',$_POST['resources-sorted-by']);
+                $doctrineProperty = !empty($incomingDoctrineProperty) 
+                                        ? htmlspecialchars(strip_tags(trim($incomingDoctrineProperty))) 
+                                        : '';
+                $orderByValue = !empty($incomingOrderByValue) 
+                                ? htmlspecialchars(strip_tags(trim(strtoupper($incomingOrderByValue)))) 
+                                : '';
+
+                // create empty errors array and check for errors
+                $errors = [];
+                if(empty($doctrineProperty)) array_push($errors,array('errorType' => 'doctrinePropertyInvalid'));
+                if(empty($orderByValue)) array_push($errors,array('errorType' => 'orderByValueInvalid'));
+
+                // some errors found, return them
+                if(!empty($errors)) return array('errors' => $errors);
+                
+                // no errors, get data from db
+                $resources = $this->entityManager
+                                ->getRepository(Course::class)
+                                ->findBy(array(),array(
+                                    $doctrineProperty => $orderByValue
+                                ));
+                
+                // create empty array to fill and return data
+                $resourcesSortedBy = [];
+                foreach($resources as $resource){
+                    array_push($resourcesSortedBy, $resource->jsonSerialize());
+                }
+                return $resourcesSortedBy;
+            },
             'upload_img_from_text_editor' => function(){
 
                 // accept only POST request
