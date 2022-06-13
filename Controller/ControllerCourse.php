@@ -413,7 +413,10 @@ class ControllerCourse extends Controller
                 // no errors, get data from db
                 $resources = $this->entityManager
                                 ->getRepository(Course::class)
-                                ->findBy(array(),array(
+                                ->findBy(array(
+                                    'rights'=> 1,
+                                    'rights'=> 2,
+                                ),array(
                                     $doctrineProperty => $orderByValue
                                 ));
                 
