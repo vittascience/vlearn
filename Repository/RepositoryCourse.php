@@ -70,7 +70,7 @@ class RepositoryCourse extends EntityRepository
             ->createQueryBuilder();
         $queryBuilder->select($queryBuilder->expr()->count('t.id'))
             ->from(Course::class, 't')
-            ->where('t.rights != 0 OR t.id = ' . $id)
+            ->where('t.rights != 0 AND t.rights != 3 OR t.id = ' . $id)
             ->andWhere('t.title LIKE ' . $search . ' OR t.description LIKE ' . $search);
         foreach ($options as $key => $option) {
             if (count($option) > 0) {
