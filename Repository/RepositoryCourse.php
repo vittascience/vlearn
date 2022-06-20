@@ -32,9 +32,9 @@ class RepositoryCourse extends EntityRepository
 
         $queryBuilder = $this->getEntityManager()
             ->createQueryBuilder();
-        $queryBuilder->select('t')
+            $queryBuilder->select('t')
             ->from(Course::class, 't')
-            ->where('(t.rights != ' .  self::PRIVATE_RIGHTS . ' AND t.rights != ' .  self::UNLISTED_RIGHTS . ') OR t.user =' . $id)
+            ->where('t.rights=1 OR t.rights=2')
             ->andWhere('t.title LIKE ' . $search . ' OR t.description LIKE ' . $search)
             /* ->orWhere('t.title LIKE ' . $search_filtered . ' OR t.description LIKE ' . $search_filtered) */;
         foreach ($options as $key => $option) {
@@ -68,9 +68,9 @@ class RepositoryCourse extends EntityRepository
     {
         $queryBuilder = $this->getEntityManager()
             ->createQueryBuilder();
-        $queryBuilder->select($queryBuilder->expr()->count('t.id'))
+            $queryBuilder->select($queryBuilder->expr()->count('t.id'))
             ->from(Course::class, 't')
-            ->where('t.rights != 0 AND t.rights != 3 OR t.id = ' . $id)
+            ->where('t.rights=1 OR t.rights=2')
             ->andWhere('t.title LIKE ' . $search . ' OR t.description LIKE ' . $search);
         foreach ($options as $key => $option) {
             if (count($option) > 0) {
@@ -92,6 +92,7 @@ class RepositoryCourse extends EntityRepository
             }
         }
         $query = $queryBuilder->getQuery();
+        
         return intVal($query->getSingleScalarResult());
     }
 
@@ -100,7 +101,7 @@ class RepositoryCourse extends EntityRepository
         
         $results = $queryBuilder->select('c')
                                 ->from(Course::class,'c')
-                                ->where('c.rights !=0 AND c.rights !=3')
+                                ->where('c.rights=1 OR c.rights=2')
                                 ->orderBy("c.$doctrineProperty","$orderByValue")
                                 ->getQuery()
                                 ->getResult();
