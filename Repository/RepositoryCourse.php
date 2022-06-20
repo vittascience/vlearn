@@ -94,4 +94,16 @@ class RepositoryCourse extends EntityRepository
         $query = $queryBuilder->getQuery();
         return intVal($query->getSingleScalarResult());
     }
+
+    public function getCoursesSortedBy($doctrineProperty,$orderByValue){
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder();
+        
+        $results = $queryBuilder->select('c')
+                                ->from(Course::class,'c')
+                                ->where('c.rights !=0 AND c.rights !=3')
+                                ->orderBy("c.$doctrineProperty","$orderByValue")
+                                ->getQuery()
+                                ->getResult();
+        return $results;
+    }
 }
