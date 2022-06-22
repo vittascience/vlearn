@@ -19,14 +19,14 @@ class RepositoryCourse extends EntityRepository
     {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
-                        ->from(CourseLinkActivity::class, 'cla')
-                        ->join(Course::class, 'c', 'WITH', "cla.course=c.id")
-                        ->join(Activity::class, 'a', 'WITH', "cla.activity=a.id")
-                        ->andWhere('c.rights=1 OR c.rights=2')
-                        ->andWhere("
-                            c.title LIKE $search OR c.description LIKE $search 
-                            OR a.title LIKE $search OR a.content LIKE $search
-                        ");
+            ->from(Course::class, 'c')
+            ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
+            ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
+            ->andWhere('c.rights=1 OR c.rights=2')
+            ->andWhere("
+                c.title LIKE $search OR c.description LIKE $search 
+                OR a.title LIKE $search OR a.content LIKE $search
+            ");
 
         foreach ($options as $key => $option) {
             if (count($option) > 0) {
@@ -52,7 +52,7 @@ class RepositoryCourse extends EntityRepository
 
         $queryBuilder->setFirstResult(($page - 1) * self::RESULT_PER_PAGE);
         $queryBuilder->setMaxResults(self::RESULT_PER_PAGE);
-        $queryBuilder->groupBy('cla.course');
+        $queryBuilder->groupBy('c.id');
         $queryBuilder->orderBy("c.createdAt", 'DESC');
         $query = $queryBuilder->getQuery();
         return $query->getResult();
@@ -113,14 +113,14 @@ class RepositoryCourse extends EntityRepository
     {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
-                        ->from(CourseLinkActivity::class,'cla')
-                        ->join(Course::class,'c','WITH',"cla.course=c.id")
-                        ->join(Activity::class,'a','WITH',"cla.activity=a.id")
-                        ->andWhere('c.rights=1 OR c.rights=2')
-                        ->andWhere("
-                            c.title LIKE $search OR c.description LIKE $search 
-                            OR a.title LIKE $search OR a.content LIKE $search
-                        ");
+            ->from(Course::class, 'c')
+            ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
+            ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
+            ->andWhere('c.rights=1 OR c.rights=2')
+            ->andWhere("
+                c.title LIKE $search OR c.description LIKE $search 
+                OR a.title LIKE $search OR a.content LIKE $search
+            ");
 
         foreach ($options as $key => $option) {
             if (count($option) > 0) {
@@ -139,15 +139,15 @@ class RepositoryCourse extends EntityRepository
                     $index++;
                 }
                 $stringArray .= ')';
-            
+
                 $queryBuilder->andWhere('c.' . $key . ' IN ' . $stringArray);
             }
         }
- 
-         $queryBuilder->groupBy('cla.course');
-         $query = $queryBuilder->getQuery();
-        
-         return count($query->getResult());
+
+        $queryBuilder->groupBy('c.id');
+        $query = $queryBuilder->getQuery();
+
+        return count($query->getResult());
         // @ToBeRemoved
         // @Naser
         // last check 21/06/2022
