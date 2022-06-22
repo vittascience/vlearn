@@ -19,11 +19,6 @@ class ControllerCourse extends Controller
     {
         parent::__construct($entityManager, $user);
         $this->actions = array(
-            'get_all' => function () {
-                return $this->entityManager->getRepository('Learn\Entity\Course')
-                    ->findAll();
-            },
-
             'get_one' => function ($data) {
                 preg_match('/[0-9]{1,11}/', $data['id'], $matches);
                 $data['id'] = $matches[0];
@@ -184,7 +179,6 @@ class ControllerCourse extends Controller
                     echo ($error->getMessage());
                 }
             },
-
             'increment_views' => function ($data) {
                 if (isset($_SESSION['views'][$data['id']])) {
                     return false;
@@ -535,6 +529,13 @@ class ControllerCourse extends Controller
                     "src" => "/public/content/user_data/resources/$filenameToUpload"
                 );
             }
+            // @ToBeRemoved
+            // last check 06/2022 from Naser
+            // No ajax call made to "controller=course&action=get_all"
+            // 'get_all' => function () {
+            //     return $this->entityManager->getRepository('Learn\Entity\Course')
+            //         ->findAll();
+            // },
         );
     }
     private function bindIncomingTutorialData($incomingData){
