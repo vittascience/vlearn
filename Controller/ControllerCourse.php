@@ -78,12 +78,6 @@ class ControllerCourse extends Controller
                                 $limit
                             );
             },
-            'count_my_tutorials' => function () {
-                return count($this->entityManager->getRepository('Learn\Entity\Course')
-                    ->findBy(
-                        array("user" => $this->user)
-                    ));
-            },
             'get_by_filter' => function ($data) {
                 $search = "'%" . $data['filter']['search'] . "%'";
                 if ($this->user != null) {
@@ -561,6 +555,15 @@ class ControllerCourse extends Controller
             // 'get_all' => function () {
             //     return $this->entityManager->getRepository('Learn\Entity\Course')
             //         ->findAll();
+            // },
+            // @ToBeRemoved
+            // last check 06/2022 from Naser
+            // No ajax call made to "controller=course&action=count_my_tutorials"
+            // 'count_my_tutorials' => function () {
+            //     return count($this->entityManager->getRepository('Learn\Entity\Course')
+            //         ->findBy(
+            //             array("user" => $this->user)
+            //         ));
             // },
         );
     }
