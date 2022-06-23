@@ -20,16 +20,28 @@ class ControllerCourse extends Controller
         parent::__construct($entityManager, $user);
         $this->actions = array(
             'get_one' => function ($data) {
-                preg_match('/[0-9]{1,11}/', $data['id'], $matches);
-                $data['id'] = $matches[0];
-                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')
-                    ->find($data['id']);
-                $activities = $this->entityManager->getRepository('Learn\Entity\CourseLinkActivity')
-                    ->getActivitiesOrdered($data['id']);
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // bind and sanitize incoming data
+                $tutorialId = intval($_POST['id']);
+
+                // get the tutorial and related activities
+                $tutorial = $this->entityManager
+                    ->getRepository('Learn\Entity\Course')
+                    ->find($tutorialId);
+
+                $activities = $this->entityManager
+                    ->getRepository('Learn\Entity\CourseLinkActivity')
+                    ->getActivitiesOrdered($tutorialId);
+
+                // create empty array to fill with formatted activities
                 $arrayActivities = [];
                 for ($index = 0; $index < count($activities); $index++) {
                     $arrayActivities[$index] = $activities[$index]->getActivity();
                 }
+
+                // prepare data to return
                 $tutorial = array(
                     "tutorial" => $tutorial,
                     "activities" => $arrayActivities
@@ -86,7 +98,7 @@ class ControllerCourse extends Controller
                 return $this->entityManager->getRepository('Learn\Entity\Course')->countByFilter($data['filter'], $id, $search);
             },
             'add' => function () {
-                
+
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -99,7 +111,7 @@ class ControllerCourse extends Controller
 
                     // check for errors and return them if any
                     $tutorialErrors = $this->validateIncomingTutorialData($incomingTutorial);
-                    if(!empty($tutorialErrors)) return array('errors' => $tutorialErrors);
+                    if (!empty($tutorialErrors)) return array('errors' => $tutorialErrors);
 
 
                     $tutorialParts = json_decode($_POST['tutorialParts']);
@@ -108,7 +120,7 @@ class ControllerCourse extends Controller
                     unset($_POST['linkedTuto']);
                     unset($_POST['tutorialParts']);
                     unset($_POST['chapters']);
-                   
+
                     // translate first $tutorialPart content from $name and url to full bbcode
                     for ($i = 0; $i < count($tutorialParts); $i++) {
 
@@ -143,7 +155,7 @@ class ControllerCourse extends Controller
                     }
 
                     $tutorial = Course::jsonDeserialize($incomingTutorial);
-                    
+
                     if (isset($_FILES['imgFile'])) {
                         $tutorial->setImg($_FILES['imgFile']);
                     }
@@ -193,7 +205,7 @@ class ControllerCourse extends Controller
                 }
             },
             'update' => function () {
-                
+
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -215,12 +227,12 @@ class ControllerCourse extends Controller
                     'id' => $courseId,
                     'user' => $userId
                 ));
-                
+
                 // user is not admin and not the owner of the course
                 if (!$isAdmin && !$isOwnerOfCourse) {
                     return ["errorType" => "courseNotUpdatedNotAuthorized"];
                 }
- 
+
                 //prepare the data
                 $tutorialParts = json_decode($_POST['tutorialParts']);
                 $linked = json_decode($_POST['linkedTuto']);
@@ -261,20 +273,20 @@ class ControllerCourse extends Controller
                 }
 
                 $tutorial = Course::jsonDeserialize($_POST);
-               
-                $errors = [];
-                if(empty($tutorial->getDescription())) array_push($errors,array('type' =>'descriptionInvalid'));
 
-                if(!empty($errors)) return array('errors' =>$errors);
+                $errors = [];
+                if (empty($tutorial->getDescription())) array_push($errors, array('type' => 'descriptionInvalid'));
+
+                if (!empty($errors)) return array('errors' => $errors);
 
                 //get the matching tutorial from database
                 $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $tutorial->getId()));
- 
+
                 //if we uploaded a picture, set it on the database & tutorial
                 if (isset($_FILES['imgFile'])) {
                     $tutorial->setImg($_FILES['imgFile']);
-                } 
-               
+                }
+
                 //delete previous lessons & parts & linked from the database
                 $lessonsDatabase = $this->entityManager->getRepository('Learn\Entity\Lesson')->findBy(array("tutorial" => $tutorial));
                 foreach ($lessonsDatabase as $val) {
@@ -350,14 +362,14 @@ class ControllerCourse extends Controller
 
                 $linkedCourses = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(
                     array(
-                        'tutorial1'=> $databaseCourse
+                        'tutorial1' => $databaseCourse
                     )
                 );
-                foreach($linkedCourses as $linkedCourse){
+                foreach ($linkedCourses as $linkedCourse) {
                     $this->entityManager->remove($linkedCourse);
                     $this->entityManager->flush();
                 }
-                
+
                 $this->entityManager->flush();
                 $this->entityManager->remove($databaseCourse);
                 $this->entityManager->flush();
@@ -383,40 +395,40 @@ class ControllerCourse extends Controller
                     }
                 }
             },
-            'get_courses_sorted_by'=> function(){
+            'get_courses_sorted_by' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
                 // parse and sanitize incoming data
-                list($incomingDoctrineProperty,$incomingOrderByValue) = explode('-',$_POST['resources-sorted-by']);
-                $doctrineProperty = !empty($incomingDoctrineProperty) 
-                                        ? htmlspecialchars(strip_tags(trim($incomingDoctrineProperty))) 
-                                        : '';
-                $orderByValue = !empty($incomingOrderByValue) 
-                                ? htmlspecialchars(strip_tags(trim(strtoupper($incomingOrderByValue)))) 
-                                : '';
+                list($incomingDoctrineProperty, $incomingOrderByValue) = explode('-', $_POST['resources-sorted-by']);
+                $doctrineProperty = !empty($incomingDoctrineProperty)
+                    ? htmlspecialchars(strip_tags(trim($incomingDoctrineProperty)))
+                    : '';
+                $orderByValue = !empty($incomingOrderByValue)
+                    ? htmlspecialchars(strip_tags(trim(strtoupper($incomingOrderByValue))))
+                    : '';
 
                 // create empty errors array and check for errors
                 $errors = [];
-                if(empty($doctrineProperty)) array_push($errors,array('errorType' => 'doctrinePropertyInvalid'));
-                if(empty($orderByValue)) array_push($errors,array('errorType' => 'orderByValueInvalid'));
+                if (empty($doctrineProperty)) array_push($errors, array('errorType' => 'doctrinePropertyInvalid'));
+                if (empty($orderByValue)) array_push($errors, array('errorType' => 'orderByValueInvalid'));
 
                 // some errors found, return them
-                if(!empty($errors)) return array('errors' => $errors);
-                
+                if (!empty($errors)) return array('errors' => $errors);
+
                 // no errors, get data from db
                 $resources = $this->entityManager
-                                ->getRepository(Course::class)
-                                ->getCoursesSortedBy($doctrineProperty,$orderByValue);
-                
+                    ->getRepository(Course::class)
+                    ->getCoursesSortedBy($doctrineProperty, $orderByValue);
+
                 // create empty array to fill and return data
                 $resourcesSortedBy = [];
-                foreach($resources as $resource){
+                foreach ($resources as $resource) {
                     array_push($resourcesSortedBy, $resource->jsonSerialize());
                 }
                 return $resourcesSortedBy;
             },
-            'upload_img_from_text_editor' => function(){
+            'upload_img_from_text_editor' => function () {
 
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
@@ -429,32 +441,32 @@ class ControllerCourse extends Controller
                 $imageError = intval($incomingData['error']);
                 $imageName = !empty($incomingData['name']) ? htmlspecialchars(strip_tags(trim($incomingData['name']))) : "";
                 $imageTempName = !empty($incomingData['tmp_name']) ? htmlspecialchars(strip_tags(trim($incomingData['tmp_name']))) : "";
-                $extension = !empty($incomingData['type']) 
+                $extension = !empty($incomingData['type'])
                     ? htmlspecialchars(strip_tags(trim(
-                        explode('/',$incomingData['type'])[1]
-                    ))) 
+                        explode('/', $incomingData['type'])[1]
+                    )))
                     : "";
-                $imageSize = !empty($incomingData['size']) ? intval($incomingData['size']): 0;
+                $imageSize = !empty($incomingData['size']) ? intval($incomingData['size']) : 0;
 
                 // initialize $errors array and check for errors if any
                 $errors = [];
                 if ($imageError !== 0) array_push($errors, array("errorType" => "imageUploadError"));
-                if(empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
-                if(empty($imageTempName)) array_push($errors, array("errorType" => "invalidImageTempName"));
-                if(empty($extension)) array_push($errors, array("errorType" => "invalidImageExtension"));
-                if(!in_array($extension, array("jpg","jpeg","png","svg","webp","gif","apng"))){
+                if (empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
+                if (empty($imageTempName)) array_push($errors, array("errorType" => "invalidImageTempName"));
+                if (empty($extension)) array_push($errors, array("errorType" => "invalidImageExtension"));
+                if (!in_array($extension, array("jpg", "jpeg", "png", "svg", "webp", "gif", "apng"))) {
                     array_push($errors, array("errorType" => "invalidImageExtension"));
                 }
-                if(empty($imageSize)) array_push($errors, array("errorType" => "invalidImageSize"));
-                elseif($imageSize > 1000000) array_push($errors, array("errorType" => "imageSizeToLarge"));
+                if (empty($imageSize)) array_push($errors, array("errorType" => "invalidImageSize"));
+                elseif ($imageSize > 1000000) array_push($errors, array("errorType" => "imageSizeToLarge"));
 
                 // some errors found, return them
-                if(!empty($errors)) return array('errors'=>$errors);
+                if (!empty($errors)) return array('errors' => $errors);
 
                 // no errors, we can process the data
                 // replace whitespaces by _ and get the first chunk in case of duplicated ".someMisleadingExtensionBeforeTheRealFileExtension"
-                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $imageName) )[0];
-                $filenameToUpload = time()."_$filenameWithoutSpaces.$extension" ;
+                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $imageName))[0];
+                $filenameToUpload = time() . "_$filenameWithoutSpaces.$extension";
 
                 // no errors, we can process the data
                 $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
@@ -462,9 +474,9 @@ class ControllerCourse extends Controller
                 $success = move_uploaded_file($imageTempName, "$uploadDir/$filenameToUpload");
 
                 // something went wrong while storing the image, return an error
-                if(!$success){
+                if (!$success) {
                     array_push($errors, array('errorType' => "imageNotStored"));
-                    return array('errors'=>$errors);
+                    return array('errors' => $errors);
                 }
 
                 // no errors, return data
@@ -473,7 +485,7 @@ class ControllerCourse extends Controller
                     "src" => "/public/content/user_data/resources/$filenameToUpload"
                 );
             },
-            'upload_file_from_text_editor' => function(){
+            'upload_file_from_text_editor' => function () {
 
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
@@ -486,41 +498,41 @@ class ControllerCourse extends Controller
                 $fileError = intval($incomingData['error']);
                 $fileName = !empty($incomingData['name']) ? htmlspecialchars(strip_tags(trim($incomingData['name']))) : "";
                 $fileTempName = !empty($incomingData['tmp_name']) ? htmlspecialchars(strip_tags(trim($incomingData['tmp_name']))) : "";
-                $extension = !empty($incomingData['type']) 
+                $extension = !empty($incomingData['type'])
                     ? htmlspecialchars(strip_tags(trim(
-                        explode('/',$incomingData['type'])[1]
-                    ))) 
+                        explode('/', $incomingData['type'])[1]
+                    )))
                     : "";
-                $fileSize = !empty($incomingData['size']) ? intval($incomingData['size']): 0;
+                $fileSize = !empty($incomingData['size']) ? intval($incomingData['size']) : 0;
 
                 // initialize $errors array and check for errors if any
                 $errors = [];
                 if ($fileError !== 0) array_push($errors, array("errorType" => "fileUploadError"));
-                if(empty($fileName)) array_push($errors, array("errorType" => "invalidFileName"));
-                if(empty($fileTempName)) array_push($errors, array("errorType" => "invalidFileTempName"));
-                if(empty($extension)) array_push($errors, array("errorType" => "invalidFileExtension"));
-                if(!in_array($extension, array("pdf"))){
+                if (empty($fileName)) array_push($errors, array("errorType" => "invalidFileName"));
+                if (empty($fileTempName)) array_push($errors, array("errorType" => "invalidFileTempName"));
+                if (empty($extension)) array_push($errors, array("errorType" => "invalidFileExtension"));
+                if (!in_array($extension, array("pdf"))) {
                     array_push($errors, array("errorType" => "invalidFileExtension"));
                 }
-                if(empty($fileSize)) array_push($errors, array("errorType" => "invalidFileSize"));
-                elseif($fileSize > 5000000) array_push($errors, array("errorType" => "fileSizeToLarge"));
+                if (empty($fileSize)) array_push($errors, array("errorType" => "invalidFileSize"));
+                elseif ($fileSize > 5000000) array_push($errors, array("errorType" => "fileSizeToLarge"));
 
                 // some errors found, return them
-                if(!empty($errors)) return array('errors'=>$errors);
+                if (!empty($errors)) return array('errors' => $errors);
 
                 // no errors, we can process the data
                 // replace whitespaces by _ and get the first chunk in case of duplicated ".someMisleadingExtensionBeforeTheRealFileExtension"
-                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $fileName) )[0];
-                $filenameToUpload = time()."_$filenameWithoutSpaces.$extension" ;
+                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $fileName))[0];
+                $filenameToUpload = time() . "_$filenameWithoutSpaces.$extension";
 
                 // set the target dir and move file
                 $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
                 $success = move_uploaded_file($fileTempName, "$uploadDir/$filenameToUpload");
 
                 // something went wrong while storing the file, return an error
-                if(!$success){
+                if (!$success) {
                     array_push($errors, array('errorType' => "fileNotStored"));
-                    return array('errors'=>$errors);
+                    return array('errors' => $errors);
                 }
 
                 // no errors, return data
@@ -538,11 +550,12 @@ class ControllerCourse extends Controller
             // },
         );
     }
-    private function bindIncomingTutorialData($incomingData){
+    private function bindIncomingTutorialData($incomingData)
+    {
         $tutorial = new \stdClass;
-        
-        $tutorial->title = !empty($incomingData['title']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '',$incomingData['title']))) : '';
-        $tutorial->description = !empty($incomingData['description']) ?trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '',$incomingData['description']))) : '';
+
+        $tutorial->title = !empty($incomingData['title']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $incomingData['title']))) : '';
+        $tutorial->description = !empty($incomingData['description']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $incomingData['description']))) : '';
         $tutorial->difficulty = !empty($incomingData['difficulty']) ? intval($incomingData['difficulty']) : 0;
         $tutorial->duration = !empty($incomingData['duration']) ? intval($incomingData['duration']) : 3600;
         $tutorial->lang = !empty($incomingData['lang']) ? htmlspecialchars(strip_tags(trim($incomingData['lang']))) : '';
@@ -552,21 +565,21 @@ class ControllerCourse extends Controller
         return $tutorial;
     }
 
-    private function validateIncomingTutorialData($tutorial){
+    private function validateIncomingTutorialData($tutorial)
+    {
         $errors = [];
 
         // check for errors
-        if(empty($tutorial->title)) array_push($errors, array('type' => 'titleInvalid'));
-        if(empty($tutorial->description)) array_push($errors, array('type' => 'descriptionInvalid'));
-        if(!is_numeric($tutorial->difficulty)) array_push($errors, array('type' => 'difficultyInvalid'));
-        elseif($tutorial->difficulty < 0 || $tutorial->difficulty > 3) array_push($errors, array('type' => 'difficultyInvalid'));
-        if(empty($tutorial->duration)) array_push($errors, array('type' => 'durationInvalid'));
-        if(empty($tutorial->lang)) array_push($errors, array('type' => 'langInvalid'));
-        if(!is_numeric($tutorial->support)) array_push($errors, array('type' => 'supportInvalid'));
-        elseif($tutorial->support < 0) array_push($errors, array('type' => 'supportInvalid'));
-        if($tutorial->rights <0 || $tutorial->rights > 3) array_push($errors, array('type' => 'rightsInvalid'));
+        if (empty($tutorial->title)) array_push($errors, array('type' => 'titleInvalid'));
+        if (empty($tutorial->description)) array_push($errors, array('type' => 'descriptionInvalid'));
+        if (!is_numeric($tutorial->difficulty)) array_push($errors, array('type' => 'difficultyInvalid'));
+        elseif ($tutorial->difficulty < 0 || $tutorial->difficulty > 3) array_push($errors, array('type' => 'difficultyInvalid'));
+        if (empty($tutorial->duration)) array_push($errors, array('type' => 'durationInvalid'));
+        if (empty($tutorial->lang)) array_push($errors, array('type' => 'langInvalid'));
+        if (!is_numeric($tutorial->support)) array_push($errors, array('type' => 'supportInvalid'));
+        elseif ($tutorial->support < 0) array_push($errors, array('type' => 'supportInvalid'));
+        if ($tutorial->rights < 0 || $tutorial->rights > 3) array_push($errors, array('type' => 'rightsInvalid'));
 
         return $errors;
-
     }
 }
