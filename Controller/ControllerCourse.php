@@ -19,7 +19,7 @@ class ControllerCourse extends Controller
     {
         parent::__construct($entityManager, $user);
         $this->actions = array(
-            'get_one' => function ($data) {
+            'get_one' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -49,20 +49,34 @@ class ControllerCourse extends Controller
                 return $tutorial;
             },
             'get_by_user' => function () {
-                if (isset($_GET['limit'])) {
-                    $limit  = $_GET['limit'];
-                    return $this->entityManager->getRepository('Learn\Entity\Course')
-                        ->findBy(
-                            array("user" => $this->user),
-                            null, //order
-                            $limit
-                        );
-                } else {
-                    return $this->entityManager->getRepository('Learn\Entity\Course')
-                        ->findBy(
-                            array("user" => $this->user)
-                        );
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "userNotAuthenticated"];
+
+                // bind and sanitize incoming data
+                $limit = !empty($_POST['limit']) ? intval($_POST['limit']) : null;
+                $userId = intval($_SESSION['id']);
+
+                $user = $this->entityManager->getRepository(User::class)->find($userId);
+
+                if(empty($limit)){
+                    return $this->entityManager
+                                ->getRepository('Learn\Entity\Course')
+                                ->findBy(
+                                    array("user" => $user)
+                                );
                 }
+
+                // return data according to $limit
+                return $this->entityManager
+                            ->getRepository('Learn\Entity\Course')
+                            ->findBy(
+                                array("user" => $user),
+                                null, //order
+                                $limit
+                            );
             },
             'count_my_tutorials' => function () {
                 return count($this->entityManager->getRepository('Learn\Entity\Course')
