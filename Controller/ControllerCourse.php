@@ -79,31 +79,48 @@ class ControllerCourse extends Controller
                             );
             },
             'get_by_filter' => function ($data) {
-                $search = "'%" . $data['filter']['search'] . "%'";
-                if ($this->user != null) {
-                    $id = $this->user['id'];
-                } else {
-                    $id = 0;
-                }
-                unset($data['filter']['search']);
-                $result = $this->entityManager->getRepository('Learn\Entity\Course')->getByFilter($data['filter'], $id, $search, $data['page']);
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // bind incoming search param
+                $search = !empty($_POST['filter']['search']) 
+                            ? htmlspecialchars(strip_tags(trim($_POST['filter']['search']))) 
+                            : '';
+                unset($_POST['filter']['search']);
+
+                // bind and/or sanitize other incoming params
+                $page = !empty($_POST['page']) ? intval($_POST['page']) : 1;
+                $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
+                $search = "'%$search%'";
+                
+                // fetch data from db 
+                $results = $this->entityManager->getRepository('Learn\Entity\Course')->getByFilter($sanitizedFilters, $search, $page);
+
+                // prepare and return data
                 $arrayResult = [];
-                foreach ($result as $r) {
-                    if (json_encode($r) != NULL && json_encode($r) != false) {
-                        $arrayResult[] = $r;
+                foreach ($results as $result) {
+                    if (json_encode($result) != NULL && json_encode($result) != false) {
+                        $arrayResult[] = $result;
                     }
                 }
                 return $arrayResult;
             },
             'count_by_filter' => function ($data) {
-                if ($this->user != null) {
-                    $id = $this->user['id'];
-                } else {
-                    $id = 0;
-                }
-                $search = "'%" . $data['filter']['search'] . "%'";
-                unset($data['filter']['search']);
-                return $this->entityManager->getRepository('Learn\Entity\Course')->countByFilter($data['filter'], $id, $search);
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // bind incoming search param
+                $search = !empty($_POST['filter']['search']) 
+                            ? htmlspecialchars(strip_tags(trim($_POST['filter']['search']))) 
+                            : '';
+                unset($_POST['filter']['search']);
+
+                // bind and/or sanitize other incoming params
+                $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
+                $search = "'%$search%'";
+                
+                // fetch data from db 
+               return $this->entityManager->getRepository('Learn\Entity\Course')->countByFilter( $sanitizedFilters,  $search);
             },
             'add' => function () {
 
@@ -598,5 +615,32 @@ class ControllerCourse extends Controller
         if ($tutorial->rights < 0 || $tutorial->rights > 3) array_push($errors, array('type' => 'rightsInvalid'));
 
         return $errors;
+    }
+
+    private function sanitizeAndFormatFilterParams($incomingFilters){
+        $sanitizedFilters = [];
+        if(!empty($incomingFilters["support"])){
+            $supports = [];
+            foreach($incomingFilters["support"] as $incomingSupport){
+                array_push($supports,intval($incomingSupport));
+            }
+            $sanitizedFilters['support'] = "(".implode(",",$supports).")";
+        }
+        else if(!empty($incomingFilters["difficulty"])){
+            $difficulties = [];
+            foreach($incomingFilters["difficulty"] as $incomingDifficulty){
+                array_push($difficulties,intval($incomingDifficulty));
+            }
+            $sanitizedFilters['difficulty'] = "(".implode(",",$difficulties).")";
+        }
+        else if(!empty($incomingFilters["lang"])){
+            $languages = [];
+            foreach($incomingFilters["lang"] as $incomingLang){
+                array_push($languages,htmlspecialchars(strip_tags(trim($incomingLang))));
+            }
+            $sanitizedFilters['lang'] = "(".implode(",",$languages).")";
+        }
+
+        return $sanitizedFilters;
     }
 }

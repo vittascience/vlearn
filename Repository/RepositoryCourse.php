@@ -15,7 +15,7 @@ class RepositoryCourse extends EntityRepository
     const UNLISTED_RIGHTS = 3;
     // Add dql stuff.
 
-    public function getByFilter($options, $id, $search = "'%%'", $page = 1)
+    public function getByFilter($options, $search, $page = 1)
     {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
@@ -28,34 +28,19 @@ class RepositoryCourse extends EntityRepository
                 OR a.title LIKE $search OR a.content LIKE $search
             ");
 
-        foreach ($options as $key => $option) {
-            if (count($option) > 0) {
-                $stringArray = '(';
-                $index = 0;
-                foreach ($option as $data) {
-                    if ($key == 'lang') {
-                        $data = "'" . $data . "'";
-                    }
-
-                    if ($index == 0) {
-                        $stringArray .= $data;
-                    } else {
-                        $stringArray .= ',' . $data;
-                    }
-                    $index++;
-                }
-                $stringArray .= ')';
-
-                $queryBuilder->andWhere('c.' . $key . ' IN ' . $stringArray);
+        if($options){
+            foreach ($options as $key => $option) {
+                $queryBuilder->andWhere("c.$key IN $option");
             }
         }
-
-        $queryBuilder->setFirstResult(($page - 1) * self::RESULT_PER_PAGE);
-        $queryBuilder->setMaxResults(self::RESULT_PER_PAGE);
-        $queryBuilder->groupBy('c.id');
-        $queryBuilder->orderBy("c.createdAt", 'DESC');
-        $query = $queryBuilder->getQuery();
-        return $query->getResult();
+       
+        $results = $queryBuilder->setFirstResult(($page - 1) * self::RESULT_PER_PAGE)
+                                ->setMaxResults(self::RESULT_PER_PAGE)
+                                ->groupBy('c.id')
+                                ->orderBy("c.createdAt", 'DESC')
+                                ->getQuery()
+                                ->getResult();
+        return $results;
 
         // @ToBeRemoved
         // @Naser
@@ -109,7 +94,7 @@ class RepositoryCourse extends EntityRepository
         // return $query->getResult();
     }
 
-    public function countByFilter($options, $id, $search = "'%%'")
+    public function countByFilter($options,$search)
     {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
@@ -122,32 +107,17 @@ class RepositoryCourse extends EntityRepository
                 OR a.title LIKE $search OR a.content LIKE $search
             ");
 
-        foreach ($options as $key => $option) {
-            if (count($option) > 0) {
-                $stringArray = '(';
-                $index = 0;
-                foreach ($option as $data) {
-                    if ($key == 'lang') {
-                        $data = "'" . $data . "'";
-                    }
-
-                    if ($index == 0) {
-                        $stringArray .= $data;
-                    } else {
-                        $stringArray .= ',' . $data;
-                    }
-                    $index++;
-                }
-                $stringArray .= ')';
-
-                $queryBuilder->andWhere('c.' . $key . ' IN ' . $stringArray);
+        if($options){
+            foreach ($options as $key => $option) {
+                $queryBuilder->andWhere("c.$key IN $option");
             }
         }
+        
+        $results = $queryBuilder->groupBy('c.id')
+                                ->getQuery()
+                                ->getResult();
 
-        $queryBuilder->groupBy('c.id');
-        $query = $queryBuilder->getQuery();
-
-        return count($query->getResult());
+        return count($results);
         // @ToBeRemoved
         // @Naser
         // last check 21/06/2022
