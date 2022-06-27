@@ -216,18 +216,28 @@ class ControllerCourse extends Controller
                     echo ($error->getMessage());
                 }
             },
-            'increment_views' => function ($data) {
-                if (isset($_SESSION['views'][$data['id']])) {
-                    return false;
-                } else {
-                    $_SESSION['views'][$data['id']] = 1;
-                    $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $data['id']));
-                    $tutorial->incrementViews();
-                    $this->entityManager->persist($tutorial);
-                    $this->entityManager->flush();
+            'increment_views' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
-                    return true;
+                // bind incoming data
+                $tutorialId = !empty($_POST['id']) ? intval($_POST['id']) : null;
+
+                // invalid tutorial id, return an error
+                if(empty($tutorialId)){
+                    return array('errors' => array('errorType' => 'tutorialIdInvalid'));
                 }
+                
+                // tutorial already viewed by the user, do nothing
+                if ($_SESSION['views'][$tutorialId])  return false;
+
+                // tutorial not already viewed by the user, increment view count in db
+                $_SESSION['views'][$tutorialId] = 1;
+                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $tutorialId));
+                $tutorial->incrementViews();
+                $this->entityManager->persist($tutorial);
+                $this->entityManager->flush();
+                return true;
             },
             'update' => function () {
 
