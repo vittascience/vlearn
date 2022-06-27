@@ -410,25 +410,42 @@ class ControllerCourse extends Controller
                 $this->entityManager->flush();
             },
             'get_all_user_resources' => function ($data) {
-                // To change
-                if ($data['user']) {
-                    $idUserToFetch = $data['user'];
-                } else {
-                    $idUserToFetch = $this->user['id'];
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // bind data 
+                $loggedUserId = !empty($_SESSION['id']) ? intval($_SESSION['id']) : null;
+                $receivedUserId = !empty($_POST['user']) ? intval($_POST['user']) : null;
+                /**
+                 * $receivedUserId comes from a link => <a href="/userDetails?id=77">Equipe Vittascience</a> on learn page
+                 * $loggedUserId comes from a request on profile page
+                 */
+                $userId = $receivedUserId ?? $loggedUserId ??   null;
+
+                // invalid user id, return an error
+                if(empty($userId)){
+                    return array('errors'=> array('errorType' => 'userIdInvalid'));
                 }
-                $userFetched = $this->entityManager->getRepository('User\Entity\User')
-                    ->findOneBy(array("id" => $idUserToFetch));
-                if ($userFetched === null) {
-                    return [];
-                } else {
-                    if ($data['user']) {
-                        return $this->entityManager->getRepository('Learn\Entity\Course')
-                            ->findBy(array("user" => $userFetched, "deleted" => false, "rights" => [1, 2]));
-                    } else {
-                        return $this->entityManager->getRepository('Learn\Entity\Course')
-                            ->findBy(array("user" => $userFetched, "deleted" => false));
-                    }
+               
+                $user = $this->entityManager
+                                ->getRepository('User\Entity\User')
+                                ->findOneBy(array("id" => $userId));
+                
+                // user not found, return an error
+                if(!$user){
+                    return array('errors'=> array('errorType' => 'userNotFound'));
                 }
+               
+                if($receivedUserId){
+                    // return data if a link has been clicked
+                   return $this->entityManager
+                                ->getRepository('Learn\Entity\Course')
+                                ->findBy(array("user" => $user, "deleted" => false, "rights" => [1, 2]));
+                }
+
+                // return data if a user open its profile page
+                return $this->entityManager->getRepository('Learn\Entity\Course')
+                        ->findBy(array("user" => $user, "deleted" => false));
             },
             'get_courses_sorted_by' => function () {
                 // accept only POST request
