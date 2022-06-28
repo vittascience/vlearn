@@ -384,28 +384,59 @@ class ControllerCourse extends Controller
                 return $databaseCourse;
             },
             'delete' => function ($data) {
-                $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['id']);
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "userNotAuthenticated"];
+
+                $userId = intval($_SESSION['id']);
+                $courseIdToDelete = !empty($_POST['id']) ? intval($_POST['id']) : null;
+                $errors = [];
+
+                // invalid course id, return an error
+                if(empty($courseIdToDelete)){
+                    array_push($errors,array('errorType' => 'courseIdInvalid'));
+                    return $errors;
+                }
+
+                $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->find($courseIdToDelete);
+
+                // course does not exists, return an error
+                if(!$databaseCourse){
+                    array_push($errors,array('errorType' => 'courseNotFound'));
+                    return $errors;
+                }
+
+                // course exists but does not belong to current user, return an error
+                if($databaseCourse->getUser()->getId() != $userId){
+                    array_push($errors,array('errorType' => 'userNotCourseOwner'));
+                    return $errors;
+                }
+                
+                // remove entries from "learn_chapters_link_tutorials" table
                 $lessonsDatabase = $this->entityManager->getRepository('Learn\Entity\Lesson')->findBy(array("tutorial" => $databaseCourse));
                 foreach ($lessonsDatabase as $val) {
                     $this->entityManager->remove($val);
                 }
 
+                // remove entries from "learn_favorites" table
                 $favoriteDatabase = $this->entityManager->getRepository('Learn\Entity\Favorite')->findBy(array("tutorial" => $databaseCourse));
                 foreach ($favoriteDatabase as $val) {
                     $this->entityManager->remove($val);
                 }
 
-                $linkedCourses = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(
-                    array(
-                        'tutorial1' => $databaseCourse
-                    )
-                );
+                // remove entries from "learn_tutorials_link_tutorials" table
+                $linkedCourses = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(array( 'tutorial1' => $databaseCourse));
                 foreach ($linkedCourses as $linkedCourse) {
                     $this->entityManager->remove($linkedCourse);
                     $this->entityManager->flush();
                 }
 
+                // flush anything that as not been saved in db
                 $this->entityManager->flush();
+
+                // remove the course and save the changes in db
                 $this->entityManager->remove($databaseCourse);
                 $this->entityManager->flush();
             },
