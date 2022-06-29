@@ -12,18 +12,37 @@ class ControllerFavorite extends Controller
         parent::__construct($entityManager, $user);
         $this->actions = array(
             'get_mine' => function () {
-                if ($this->user) {
-                    $favorites = $this->entityManager->getRepository('Learn\Entity\Favorite')
-                        ->findBy(array("user" => $this->user['id']));
-                    $arrayResult = array();
-                    foreach ($favorites as $favorite) {
-                        $result = ["user" => $favorite->getUser()->getId(), "tutorial" => $favorite->getTutorial()->getId()];
-                        array_push($arrayResult, $result);
-                    }
-                    return  $arrayResult;
-                } else {
-                    return false;
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "userNotAuthenticated"];
+
+                $userId = intval($_SESSION['id']);
+
+                // get logged user data from db and its favorite tutorials
+                $user = $this->entityManager
+                            ->getRepository(User::class)
+                            ->find($userId);
+                
+                // no user with this id 
+                if(!$user) return false;
+                
+                // user found
+                $favorites = $this->entityManager
+                                    ->getRepository('Learn\Entity\Favorite')
+                                    ->findBy(array("user" => $user));
+
+                // create empty array to fill with data
+                $arrayResult = array();
+                foreach ($favorites as $favorite) {
+                    $result = array(
+                        "user" => $favorite->getUser()->getId(), 
+                        "tutorial" => $favorite->getTutorial()->getId()
+                    );
+                    array_push($arrayResult, $result);
                 }
+                return  $arrayResult;
             },
             'update' => function ($data) {
                 $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
