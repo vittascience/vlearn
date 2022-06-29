@@ -45,7 +45,26 @@ class ControllerFavorite extends Controller
                 return  $arrayResult;
             },
             'update' => function ($data) {
-                $user = $this->entityManager->getRepository(User::class)->find($_SESSION['id']);
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "userNotAuthenticated"];
+
+                $userId = intval($_SESSION['id']);
+                $tutorialId = !empty($_POST['tutorial']) ? intval($_POST['tutorial']) : null;
+               
+                $errors = [];
+                if(empty($tutorialId)){
+                    array_push($errors, array('errorType'=> 'tutorialIdInvalid'));
+                    return array('errors' => $errors);
+                }
+                
+                // get logged user data from db and its favorite tutorials
+                $user = $this->entityManager
+                            ->getRepository(User::class)
+                            ->find($userId);
+                
                 $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['tutorial']);
                 $favorite = new Favorite($user, $tutorial);
                 $this->entityManager->persist($favorite);
