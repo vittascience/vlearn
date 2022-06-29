@@ -44,16 +44,18 @@ class ControllerFavorite extends Controller
                 }
                 return  $arrayResult;
             },
-            'update' => function ($data) {
+            'update' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
                 // accept only connected user
                 if (empty($_SESSION['id'])) return ["errorType" => "userNotAuthenticated"];
 
+                // bind data
                 $userId = intval($_SESSION['id']);
                 $tutorialId = !empty($_POST['tutorial']) ? intval($_POST['tutorial']) : null;
                
+                // create empty errors array and check for errors
                 $errors = [];
                 if(empty($tutorialId)){
                     array_push($errors, array('errorType'=> 'tutorialIdInvalid'));
@@ -65,16 +67,45 @@ class ControllerFavorite extends Controller
                             ->getRepository(User::class)
                             ->find($userId);
                 
-                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['tutorial']);
+                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->find($tutorialId);
                 $favorite = new Favorite($user, $tutorial);
                 $this->entityManager->persist($favorite);
                 $this->entityManager->flush();
                 return true;
             },
-            'delete' => function ($data) {
-                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['tutorial']);
+            'delete' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "userNotAuthenticated"];
+
+                // bind data
+                $userId = intval($_SESSION['id']);
+                $tutorialId = !empty($_POST['tutorial']) ? intval($_POST['tutorial']) : null;
+               
+                // create empty errors array and check for errors
+                $errors = [];
+                if(empty($tutorialId)){
+                    array_push($errors, array('errorType'=> 'tutorialIdInvalid'));
+                    return array('errors' => $errors);
+                }
+                
+                // get logged user data from db and its favorite tutorials
+                $user = $this->entityManager->getRepository(User::class)->find($userId);
+                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->find($tutorialId);
                 $favorite = $this->entityManager->getRepository("Learn\Entity\Favorite")
-                    ->findOneBy(array("user" => $this->user, "tutorial" => $tutorial));
+                    ->findOneBy(array(
+                        "user" => $user, 
+                        "tutorial" => $tutorial
+                    ));
+
+                // favorite not found in db return an error
+                if(!$favorite){
+                    array_push($errors, array('errorType'=> 'favoriteTutorialNotFound'));
+                    return array('errors' => $errors);
+                }
+                
                 $this->entityManager->remove($favorite);
                 $this->entityManager->flush();
                 return true;
