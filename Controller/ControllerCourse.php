@@ -65,7 +65,8 @@ class ControllerCourse extends Controller
                     return $this->entityManager
                                 ->getRepository('Learn\Entity\Course')
                                 ->findBy(
-                                    array("user" => $user)
+                                    array("user" => $user),
+                                    array('createdAt'=> 'DESC') //order
                                 );
                 }
 
@@ -74,7 +75,7 @@ class ControllerCourse extends Controller
                             ->getRepository('Learn\Entity\Course')
                             ->findBy(
                                 array("user" => $user),
-                                null, //order
+                                array('createdAt'=> 'DESC'), //order
                                 $limit
                             );
             },
