@@ -268,14 +268,22 @@ class ControllerCourse extends Controller
                     return ["errorType" => "courseNotUpdatedNotAuthorized"];
                 }
 
-                //prepare the data
-                $tutorialParts = json_decode($_POST['tutorialParts']);
-                $linked = json_decode($_POST['linkedTuto']);
-                $chapters = json_decode($_POST['chapters']);
-                unset($_POST['tutorialParts']);
-                unset($_POST['chapters']);
-                unset($_POST['linkedTuto']);
+                // bind and sanitize the remaining data to be inserted in db
+                $linked = [];
+                if(!empty($_POST['linkedTuto'])){
+                    foreach(json_decode($_POST['linkedTuto']) as $incomingLinkedTuto){
+                        array_push($linked, intval($incomingLinkedTuto));
+                    }
+                }
 
+                $chapters = [];
+                if(!empty($_POST['chapters'])){
+                    foreach(json_decode($_POST['chapters']) as $incomingchapter){
+                        array_push($chapters, intval($incomingchapter));
+                    }
+                }
+
+                $tutorialParts = json_decode($_POST['tutorialParts']); 
                 // translate first $tutorialPart content from $name and url to full bbcode
                 for ($i = 0; $i < count($tutorialParts); $i++) {
 
@@ -307,14 +315,20 @@ class ControllerCourse extends Controller
                     }
                 }
 
+                // unset bound data
+                unset($_POST['tutorialParts']);
+                unset($_POST['chapters']);
+                unset($_POST['linkedTuto']);
+                
+                $incomingTutorial = $this->bindIncomingTutorialData($_POST);
+
+                // check for errors and return them if any
+                $tutorialErrors = $this->validateIncomingTutorialData($incomingTutorial);
+                if (!empty($tutorialErrors)) return array('errors' => $tutorialErrors);
+                
                 $tutorial = Course::jsonDeserialize($_POST);
 
-                $errors = [];
-                if (empty($tutorial->getDescription())) array_push($errors, array('type' => 'descriptionInvalid'));
-
-                if (!empty($errors)) return array('errors' => $errors);
-
-                //get the matching tutorial from database
+                //no error, get the matching tutorial from database
                 $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $tutorial->getId()));
 
                 //if we uploaded a picture, set it on the database & tutorial
