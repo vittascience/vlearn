@@ -2,6 +2,7 @@
 
 namespace Learn\Controller;
 
+use User\Entity\User;
 use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Learn\Controller\Controller;
