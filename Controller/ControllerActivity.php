@@ -17,9 +17,20 @@ class ControllerActivity extends Controller
         parent::__construct($entityManager, $user);
         $this->actions = array(
             'get_mine_for_classroom' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "userNotAuthenticated"];
+
+                // bind and sanitize data
+                $userId = intval($_SESSION['id']);
+
+                $user = $this->entityManager->getRepository(User::class)->find($userId);
+
                 return $this->entityManager->getRepository(Activity::class)
                     ->findBy(
-                        array("user" => $this->user, "isFromClassroom" => true)
+                        array("user" => $user, "isFromClassroom" => true)
                     );
             },
             'get' => function ($data) {
