@@ -16,10 +16,6 @@ class ControllerActivity extends Controller
     {
         parent::__construct($entityManager, $user);
         $this->actions = array(
-
-            'get_mine' => function () {
-                return $this->entityManager->getRepository(Activity::class)->findBy(array("user" => $this->user));
-            },
             'get_mine_for_classroom' => function () {
                 return $this->entityManager->getRepository(Activity::class)
                     ->findBy(
@@ -159,6 +155,12 @@ class ControllerActivity extends Controller
                 $activityType = htmlspecialchars($data['activityType']);
                 return $this->isActivitiesLimited($activityId, $activityType);
             }
+            // @ToBeRemoved
+            // @Naser no ajax call to this method from the front
+            // last check June 2022
+            // 'get_mine' => function () {
+            //     return $this->entityManager->getRepository(Activity::class)->findBy(array("user" => $this->user));
+            // },
         );
     }
 
