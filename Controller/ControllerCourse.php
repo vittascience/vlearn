@@ -19,22 +19,29 @@ class ControllerCourse extends Controller
     {
         parent::__construct($entityManager, $user);
         $this->actions = array(
-            'get_all' => function () {
-                return $this->entityManager->getRepository('Learn\Entity\Course')
-                    ->findAll();
-            },
+            'get_one' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
-            'get_one' => function ($data) {
-                preg_match('/[0-9]{1,11}/', $data['id'], $matches);
-                $data['id'] = $matches[0];
-                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')
-                    ->find($data['id']);
-                $activities = $this->entityManager->getRepository('Learn\Entity\CourseLinkActivity')
-                    ->getActivitiesOrdered($data['id']);
+                // bind and sanitize incoming data
+                $tutorialId = intval($_POST['id']);
+
+                // get the tutorial and related activities
+                $tutorial = $this->entityManager
+                    ->getRepository('Learn\Entity\Course')
+                    ->find($tutorialId);
+
+                $activities = $this->entityManager
+                    ->getRepository('Learn\Entity\CourseLinkActivity')
+                    ->getActivitiesOrdered($tutorialId);
+
+                // create empty array to fill with formatted activities
                 $arrayActivities = [];
                 for ($index = 0; $index < count($activities); $index++) {
                     $arrayActivities[$index] = $activities[$index]->getActivity();
                 }
+
+                // prepare data to return
                 $tutorial = array(
                     "tutorial" => $tutorial,
                     "activities" => $arrayActivities
@@ -42,56 +49,82 @@ class ControllerCourse extends Controller
                 return $tutorial;
             },
             'get_by_user' => function () {
-                if (isset($_GET['limit'])) {
-                    $limit  = $_GET['limit'];
-                    return $this->entityManager->getRepository('Learn\Entity\Course')
-                        ->findBy(
-                            array("user" => $this->user),
-                            null, //order
-                            $limit
-                        );
-                } else {
-                    return $this->entityManager->getRepository('Learn\Entity\Course')
-                        ->findBy(
-                            array("user" => $this->user)
-                        );
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "userNotAuthenticated"];
+
+                // bind and sanitize incoming data
+                $limit = !empty($_POST['limit']) ? intval($_POST['limit']) : null;
+                $userId = intval($_SESSION['id']);
+
+                $user = $this->entityManager->getRepository(User::class)->find($userId);
+
+                if(empty($limit)){
+                    return $this->entityManager
+                                ->getRepository('Learn\Entity\Course')
+                                ->findBy(
+                                    array("user" => $user),
+                                    array('createdAt'=> 'DESC') //order
+                                );
                 }
-            },
-            'count_my_tutorials' => function () {
-                return count($this->entityManager->getRepository('Learn\Entity\Course')
-                    ->findBy(
-                        array("user" => $this->user)
-                    ));
+
+                // return data according to $limit
+                return $this->entityManager
+                            ->getRepository('Learn\Entity\Course')
+                            ->findBy(
+                                array("user" => $user),
+                                array('createdAt'=> 'DESC'), //order
+                                $limit
+                            );
             },
             'get_by_filter' => function ($data) {
-                $search = "'%" . $data['filter']['search'] . "%'";
-                if ($this->user != null) {
-                    $id = $this->user['id'];
-                } else {
-                    $id = 0;
-                }
-                unset($data['filter']['search']);
-                $result = $this->entityManager->getRepository('Learn\Entity\Course')->getByFilter($data['filter'], $id, $search, $data['page']);
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // bind incoming search param
+                $search = !empty($_POST['filter']['search']) 
+                            ? htmlspecialchars(strip_tags(trim($_POST['filter']['search']))) 
+                            : '';
+                unset($_POST['filter']['search']);
+
+                // bind and/or sanitize other incoming params
+                $page = !empty($_POST['page']) ? intval($_POST['page']) : 1;
+                $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
+                $search = "'%$search%'";
+                
+                // fetch data from db 
+                $results = $this->entityManager->getRepository('Learn\Entity\Course')->getByFilter($sanitizedFilters, $search, $page);
+
+                // prepare and return data
                 $arrayResult = [];
-                foreach ($result as $r) {
-                    if (json_encode($r) != NULL && json_encode($r) != false) {
-                        $arrayResult[] = $r;
+                foreach ($results as $result) {
+                    if (json_encode($result) != NULL && json_encode($result) != false) {
+                        $arrayResult[] = $result;
                     }
                 }
                 return $arrayResult;
             },
             'count_by_filter' => function ($data) {
-                if ($this->user != null) {
-                    $id = $this->user['id'];
-                } else {
-                    $id = 0;
-                }
-                $search = "'%" . $data['filter']['search'] . "%'";
-                unset($data['filter']['search']);
-                return $this->entityManager->getRepository('Learn\Entity\Course')->countByFilter($data['filter'], $id, $search);
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // bind incoming search param
+                $search = !empty($_POST['filter']['search']) 
+                            ? htmlspecialchars(strip_tags(trim($_POST['filter']['search']))) 
+                            : '';
+                unset($_POST['filter']['search']);
+
+                // bind and/or sanitize other incoming params
+                $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
+                $search = "'%$search%'";
+                
+                // fetch data from db 
+               return $this->entityManager->getRepository('Learn\Entity\Course')->countByFilter( $sanitizedFilters,  $search);
             },
             'add' => function () {
-                
+
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -104,7 +137,7 @@ class ControllerCourse extends Controller
 
                     // check for errors and return them if any
                     $tutorialErrors = $this->validateIncomingTutorialData($incomingTutorial);
-                    if(!empty($tutorialErrors)) return array('errors' => $tutorialErrors);
+                    if (!empty($tutorialErrors)) return array('errors' => $tutorialErrors);
 
 
                     $tutorialParts = json_decode($_POST['tutorialParts']);
@@ -113,7 +146,7 @@ class ControllerCourse extends Controller
                     unset($_POST['linkedTuto']);
                     unset($_POST['tutorialParts']);
                     unset($_POST['chapters']);
-                   
+
                     // translate first $tutorialPart content from $name and url to full bbcode
                     for ($i = 0; $i < count($tutorialParts); $i++) {
 
@@ -148,7 +181,7 @@ class ControllerCourse extends Controller
                     }
 
                     $tutorial = Course::jsonDeserialize($incomingTutorial);
-                    
+
                     if (isset($_FILES['imgFile'])) {
                         $tutorial->setImg($_FILES['imgFile']);
                     }
@@ -184,22 +217,31 @@ class ControllerCourse extends Controller
                     echo ($error->getMessage());
                 }
             },
+            'increment_views' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
-            'increment_views' => function ($data) {
-                if (isset($_SESSION['views'][$data['id']])) {
-                    return false;
-                } else {
-                    $_SESSION['views'][$data['id']] = 1;
-                    $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $data['id']));
-                    $tutorial->incrementViews();
-                    $this->entityManager->persist($tutorial);
-                    $this->entityManager->flush();
+                // bind incoming data
+                $tutorialId = !empty($_POST['id']) ? intval($_POST['id']) : null;
 
-                    return true;
+                // invalid tutorial id, return an error
+                if(empty($tutorialId)){
+                    return array('errors' => array('errorType' => 'tutorialIdInvalid'));
                 }
+                
+                // tutorial already viewed by the user, do nothing
+                if ($_SESSION['views'][$tutorialId])  return false;
+
+                // tutorial not already viewed by the user, increment view count in db
+                $_SESSION['views'][$tutorialId] = 1;
+                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $tutorialId));
+                $tutorial->incrementViews();
+                $this->entityManager->persist($tutorial);
+                $this->entityManager->flush();
+                return true;
             },
             'update' => function () {
-                
+
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -221,20 +263,28 @@ class ControllerCourse extends Controller
                     'id' => $courseId,
                     'user' => $userId
                 ));
-                
+
                 // user is not admin and not the owner of the course
                 if (!$isAdmin && !$isOwnerOfCourse) {
                     return ["errorType" => "courseNotUpdatedNotAuthorized"];
                 }
- 
-                //prepare the data
-                $tutorialParts = json_decode($_POST['tutorialParts']);
-                $linked = json_decode($_POST['linkedTuto']);
-                $chapters = json_decode($_POST['chapters']);
-                unset($_POST['tutorialParts']);
-                unset($_POST['chapters']);
-                unset($_POST['linkedTuto']);
 
+                // bind and sanitize the remaining data to be inserted in db
+                $linked = [];
+                if(!empty($_POST['linkedTuto'])){
+                    foreach(json_decode($_POST['linkedTuto']) as $incomingLinkedTuto){
+                        array_push($linked, intval($incomingLinkedTuto));
+                    }
+                }
+
+                $chapters = [];
+                if(!empty($_POST['chapters'])){
+                    foreach(json_decode($_POST['chapters']) as $incomingchapter){
+                        array_push($chapters, intval($incomingchapter));
+                    }
+                }
+
+                $tutorialParts = json_decode($_POST['tutorialParts']); 
                 // translate first $tutorialPart content from $name and url to full bbcode
                 for ($i = 0; $i < count($tutorialParts); $i++) {
 
@@ -266,21 +316,27 @@ class ControllerCourse extends Controller
                     }
                 }
 
+                // unset bound data
+                unset($_POST['tutorialParts']);
+                unset($_POST['chapters']);
+                unset($_POST['linkedTuto']);
+                
+                $incomingTutorial = $this->bindIncomingTutorialData($_POST);
+
+                // check for errors and return them if any
+                $tutorialErrors = $this->validateIncomingTutorialData($incomingTutorial);
+                if (!empty($tutorialErrors)) return array('errors' => $tutorialErrors);
+                
                 $tutorial = Course::jsonDeserialize($_POST);
-               
-                $errors = [];
-                if(empty($tutorial->getDescription())) array_push($errors,array('type' =>'descriptionInvalid'));
 
-                if(!empty($errors)) return array('errors' =>$errors);
-
-                //get the matching tutorial from database
+                //no error, get the matching tutorial from database
                 $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $tutorial->getId()));
- 
+
                 //if we uploaded a picture, set it on the database & tutorial
                 if (isset($_FILES['imgFile'])) {
                     $tutorial->setImg($_FILES['imgFile']);
-                } 
-               
+                }
+
                 //delete previous lessons & parts & linked from the database
                 $lessonsDatabase = $this->entityManager->getRepository('Learn\Entity\Lesson')->findBy(array("tutorial" => $tutorial));
                 foreach ($lessonsDatabase as $val) {
@@ -343,54 +399,135 @@ class ControllerCourse extends Controller
                 return $databaseCourse;
             },
             'delete' => function ($data) {
-                $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['id']);
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "userNotAuthenticated"];
+
+                $userId = intval($_SESSION['id']);
+                $courseIdToDelete = !empty($_POST['id']) ? intval($_POST['id']) : null;
+                $errors = [];
+
+                // invalid course id, return an error
+                if(empty($courseIdToDelete)){
+                    array_push($errors,array('errorType' => 'courseIdInvalid'));
+                    return $errors;
+                }
+
+                $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->find($courseIdToDelete);
+
+                // course does not exists, return an error
+                if(!$databaseCourse){
+                    array_push($errors,array('errorType' => 'courseNotFound'));
+                    return $errors;
+                }
+
+                // course exists but does not belong to current user, return an error
+                if($databaseCourse->getUser()->getId() != $userId){
+                    array_push($errors,array('errorType' => 'userNotCourseOwner'));
+                    return $errors;
+                }
+                
+                // remove entries from "learn_chapters_link_tutorials" table
                 $lessonsDatabase = $this->entityManager->getRepository('Learn\Entity\Lesson')->findBy(array("tutorial" => $databaseCourse));
                 foreach ($lessonsDatabase as $val) {
                     $this->entityManager->remove($val);
                 }
 
+                // remove entries from "learn_favorites" table
                 $favoriteDatabase = $this->entityManager->getRepository('Learn\Entity\Favorite')->findBy(array("tutorial" => $databaseCourse));
                 foreach ($favoriteDatabase as $val) {
                     $this->entityManager->remove($val);
                 }
 
-                $linkedCourses = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(
-                    array(
-                        'tutorial1'=> $databaseCourse
-                    )
-                );
-                foreach($linkedCourses as $linkedCourse){
+                // remove entries from "learn_tutorials_link_tutorials" table
+                $linkedCourses = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(array( 'tutorial1' => $databaseCourse));
+                foreach ($linkedCourses as $linkedCourse) {
                     $this->entityManager->remove($linkedCourse);
                     $this->entityManager->flush();
                 }
-                
+
+                // flush anything that as not been saved in db
                 $this->entityManager->flush();
+
+                // remove the course and save the changes in db
                 $this->entityManager->remove($databaseCourse);
                 $this->entityManager->flush();
             },
             'get_all_user_resources' => function ($data) {
-                // To change
-                if ($data['user']) {
-                    $idUserToFetch = $data['user'];
-                } else {
-                    $idUserToFetch = $this->user['id'];
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // bind data 
+                $loggedUserId = !empty($_SESSION['id']) ? intval($_SESSION['id']) : null;
+                $receivedUserId = !empty($_POST['user']) ? intval($_POST['user']) : null;
+                /**
+                 * $receivedUserId comes from a link => <a href="/userDetails?id=77">Equipe Vittascience</a> on learn page
+                 * $loggedUserId comes from a request on profile page
+                 */
+                $userId = $receivedUserId ?? $loggedUserId ??   null;
+
+                // invalid user id, return an error
+                if(empty($userId)){
+                    return array('errors'=> array('errorType' => 'userIdInvalid'));
                 }
-                $userFetched = $this->entityManager->getRepository('User\Entity\User')
-                    ->findOneBy(array("id" => $idUserToFetch));
-                if ($userFetched === null) {
-                    return [];
-                } else {
-                    if ($data['user']) {
-                        return $this->entityManager->getRepository('Learn\Entity\Course')
-                            ->findBy(array("user" => $userFetched, "deleted" => false, "rights" => [1, 2]));
-                    } else {
-                        return $this->entityManager->getRepository('Learn\Entity\Course')
-                            ->findBy(array("user" => $userFetched, "deleted" => false));
-                    }
-                }
-            },
-            'upload_img_from_text_editor' => function(){
+               
+                $user = $this->entityManager
+                                ->getRepository('User\Entity\User')
+                                ->findOneBy(array("id" => $userId));
                 
+                // user not found, return an error
+                if(!$user){
+                    return array('errors'=> array('errorType' => 'userNotFound'));
+                }
+               
+                if($receivedUserId){
+                    // return data if a link has been clicked
+                   return $this->entityManager
+                                ->getRepository('Learn\Entity\Course')
+                                ->findBy(array("user" => $user, "deleted" => false, "rights" => [1, 2]));
+                }
+
+                // return data if a user open its profile page
+                return $this->entityManager->getRepository('Learn\Entity\Course')
+                        ->findBy(array("user" => $user, "deleted" => false));
+            },
+            'get_courses_sorted_by' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // parse and sanitize incoming data
+                list($incomingDoctrineProperty, $incomingOrderByValue) = explode('-', $_POST['resources-sorted-by']);
+                $doctrineProperty = !empty($incomingDoctrineProperty)
+                    ? htmlspecialchars(strip_tags(trim($incomingDoctrineProperty)))
+                    : '';
+                $orderByValue = !empty($incomingOrderByValue)
+                    ? htmlspecialchars(strip_tags(trim(strtoupper($incomingOrderByValue))))
+                    : '';
+
+                // create empty errors array and check for errors
+                $errors = [];
+                if (empty($doctrineProperty)) array_push($errors, array('errorType' => 'doctrinePropertyInvalid'));
+                if (empty($orderByValue)) array_push($errors, array('errorType' => 'orderByValueInvalid'));
+
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+
+                // no errors, get data from db
+                $resources = $this->entityManager
+                    ->getRepository(Course::class)
+                    ->getCoursesSortedBy($doctrineProperty, $orderByValue);
+
+                // create empty array to fill and return data
+                $resourcesSortedBy = [];
+                foreach ($resources as $resource) {
+                    array_push($resourcesSortedBy, $resource->jsonSerialize());
+                }
+                return $resourcesSortedBy;
+            },
+            'upload_img_from_text_editor' => function () {
+
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -402,32 +539,32 @@ class ControllerCourse extends Controller
                 $imageError = intval($incomingData['error']);
                 $imageName = !empty($incomingData['name']) ? htmlspecialchars(strip_tags(trim($incomingData['name']))) : "";
                 $imageTempName = !empty($incomingData['tmp_name']) ? htmlspecialchars(strip_tags(trim($incomingData['tmp_name']))) : "";
-                $extension = !empty($incomingData['type']) 
+                $extension = !empty($incomingData['type'])
                     ? htmlspecialchars(strip_tags(trim(
-                        explode('/',$incomingData['type'])[1]
-                    ))) 
+                        explode('/', $incomingData['type'])[1]
+                    )))
                     : "";
-                $imageSize = !empty($incomingData['size']) ? intval($incomingData['size']): 0;
+                $imageSize = !empty($incomingData['size']) ? intval($incomingData['size']) : 0;
 
                 // initialize $errors array and check for errors if any
                 $errors = [];
                 if ($imageError !== 0) array_push($errors, array("errorType" => "imageUploadError"));
-                if(empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
-                if(empty($imageTempName)) array_push($errors, array("errorType" => "invalidImageTempName"));
-                if(empty($extension)) array_push($errors, array("errorType" => "invalidImageExtension"));
-                if(!in_array($extension, array("jpg","jpeg","png","svg","webp","gif","apng"))){
+                if (empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
+                if (empty($imageTempName)) array_push($errors, array("errorType" => "invalidImageTempName"));
+                if (empty($extension)) array_push($errors, array("errorType" => "invalidImageExtension"));
+                if (!in_array($extension, array("jpg", "jpeg", "png", "svg", "webp", "gif", "apng"))) {
                     array_push($errors, array("errorType" => "invalidImageExtension"));
                 }
-                if(empty($imageSize)) array_push($errors, array("errorType" => "invalidImageSize"));
-                elseif($imageSize > 1000000) array_push($errors, array("errorType" => "imageSizeToLarge"));
+                if (empty($imageSize)) array_push($errors, array("errorType" => "invalidImageSize"));
+                elseif ($imageSize > 1000000) array_push($errors, array("errorType" => "imageSizeToLarge"));
 
                 // some errors found, return them
-                if(!empty($errors)) return array('errors'=>$errors);
+                if (!empty($errors)) return array('errors' => $errors);
 
                 // no errors, we can process the data
                 // replace whitespaces by _ and get the first chunk in case of duplicated ".someMisleadingExtensionBeforeTheRealFileExtension"
-                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $imageName) )[0];
-                $filenameToUpload = time()."_$filenameWithoutSpaces.$extension" ;
+                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $imageName))[0];
+                $filenameToUpload = time() . "_$filenameWithoutSpaces.$extension";
 
                 // no errors, we can process the data
                 $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
@@ -435,80 +572,96 @@ class ControllerCourse extends Controller
                 $success = move_uploaded_file($imageTempName, "$uploadDir/$filenameToUpload");
 
                 // something went wrong while storing the image, return an error
-                if(!$success){
+                if (!$success) {
                     array_push($errors, array('errorType' => "imageNotStored"));
-                    return array('errors'=>$errors);
+                    return array('errors' => $errors);
                 }
-               
+
                 // no errors, return data
                 return array(
                     "filename" => $filenameToUpload,
                     "src" => "/public/content/user_data/resources/$filenameToUpload"
                 );
             },
-            'upload_file_from_text_editor' => function(){
-                
+            'upload_file_from_text_editor' => function () {
+
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
                 // accept only connected user
                 if (empty($_SESSION['id'])) return ["errorType" => "uploadFileFromTextEditorNotAuthenticated"];
-                
                 // bind and sanitize incoming data and 
                 $incomingData = $_FILES['file'];
                 $fileError = intval($incomingData['error']);
                 $fileName = !empty($incomingData['name']) ? htmlspecialchars(strip_tags(trim($incomingData['name']))) : "";
                 $fileTempName = !empty($incomingData['tmp_name']) ? htmlspecialchars(strip_tags(trim($incomingData['tmp_name']))) : "";
-                $extension = !empty($incomingData['type']) 
+                $extension = !empty($incomingData['type'])
                     ? htmlspecialchars(strip_tags(trim(
-                        explode('/',$incomingData['type'])[1]
-                    ))) 
+                        explode('/', $incomingData['type'])[1]
+                    )))
                     : "";
-                $fileSize = !empty($incomingData['size']) ? intval($incomingData['size']): 0;
+                $fileSize = !empty($incomingData['size']) ? intval($incomingData['size']) : 0;
 
                 // initialize $errors array and check for errors if any
                 $errors = [];
                 if ($fileError !== 0) array_push($errors, array("errorType" => "fileUploadError"));
-                if(empty($fileName)) array_push($errors, array("errorType" => "invalidFileName"));
-                if(empty($fileTempName)) array_push($errors, array("errorType" => "invalidFileTempName"));
-                if(empty($extension)) array_push($errors, array("errorType" => "invalidFileExtension"));
-                if(!in_array($extension, array("pdf"))){
+                if (empty($fileName)) array_push($errors, array("errorType" => "invalidFileName"));
+                if (empty($fileTempName)) array_push($errors, array("errorType" => "invalidFileTempName"));
+                if (empty($extension)) array_push($errors, array("errorType" => "invalidFileExtension"));
+                if (!in_array($extension, array("pdf"))) {
                     array_push($errors, array("errorType" => "invalidFileExtension"));
                 }
-                if(empty($fileSize)) array_push($errors, array("errorType" => "invalidFileSize"));
-                elseif($fileSize > 5000000) array_push($errors, array("errorType" => "fileSizeToLarge"));
-             
+                if (empty($fileSize)) array_push($errors, array("errorType" => "invalidFileSize"));
+                elseif ($fileSize > 5000000) array_push($errors, array("errorType" => "fileSizeToLarge"));
+
                 // some errors found, return them
-                if(!empty($errors)) return array('errors'=>$errors);
-                
+                if (!empty($errors)) return array('errors' => $errors);
+
                 // no errors, we can process the data
                 // replace whitespaces by _ and get the first chunk in case of duplicated ".someMisleadingExtensionBeforeTheRealFileExtension"
-                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $fileName) )[0];
-                $filenameToUpload = time()."_$filenameWithoutSpaces.$extension" ;
+                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $fileName))[0];
+                $filenameToUpload = time() . "_$filenameWithoutSpaces.$extension";
 
                 // set the target dir and move file
                 $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
                 $success = move_uploaded_file($fileTempName, "$uploadDir/$filenameToUpload");
 
                 // something went wrong while storing the file, return an error
-                if(!$success){
+                if (!$success) {
                     array_push($errors, array('errorType' => "fileNotStored"));
-                    return array('errors'=>$errors);
+                    return array('errors' => $errors);
                 }
-               
+
                 // no errors, return data
                 return array(
                     "filename" => $filenameToUpload,
                     "src" => "/public/content/user_data/resources/$filenameToUpload"
                 );
             }
+            // @ToBeRemoved
+            // last check 06/2022 from Naser
+            // No ajax call made to "controller=course&action=get_all"
+            // 'get_all' => function () {
+            //     return $this->entityManager->getRepository('Learn\Entity\Course')
+            //         ->findAll();
+            // },
+            // @ToBeRemoved
+            // last check 06/2022 from Naser
+            // No ajax call made to "controller=course&action=count_my_tutorials"
+            // 'count_my_tutorials' => function () {
+            //     return count($this->entityManager->getRepository('Learn\Entity\Course')
+            //         ->findBy(
+            //             array("user" => $this->user)
+            //         ));
+            // },
         );
     }
-    private function bindIncomingTutorialData($incomingData){
+    private function bindIncomingTutorialData($incomingData)
+    {
         $tutorial = new \stdClass;
-        
-        $tutorial->title = !empty($incomingData['title']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '',$incomingData['title']))) : '';
-        $tutorial->description = !empty($incomingData['description']) ?trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '',$incomingData['description']))) : '';
+
+        $tutorial->title = !empty($incomingData['title']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $incomingData['title']))) : '';
+        $tutorial->description = !empty($incomingData['description']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $incomingData['description']))) : '';
         $tutorial->difficulty = !empty($incomingData['difficulty']) ? intval($incomingData['difficulty']) : 0;
         $tutorial->duration = !empty($incomingData['duration']) ? intval($incomingData['duration']) : 3600;
         $tutorial->lang = !empty($incomingData['lang']) ? htmlspecialchars(strip_tags(trim($incomingData['lang']))) : '';
@@ -518,21 +671,48 @@ class ControllerCourse extends Controller
         return $tutorial;
     }
 
-    private function validateIncomingTutorialData($tutorial){
+    private function validateIncomingTutorialData($tutorial)
+    {
         $errors = [];
 
         // check for errors
-        if(empty($tutorial->title)) array_push($errors, array('type' => 'titleInvalid'));
-        if(empty($tutorial->description)) array_push($errors, array('type' => 'descriptionInvalid'));
-        if(!is_numeric($tutorial->difficulty)) array_push($errors, array('type' => 'difficultyInvalid'));
-        elseif($tutorial->difficulty < 0 || $tutorial->difficulty > 3) array_push($errors, array('type' => 'difficultyInvalid'));
-        if(empty($tutorial->duration)) array_push($errors, array('type' => 'durationInvalid'));
-        if(empty($tutorial->lang)) array_push($errors, array('type' => 'langInvalid'));
-        if(!is_numeric($tutorial->support)) array_push($errors, array('type' => 'supportInvalid'));
-        elseif($tutorial->support < 0) array_push($errors, array('type' => 'supportInvalid'));
-        if($tutorial->rights <0 || $tutorial->rights > 3) array_push($errors, array('type' => 'rightsInvalid'));
+        if (empty($tutorial->title)) array_push($errors, array('type' => 'titleInvalid'));
+        if (empty($tutorial->description)) array_push($errors, array('type' => 'descriptionInvalid'));
+        if (!is_numeric($tutorial->difficulty)) array_push($errors, array('type' => 'difficultyInvalid'));
+        elseif ($tutorial->difficulty < 0 || $tutorial->difficulty > 3) array_push($errors, array('type' => 'difficultyInvalid'));
+        if (empty($tutorial->duration)) array_push($errors, array('type' => 'durationInvalid'));
+        if (empty($tutorial->lang)) array_push($errors, array('type' => 'langInvalid'));
+        if (!is_numeric($tutorial->support)) array_push($errors, array('type' => 'supportInvalid'));
+        elseif ($tutorial->support < 0) array_push($errors, array('type' => 'supportInvalid'));
+        if ($tutorial->rights < 0 || $tutorial->rights > 3) array_push($errors, array('type' => 'rightsInvalid'));
 
         return $errors;
+    }
 
+    private function sanitizeAndFormatFilterParams($incomingFilters){
+        $sanitizedFilters = [];
+        if(!empty($incomingFilters["support"])){
+            $supports = [];
+            foreach($incomingFilters["support"] as $incomingSupport){
+                array_push($supports,intval($incomingSupport));
+            }
+            $sanitizedFilters['support'] = "(".implode(",",$supports).")";
+        }
+        else if(!empty($incomingFilters["difficulty"])){
+            $difficulties = [];
+            foreach($incomingFilters["difficulty"] as $incomingDifficulty){
+                array_push($difficulties,intval($incomingDifficulty));
+            }
+            $sanitizedFilters['difficulty'] = "(".implode(",",$difficulties).")";
+        }
+        else if(!empty($incomingFilters["lang"])){
+            $languages = [];
+            foreach($incomingFilters["lang"] as $incomingLang){
+                array_push($languages,htmlspecialchars(strip_tags(trim($incomingLang))));
+            }
+            $sanitizedFilters['lang'] = "(".implode(",",$languages).")";
+        }
+
+        return $sanitizedFilters;
     }
 }
