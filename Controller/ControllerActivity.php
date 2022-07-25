@@ -10,8 +10,8 @@ use Database\DataBaseManager;
 use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
-use Classroom\Entity\ActivityLinkUser;
 use Classroom\Entity\UsersRestrictions;
+use Classroom\Entity\ActivityLinkUser;
 use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
@@ -26,10 +26,6 @@ class ControllerActivity extends Controller
     {
         parent::__construct($entityManager, $user);
         $this->actions = array(
-
-            'get_mine' => function () {
-                return $this->entityManager->getRepository(Activity::class)->findBy(array("user" => $this->user));
-            },
             'get_mine_for_classroom' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
@@ -373,7 +369,13 @@ class ControllerActivity extends Controller
                 $this->entityManager->flush();
 
                 return $folder;
-            },
+            }
+            // @ToBeRemoved
+            // @Naser no ajax call to this method from the front
+            // last check June 2022
+            // 'get_mine' => function () {
+            //     return $this->entityManager->getRepository(Activity::class)->findBy(array("user" => $this->user));
+            // },
         );
     }
 

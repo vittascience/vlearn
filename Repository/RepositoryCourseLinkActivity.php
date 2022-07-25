@@ -14,10 +14,11 @@ class RepositoryCourseLinkActivity extends EntityRepository
             ->createQueryBuilder();
         $queryBuilder->select('t')
             ->from(CourseLinkActivity::class, 't')
-            ->where('t.course= ' .  $idTuto . ' ')
+            ->where('t.course= :idTuto')
+            ->setParameter('idTuto',$idTuto)
             ->orderBy(' t.indexOrder', 'ASC');
         $query = $queryBuilder->getQuery();
-        /* echo ($queryBuilder->getDql()); */
+        // echo ($queryBuilder->getDql());
         return $query->getResult();
     }
 }
