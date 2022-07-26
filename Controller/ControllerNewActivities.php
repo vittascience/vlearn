@@ -9,6 +9,8 @@ use Learn\Entity\Activity;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
 use Classroom\Entity\ActivityLinkUser;
+use Classroom\Entity\UsersLinkApplications;
+use Classroom\Entity\UsersLinkApplicationsFromGroups;
 
 class ControllerNewActivities extends Controller
 {
@@ -21,15 +23,26 @@ class ControllerNewActivities extends Controller
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
+                $ShowerApps = [];
                 $Apps = $this->entityManager->getRepository(Applications::class)->findAll();
 
-                $Applications = [];
                 foreach ($Apps as $app) {
-                    $appli = $app->jsonSerialize();
-                    $Applications[] = $appli;
-                } 
+                    $users_link_applications = $this->entityManager->getRepository(UsersLinkApplications::class)->findOneBy(['application' => $app->getId(), 'user' => $this->user]);
+                    $users_link_applications_from_groups = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findOneBy(['application' => $app->getId(), 'user' => $this->user]);
+                    if ($app->getMaxPerTeachers() == -1 || $app->getMaxPerTeachers() > 0) {
+                        $ShowerApps[] = $app->jsonSerialize();
+                    } else if ($users_link_applications || $users_link_applications_from_groups) {
+                        if ($users_link_applications->getmaxActivitiesPerTeachers() == -1 ||
+                            $users_link_applications->getmaxActivitiesPerTeachers() > 0 ||
+                            $users_link_applications_from_groups->getmaxActivitiesPerTeachers() == -1 ||
+                            $users_link_applications_from_groups->getmaxActivitiesPerTeachers() > 0) 
+                        {
+                            $ShowerApps[] = $app->jsonSerialize();
+                        }
+                    }
+                }
 
-                return $Applications;
+                return $ShowerApps;
             },
             'create_exercice' => function ($data) {
 
