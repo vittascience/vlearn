@@ -26,19 +26,62 @@ class ControllerNewActivities extends Controller
                 $ShowerApps = [];
                 $Apps = $this->entityManager->getRepository(Applications::class)->findAll();
 
+                // datetime now
+                $now = new \DateTime();
+
+                // for each apps check if it is active and allow to use it
                 foreach ($Apps as $app) {
+
                     $users_link_applications = $this->entityManager->getRepository(UsersLinkApplications::class)->findOneBy(['application' => $app->getId(), 'user' => $this->user]);
                     $users_link_applications_from_groups = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findOneBy(['application' => $app->getId(), 'user' => $this->user]);
+                    $appSerialized = $app->jsonSerialize();
+
+
                     if ($app->getMaxPerTeachers() == -1 || $app->getMaxPerTeachers() > 0) {
-                        $ShowerApps[] = $app->jsonSerialize();
+                        $ShowerApps[] = $appSerialized;
                     } else if ($users_link_applications || $users_link_applications_from_groups) {
-                        if ($users_link_applications->getmaxActivitiesPerTeachers() == -1 ||
-                            $users_link_applications->getmaxActivitiesPerTeachers() > 0 ||
-                            $users_link_applications_from_groups->getmaxActivitiesPerTeachers() == -1 ||
-                            $users_link_applications_from_groups->getmaxActivitiesPerTeachers() > 0) 
-                        {
-                            $ShowerApps[] = $app->jsonSerialize();
+
+                        if ($users_link_applications) {
+                            // UsersRestrictions
+                            $userRestriction = $this->entityManager->getRepository(UsersRestrictions::class)->findOneBy(['user' => $this->user]);
+                            $dateBegin = $userRestriction->getDateBegin() ?? null;
+                            $dateEnd = $userRestriction->getDateEnd() ?? null;
+                            $appSerialized['dateEnd'] = $dateEnd;
+                            
+                            if ($users_link_applications->getmaxActivitiesPerTeachers() == -1 ||
+                                $users_link_applications->getmaxActivitiesPerTeachers() > 0) {
+                                if ($dateBegin && $dateEnd >= $now) {
+                                    $appSerialized['outDated'] = false;
+                                    $ShowerApps[] = $appSerialized;
+                                } else {
+                                    $appSerialized['outDated'] = true;
+                                    $ShowerApps[] = $appSerialized;
+                                }
+                            }
+                            
+                            
+                        } else if ($users_link_applications_from_groups) {
+
+                            $groups = $this->entityManager->getRepository(Groups::class)->findOneBy(['id' => $users_link_applications_from_groups->getGroup()->getId()]);
+                            $dateBegin = $groups->getDateBegin() ?? null;
+                            $dateEnd = $groups->getDateEnd() ?? null;
+                            $appSerialized['dateEnd'] = $dateEnd;
+                            
+                            $applicationRestrictionsFromGroup = $this->entityManager->getRepository(GroupsLinkApplications::class)->findOneBy(['group' => $users_link_applications_from_groups->getGroup(), 'application' => $users_link_applications_from_groups->getApplication()]);
+
+                            if ($applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers() == -1 ||
+                                $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers() > 0) {
+
+                                if ($dateBegin && $dateEnd >= $now) {
+                                    $appSerialized['outDated'] = false;
+                                    $ShowerApps[] = $appSerialized;
+                                } else {
+                                    $appSerialized['outDated'] = true;
+                                    $ShowerApps[] = $appSerialized;
+                                }
+                            }
                         }
+
                     }
                 }
 
