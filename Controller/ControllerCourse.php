@@ -637,23 +637,137 @@ class ControllerCourse extends Controller
                     "filename" => $filenameToUpload,
                     "src" => "/public/content/user_data/resources/$filenameToUpload"
                 );
+            },
+            'add_from_classroom' => function () {
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["error" => "Not Authenticated"];
+
+                try {
+                    /*                     
+                    this.courseData = {
+                        courses: [],
+                        title: null,
+                        description: null,
+                        image: null,
+                        parameters: {
+                            duration: null,
+                            difficulty: null,
+                            language: null,
+                            license: null,
+                        }
+                    }; 
+                    */
+                    $courseData = json_decode($_POST['courseData'], true);
+                    // sanitize incoming data
+                    $activities = $courseData['courses'] ?? "";
+                    $title = $courseData['title'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
+                    $description = $courseData['description'] ? htmlspecialchars(strip_tags(trim($courseData['description']))) : "";
+                    $image = $courseData['image'] ?? "";
+                    $duration = $courseData['parameters']['duration'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : null;
+                    $difficulty = $courseData['parameters']['difficulty'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
+                    $language = $courseData['parameters']['language'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
+                    $license = $courseData['parameters']['license'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
+
+                    // initialize $errors array and check for errors if any
+                    $errors = [];
+                    if (empty($courses)) array_push($errors, array("errorType" => "invalidCourses"));
+                    if (empty($title)) array_push($errors, array("errorType" => "invalidTitle"));
+                    if (empty($description)) array_push($errors, array("errorType" => "invalidDescription"));
+                    if (empty($image)) array_push($errors, array("errorType" => "invalidImage"));
+                    if (empty($duration)) array_push($errors, array("errorType" => "invalidDuration"));
+                    if (empty($difficulty)) array_push($errors, array("errorType" => "invalidDifficulty"));
+                    if (empty($language)) array_push($errors, array("errorType" => "invalidLanguage"));
+                    if (empty($license)) array_push($errors, array("errorType" => "invalidLicense"));
+
+                    // some errors found, return them
+                    if (!empty($errors)) return array('errors' => $errors);
+                    // no errors, we can process the data
+
+                    $user = $this->entityManager->getRepository(User::class)->findOneBy(["id" => $_SESSION['id']]);
+                    $course = new Course();
+                    $course->setTitle($title);
+                    $course->setDescription($description);
+                    $course->setImg($image);
+                    $course->setFork(null);
+                    $course->setDuration($duration);
+                    $course->setDifficulty($difficulty);
+                    $course->setLang($language);
+                    $course->setUser($user);
+                    $course->setRights($license);
+                    $course->setDeleted(false);
+                    $this->entityManager->persist($course);
+
+                    foreach ($activities as $index => $activity) {
+                        $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity]);
+                        $courseLinkActivity = new CourseLinkActivity($course, $acti, $index);
+                        $this->entityManager->persist($courseLinkActivity);
+                    }
+
+                    $this->entityManager->flush();
+
+                    return ["success" => "Course added successfully", "course" => $course];
+                } catch (\Error $error) {
+                    echo ($error->getMessage());
+                }
+            },
+            'upload_img_from_classroom' => function () {
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
+
+                // bind and sanitize incoming data and 
+                $incomingData = $_FILES['image'];
+                $imageError = intval($incomingData['error']);
+                $imageName = !empty($incomingData['name']) ? htmlspecialchars(strip_tags(trim($incomingData['name']))) : "";
+                $imageTempName = !empty($incomingData['tmp_name']) ? htmlspecialchars(strip_tags(trim($incomingData['tmp_name']))) : "";
+                $extension = !empty($incomingData['type']) ? htmlspecialchars(strip_tags(trim(explode('/', $incomingData['type'])[1]))) : "";
+                $imageSize = !empty($incomingData['size']) ? intval($incomingData['size']) : 0;
+
+                // initialize $errors array and check for errors if any
+                $errors = [];
+                if ($imageError !== 0) array_push($errors, array("errorType" => "imageUploadError"));
+                if (empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
+                if (empty($imageTempName)) array_push($errors, array("errorType" => "invalidImageTempName"));
+                if (empty($extension)) array_push($errors, array("errorType" => "invalidImageExtension"));
+                if (!in_array($extension, array("jpg", "jpeg", "png", "svg", "webp", "gif", "apng"))) {
+                    array_push($errors, array("errorType" => "invalidImageExtension"));
+                }
+                if (empty($imageSize)) array_push($errors, array("errorType" => "invalidImageSize"));
+                elseif ($imageSize > 1000000) array_push($errors, array("errorType" => "imageSizeToLarge"));
+
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+
+                // no errors, we can process the data
+                // replace whitespaces by _ and get the first chunk in case of duplicated ".someMisleadingExtensionBeforeTheRealFileExtension"
+                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $imageName))[0];
+                $filenameToUpload = time() . "_$filenameWithoutSpaces.$extension";
+
+                // no errors, we can process the data
+                $uploadDir = __DIR__ . "/../../../../classroom/assets/media/uploads/";
+                //$uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
+
+                $success = move_uploaded_file($imageTempName, "$uploadDir/$filenameToUpload");
+
+                // something went wrong while storing the image, return an error
+                if (!$success) {
+                    array_push($errors, array('errorType' => "imageNotStored"));
+                    return array('errors' => $errors);
+                }
+
+                // no errors, return data
+                return array(
+                    "filename" => $filenameToUpload,
+                    "src" => "/classroom/assets/media/uploads/$filenameToUpload"
+                );
             }
-            // @ToBeRemoved
-            // last check 06/2022 from Naser
-            // No ajax call made to "controller=course&action=get_all"
-            // 'get_all' => function () {
-            //     return $this->entityManager->getRepository('Learn\Entity\Course')
-            //         ->findAll();
-            // },
-            // @ToBeRemoved
-            // last check 06/2022 from Naser
-            // No ajax call made to "controller=course&action=count_my_tutorials"
-            // 'count_my_tutorials' => function () {
-            //     return count($this->entityManager->getRepository('Learn\Entity\Course')
-            //         ->findBy(
-            //             array("user" => $this->user)
-            //         ));
-            // },
         );
     }
     private function bindIncomingTutorialData($incomingData)
