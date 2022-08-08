@@ -661,27 +661,32 @@ class ControllerCourse extends Controller
                         }
                     }; 
                     */
-                    $courseData = json_decode($_POST['courseData'], true);
+                    $courseData = json_decode($_POST['course'], true);
+
+                    
                     // sanitize incoming data
                     $activities = $courseData['courses'] ?? "";
                     $title = $courseData['title'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
                     $description = $courseData['description'] ? htmlspecialchars(strip_tags(trim($courseData['description']))) : "";
                     $image = $courseData['image'] ?? "";
-                    $duration = $courseData['parameters']['duration'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : null;
-                    $difficulty = $courseData['parameters']['difficulty'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
-                    $language = $courseData['parameters']['language'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
-                    $license = $courseData['parameters']['license'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
+                    $duration = intval($courseData['parameters']['duration']);
+                    $difficulty = intval($courseData['parameters']['difficulty']);
+                    $language = intval($courseData['parameters']['language']);
+                    $license = intval($courseData['parameters']['license']);
 
+                    $lang = [0 => "Français", 1 => "Anglais", 2 => "Italien", 3 => "Arabe"];
+                    
                     // initialize $errors array and check for errors if any
                     $errors = [];
-                    if (empty($courses)) array_push($errors, array("errorType" => "invalidCourses"));
+                    if (empty($activities)) array_push($errors, array("errorType" => "invalidActivities"));
                     if (empty($title)) array_push($errors, array("errorType" => "invalidTitle"));
                     if (empty($description)) array_push($errors, array("errorType" => "invalidDescription"));
-                    if (empty($image)) array_push($errors, array("errorType" => "invalidImage"));
                     if (empty($duration)) array_push($errors, array("errorType" => "invalidDuration"));
-                    if (empty($difficulty)) array_push($errors, array("errorType" => "invalidDifficulty"));
-                    if (empty($language)) array_push($errors, array("errorType" => "invalidLanguage"));
-                    if (empty($license)) array_push($errors, array("errorType" => "invalidLicense"));
+
+                    //if (empty($image)) array_push($errors, array("errorType" => "invalidImage"));
+                    //if (empty($difficulty)) array_push($errors, array("errorType" => "invalidDifficulty"));
+                    //if (empty($language)) array_push($errors, array("errorType" => "invalidLanguage"));
+                    //if (empty($license)) array_push($errors, array("errorType" => "invalidLicense"));
 
                     // some errors found, return them
                     if (!empty($errors)) return array('errors' => $errors);
@@ -691,15 +696,16 @@ class ControllerCourse extends Controller
                     $course = new Course();
                     $course->setTitle($title);
                     $course->setDescription($description);
-                    $course->setImg($image);
+                    //$course->setImg($image);
                     $course->setFork(null);
                     $course->setDuration($duration);
                     $course->setDifficulty($difficulty);
-                    $course->setLang($language);
+                    $course->setLang($lang[$language]);
                     $course->setUser($user);
                     $course->setRights($license);
                     $course->setDeleted(false);
                     $this->entityManager->persist($course);
+                    $this->entityManager->flush();
 
                     foreach ($activities as $index => $activity) {
                         $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity]);
