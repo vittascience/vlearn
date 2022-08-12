@@ -683,11 +683,6 @@ class ControllerCourse extends Controller
                     if (empty($description)) array_push($errors, array("errorType" => "invalidDescription"));
                     if (empty($duration)) array_push($errors, array("errorType" => "invalidDuration"));
 
-                    //if (empty($image)) array_push($errors, array("errorType" => "invalidImage"));
-                    //if (empty($difficulty)) array_push($errors, array("errorType" => "invalidDifficulty"));
-                    //if (empty($language)) array_push($errors, array("errorType" => "invalidLanguage"));
-                    //if (empty($license)) array_push($errors, array("errorType" => "invalidLicense"));
-
                     // some errors found, return them
                     if (!empty($errors)) return array('errors' => $errors);
                     // no errors, we can process the data
@@ -706,15 +701,15 @@ class ControllerCourse extends Controller
                     $course->setDeleted(false);
                     $this->entityManager->persist($course);
                     $this->entityManager->flush();
-
+                    
                     foreach ($activities as $index => $activity) {
-                        $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity]);
+                        $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity['id']]);
                         $courseLinkActivity = new CourseLinkActivity($course, $acti, $index);
                         $this->entityManager->persist($courseLinkActivity);
+                        
                     }
-
+                    
                     $this->entityManager->flush();
-
                     return ["success" => "Course added successfully", "course" => $course];
                 } catch (\Error $error) {
                     echo ($error->getMessage());
