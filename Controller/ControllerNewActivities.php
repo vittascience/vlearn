@@ -6,11 +6,14 @@ use User\Entity\User;
 use User\Entity\Regular;
 use Learn\Entity\Folders;
 use Learn\Entity\Activity;
+use Classroom\Entity\Groups;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
 use Classroom\Entity\ActivityLinkUser;
+use Classroom\Entity\UsersRestrictions;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
+use Classroom\Entity\GroupsLinkApplications;
 
 class ControllerNewActivities extends Controller
 {
