@@ -823,7 +823,7 @@ class ControllerCourse extends Controller
         else if(!empty($incomingFilters["lang"])){
             $languages = [];
             foreach($incomingFilters["lang"] as $incomingLang){
-                array_push($languages,htmlspecialchars(strip_tags(trim($incomingLang))));
+                array_push($languages,"'".htmlspecialchars(strip_tags(trim($incomingLang)))."'");
             }
             $sanitizedFilters['lang'] = "(".implode(",",$languages).")";
         }
