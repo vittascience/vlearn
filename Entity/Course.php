@@ -4,6 +4,7 @@ namespace Learn\Entity;
 
 use User\Entity\User;
 use Learn\Entity\Comment;
+use Learn\Entity\Folders;
 use Utils\MetaDataMatcher;
 use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityOperatorException;
@@ -135,6 +136,16 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
      * @var Course
      */
     private $fork = null;
+
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Learn\Entity\Folders")
+     * @ORM\JoinColumn(name="folder", nullable=true, referencedColumnName="id", onDelete="CASCADE")
+     * @var Folders
+     */
+    private $folder;
+
+
     /**
      * @return int
      */
@@ -464,6 +475,24 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
+    /**
+     * @return Folder
+     */
+    public function getFolder(): ?Folders
+    {
+        return $this->folder;
+    }
+
+    /**
+     * @param Folder $folders
+     * @return Activity
+     */
+    public function setFolder(?Folders $folder): Course
+    {
+        $this->folder = $folder;
+        return $this;
+    }
+
     public function copy($objectToCopyFrom)
     {
         if ($objectToCopyFrom instanceof self) {
@@ -516,6 +545,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             'updatedAt' => $this->getUpdatedAt(),
             'rights' => $this->getRights(),
             'fork' => $fork,
+            'folder' => $this->getFolder()
         ];
     }
 
