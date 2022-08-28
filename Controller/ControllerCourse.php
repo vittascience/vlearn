@@ -648,23 +648,7 @@ class ControllerCourse extends Controller
                 if (empty($_SESSION['id'])) return ["error" => "Not Authenticated"];
 
                 try {
-                    /*                     
-                    this.courseData = {
-                        courses: [],
-                        title: null,
-                        description: null,
-                        image: null,
-                        parameters: {
-                            duration: null,
-                            difficulty: null,
-                            language: null,
-                            license: null,
-                        }
-                    }; 
-                    */
                     $courseData = json_decode($_POST['course'], true);
-
-                    
                     // sanitize incoming data
                     $activities = $courseData['courses'] ?? "";
                     $title = $courseData['title'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
@@ -674,8 +658,7 @@ class ControllerCourse extends Controller
                     $difficulty = intval($courseData['parameters']['difficulty']);
                     $language = intval($courseData['parameters']['language']);
                     $license = intval($courseData['parameters']['license']);
-
-                    $lang = [0 => "Français", 1 => "Anglais", 2 => "Italien", 3 => "Arabe"];
+                    $folderId = !empty($_POST['folder']) ? htmlspecialchars($_POST['folder']) : null;
                     
                     // initialize $errors array and check for errors if any
                     $errors = [];
@@ -696,10 +679,17 @@ class ControllerCourse extends Controller
                     $course->setFork(null);
                     $course->setDuration($duration);
                     $course->setDifficulty($difficulty);
-                    $course->setLang($lang[$language]);
+                    $course->setLang($language);
                     $course->setUser($user);
                     $course->setRights($license);
                     $course->setDeleted(false);
+
+                    if ($folderId != null) {
+                        $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
+                        if ($folder) {
+                            $course->setFolder($folder);
+                        }
+                    }
                     $this->entityManager->persist($course);
                     $this->entityManager->flush();
                     
@@ -783,7 +773,7 @@ class ControllerCourse extends Controller
 
                     // sanitize incoming data
                     $activities = $courseData['courses'] ?? "";
-                    $courseId = htmlspecialchars(strip_tags(trim($courseData['courseId']))) ?? "";
+                    $courseId = htmlspecialchars(strip_tags(trim($_POST['courseId']))) ?? "";
                     $title = $courseData['title'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
                     $description = $courseData['description'] ? htmlspecialchars(strip_tags(trim($courseData['description']))) : "";
                     $image = $courseData['image'] ?? "";
@@ -807,6 +797,8 @@ class ControllerCourse extends Controller
 
                     $user = $this->entityManager->getRepository(User::class)->findOneBy(["id" => $_SESSION['id']]);
                     $course = $this->entityManager->getRepository(Course::class)->findOneBy(["id" => $courseId]);
+
+
                     $course->setTitle($title);
                     $course->setDescription($description);
                     //$course->setImg($image);
@@ -820,10 +812,20 @@ class ControllerCourse extends Controller
                     $this->entityManager->persist($course);
                     $this->entityManager->flush();
                     
+                    // get all courselinkactivity
+                    $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+                    // delete all courselinkactivity
+                    foreach ($courseLinkActivities as $courseLinkActivity) {
+                        $this->entityManager->remove($courseLinkActivity);
+                    }
+                    $this->entityManager->flush();
+
                     foreach ($activities as $index => $activity) {
                         $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity['id']]);
-                        $courseLinkActivity = new CourseLinkActivity($course, $acti, $index);
-                        $this->entityManager->persist($courseLinkActivity);
+                        if ($acti) {
+                            $courseLinkActivity = new CourseLinkActivity($course, $acti, $index);
+                            $this->entityManager->persist($courseLinkActivity);
+                        }
                     }
                     
                     $this->entityManager->flush();
@@ -895,6 +897,90 @@ class ControllerCourse extends Controller
                     'course' => $course,
                     'folder' => $folder
                 ];
+            },
+            'get_one_from_classroom'  => function ($data) {
+
+                $courseId = htmlspecialchars($data['courseId']);
+                if (empty($courseId)) return ["error" => "Invalid course id"];
+                
+                $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
+
+                if (!$course) return ["error" => "course not found"];
+                if ($course->getUser()->getId() != $_SESSION['id']) return ["error" => "Not authorized"];
+
+                // get course link activities
+                $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+                $activities = [];
+                foreach ($courseLinkActivities as $cla) {
+                    $activities[] = $cla->getActivity();
+                }
+                $courseSerialized = $course->jsonSerialize();
+
+                $courseSerialized['activities'] = $activities;
+
+                return ["success" => true, "course" => $courseSerialized];
+            },
+            'duplicate_from_classroom'  => function ($data) {
+
+                $courseId = htmlspecialchars($data['courseId']);
+                if (empty($courseId)) return ["error" => "Invalid course id"];
+                
+                $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
+
+                if (!$course) return ["error" => "course not found"];
+                if ($course->getUser()->getId() != $_SESSION['id']) return ["error" => "Not authorized"];
+
+                // get course link activities
+                $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+
+                $title = "";
+                $newTitle = "";
+                $regexTrigger = "";
+
+                if ($course->getTitle()) {
+                    $title = $course->getTitle();
+                    $regexTrigger = preg_match('/\(.*?\)/', $course->getTitle(), $title);
+                    if ($regexTrigger) {
+                        $result = str_replace('(', '', $title);
+                        $number = str_replace(')', '', $result);
+                        $increment = (intval($number[0]) + 1);
+                        $newTitle = str_replace($title, "(" . $increment . ")", $course->getTitle());
+                    } else {
+                        $title = 1;
+                        $newTitle =$course->getTitle() . " (1)";
+                    }
+                }
+
+                $courseDuplicate = new Course();
+                $courseDuplicate->setTitle($newTitle);
+                $courseDuplicate->setDescription($course->getDescription());
+                //$course->setImg($image);
+                $courseDuplicate->setDuration($course->getDuration());
+                $courseDuplicate->setDifficulty($course->getDifficulty());
+                $courseDuplicate->setLang($course->getLang());
+                $courseDuplicate->setUser($course->getUser());
+                $courseDuplicate->setRights($course->getRights());
+                $courseDuplicate->setDeleted(false);
+                $courseDuplicate->setFolder($course->getFolder());
+                $this->entityManager->persist($courseDuplicate);
+                $this->entityManager->flush();
+
+                foreach ($courseLinkActivities as $key => $cla) {
+                    $courseLinkActivity = new CourseLinkActivity($courseDuplicate, $cla->getActivity(), $key);
+                    $this->entityManager->persist($courseLinkActivity);
+                    $this->entityManager->flush();
+                }
+
+
+                $activities = [];
+                foreach ($courseLinkActivities as $cla) {
+                    $activities[] = $cla->getActivity();
+                }
+
+                $courseSerialized = $courseDuplicate->jsonSerialize();
+                $courseSerialized['activities'] = $activities;
+
+                return ["success" => true, "course" => $courseSerialized];
             },
         );
     }

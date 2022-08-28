@@ -117,7 +117,9 @@ class ControllerNewActivities extends Controller
 
                 if ($folderId != null) {
                     $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
-                    $exercice->setFolder($folder);
+                    if ($folder) {
+                        $exercice->setFolder($folder);
+                    }
                 }
 
                 if ($autocorrect) {
