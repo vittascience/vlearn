@@ -94,6 +94,12 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
      */
     private $folder;
 
+    /**
+     * @ORM\Column(name="is_collapsed", type="boolean", nullable=true, options={"default":0})
+     *
+     * @var bool
+     */
+    private $isCollapsed = false;
 
     public function __construct($title, $content, $user = null, $isFromClassroom = false)
     {
@@ -312,6 +318,33 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
         return $this;
     }
 
+    /**
+     * Get the value of isCollapsed
+     *
+     * @return  bool
+     */ 
+    public function getIsCollapsed()
+    {
+        return $this->isCollapsed;
+    }
+
+    /**
+     * Set the value of isCollapsed
+     *
+     * @param  bool  $isCollapsed
+     *
+     * @return  self
+     */ 
+    public function setIsCollapsed($isCollapsed)
+    {
+        if(!is_bool($isCollapsed)){
+            throw new EntityDataIntegrityException("isCollapsed has to be a boolean value");
+        }
+        $this->isCollapsed = $isCollapsed;
+
+        return $this;
+    }
+
     public function copy($objectToCopyFrom)
     {
         $this->setTitle($objectToCopyFrom->getTitle());
@@ -360,7 +393,8 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
             "solution" => $solution,
             "tolerance" => $this->getTolerance(),
             "isAutocorrect" => $this->getIsAutocorrect(),
-            "folder" => $this->getFolder()
+            "folder" => $this->getFolder(),
+            'isCollapsed' => $this->getIsCollapsed()
         ];
     }
 
