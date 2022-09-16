@@ -308,14 +308,17 @@ class ControllerCourse extends Controller
                         }
                         $content .= "[/list]";
                         $tutorialParts[$i]->content = $content;
+                        $tutorialParts[$i]->isCollapsed = false; 
                     } else {
                         // bind and sanitize incoming data
                         $title = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->title)));
                         $content = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->content)));
-
+                        $isCollapsed = filter_var($tutorialParts[$i]->isCollapsed, FILTER_VALIDATE_BOOL,FILTER_NULL_ON_FAILURE);
                         // replace values by the same values but sanitized
                         $tutorialParts[$i]->title =  $title;
                         $tutorialParts[$i]->content =  $content;
+                        $tutorialParts[$i]->isCollapsed =  $isCollapsed;
+
                     }
                 }
 
@@ -374,6 +377,7 @@ class ControllerCourse extends Controller
                     $this->entityManager->persist($activity);
                     $this->entityManager->flush();
                     $courseLinkActivity = new CourseLinkActivity($databaseCourse, $activity, $index);
+                    $activity->setIsCollapsed($tutorialParts[$index]->isCollapsed);
                     try {
                         $this->entityManager->persist($courseLinkActivity);
                     } catch (\Error $e) {
