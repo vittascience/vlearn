@@ -455,8 +455,10 @@ class ControllerActivity extends Controller
                             $applicationRestrictions = $this->entityManager->getRepository(Applications::class)->findOneBy(['id' => $application->getApplication()]);
                             if ($applicationRestrictions) {
                                 if (array_key_exists($applicationRestrictions->getName(), $Restrictions)) {
-                                    if ($Restrictions[$applicationRestrictions->getName()] < $application->getmaxActivitiesPerTeachers()) {
+                                    if ($Restrictions[$applicationRestrictions->getName()] < $application->getmaxActivitiesPerTeachers() && $Restrictions[$applicationRestrictions->getName()] != -1) {
                                         $Restrictions[$applicationRestrictions->getName()] = $application->getmaxActivitiesPerTeachers();
+                                    } else if ($application->getmaxActivitiesPerTeachers() == -1) {
+                                        $Restrictions[$applicationRestrictions->getName()] = -1;
                                     }
                                 } else {
                                     $Restrictions[$applicationRestrictions->getName()] = $application->getmaxActivitiesPerTeachers();
@@ -477,7 +479,9 @@ class ControllerActivity extends Controller
                             $applicationRestrictionsFromGroup = $this->entityManager->getRepository(GroupsLinkApplications::class)->findOneBy(['group' => $applicationFromGroup->getGroup(), 'application' => $applicationFromGroup->getApplication()]);
                             if ($applicationRestrictionsFromGroup) {
                                 if (array_key_exists($App->getName(), $Restrictions)) {
-                                    if ($Restrictions[$App->getName()] < $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers()) {
+                                    if ($Restrictions[$App->getName()] < $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers() && $Restrictions[$App->getName()] != -1) {
+                                        $Restrictions[$App->getName()] = $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers();
+                                    } else if ($applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers() == -1) {
                                         $Restrictions[$App->getName()] = $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers();
                                     }
                                 } else {
