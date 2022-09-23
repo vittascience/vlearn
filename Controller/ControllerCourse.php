@@ -2,14 +2,15 @@
 
 namespace Learn\Controller;
 
-use Learn\Entity\Course;
-use Learn\Entity\Activity;
-use Learn\Entity\CourseLinkActivity;
-use Learn\Entity\Lesson;
 use User\Entity\User;
-use Learn\Entity\CourseLinkCourse;
+use Learn\Entity\Course;
+use Learn\Entity\Lesson;
 use User\Entity\Regular;
+use Learn\Entity\Folders;
+use Learn\Entity\Activity;
 use Database\DataBaseManager;
+use Learn\Entity\CourseLinkCourse;
+use Learn\Entity\CourseLinkActivity;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -644,23 +645,350 @@ class ControllerCourse extends Controller
                     "filename" => $filenameToUpload,
                     "src" => "/public/content/user_data/resources/$filenameToUpload"
                 );
-            }
-            // @ToBeRemoved
-            // last check 06/2022 from Naser
-            // No ajax call made to "controller=course&action=get_all"
-            // 'get_all' => function () {
-            //     return $this->entityManager->getRepository('Learn\Entity\Course')
-            //         ->findAll();
-            // },
-            // @ToBeRemoved
-            // last check 06/2022 from Naser
-            // No ajax call made to "controller=course&action=count_my_tutorials"
-            // 'count_my_tutorials' => function () {
-            //     return count($this->entityManager->getRepository('Learn\Entity\Course')
-            //         ->findBy(
-            //             array("user" => $this->user)
-            //         ));
-            // },
+            },
+            'add_from_classroom' => function () {
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["error" => "Not Authenticated"];
+
+                try {
+                    $courseData = json_decode($_POST['course'], true);
+                    // sanitize incoming data
+                    $activities = $courseData['courses'] ?? "";
+                    $title = $courseData['title'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
+                    $description = $courseData['description'] ? htmlspecialchars(strip_tags(trim($courseData['description']))) : "";
+                    $image = $courseData['image'] ?? "";
+                    $duration = intval($courseData['parameters']['duration']);
+                    $difficulty = intval($courseData['parameters']['difficulty']);
+                    $language = intval($courseData['parameters']['language']);
+                    $license = intval($courseData['parameters']['license']);
+                    $folderId = !empty($_POST['folder']) ? htmlspecialchars($_POST['folder']) : null;
+                    
+                    // initialize $errors array and check for errors if any
+                    $errors = [];
+                    if (empty($activities)) array_push($errors, array("errorType" => "invalidActivities"));
+                    if (empty($title)) array_push($errors, array("errorType" => "invalidTitle"));
+                    if (empty($description)) array_push($errors, array("errorType" => "invalidDescription"));
+                    if (empty($duration)) array_push($errors, array("errorType" => "invalidDuration"));
+
+                    // some errors found, return them
+                    if (!empty($errors)) return array('errors' => $errors);
+                    // no errors, we can process the data
+
+                    $user = $this->entityManager->getRepository(User::class)->findOneBy(["id" => $_SESSION['id']]);
+                    $course = new Course();
+                    $course->setTitle($title);
+                    $course->setDescription($description);
+                    //$course->setImg($image);
+                    $course->setFork(null);
+                    $course->setDuration($duration);
+                    $course->setDifficulty($difficulty);
+                    $course->setLang($language);
+                    $course->setUser($user);
+                    $course->setRights($license);
+                    $course->setDeleted(false);
+
+                    if ($folderId != null) {
+                        $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
+                        if ($folder) {
+                            $course->setFolder($folder);
+                        }
+                    }
+                    $this->entityManager->persist($course);
+                    $this->entityManager->flush();
+                    
+                    foreach ($activities as $index => $activity) {
+                        $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity['id']]);
+                        $courseLinkActivity = new CourseLinkActivity($course, $acti, $index);
+                        $this->entityManager->persist($courseLinkActivity);
+                        
+                    }
+                    
+                    $this->entityManager->flush();
+                    return ["success" => true, "message" => "course added successfully", "course" => $course];
+                } catch (\Error $error) {
+                    return ["success" => false, "message" => $error->getMessage()];
+                }
+            },
+            'upload_img_from_classroom' => function () {
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "NotAuthenticated"];
+
+                // bind and sanitize incoming data and 
+                $incomingData = $_FILES['image'];
+                $imageError = intval($incomingData['error']);
+                $imageName = !empty($incomingData['name']) ? htmlspecialchars(strip_tags(trim($incomingData['name']))) : "";
+                $imageTempName = !empty($incomingData['tmp_name']) ? htmlspecialchars(strip_tags(trim($incomingData['tmp_name']))) : "";
+                $extension = !empty($incomingData['type']) ? htmlspecialchars(strip_tags(trim(explode('/', $incomingData['type'])[1]))) : "";
+                $imageSize = !empty($incomingData['size']) ? intval($incomingData['size']) : 0;
+
+                // initialize $errors array and check for errors if any
+                $errors = [];
+                if ($imageError !== 0) array_push($errors, array("errorType" => "imageUploadError"));
+                if (empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
+                if (empty($imageTempName)) array_push($errors, array("errorType" => "invalidImageTempName"));
+                if (empty($extension)) array_push($errors, array("errorType" => "invalidImageExtension"));
+                if (!in_array($extension, array("jpg", "jpeg", "png", "svg", "webp", "gif", "apng"))) {
+                    array_push($errors, array("errorType" => "invalidImageExtension"));
+                }
+                if (empty($imageSize)) array_push($errors, array("errorType" => "invalidImageSize"));
+                elseif ($imageSize > 1000000) array_push($errors, array("errorType" => "imageSizeToLarge"));
+
+                // some errors found, return them
+                if (!empty($errors)) return array('errors' => $errors);
+
+                // no errors, we can process the data
+                // replace whitespaces by _ and get the first chunk in case of duplicated ".someMisleadingExtensionBeforeTheRealFileExtension"
+                $filenameWithoutSpaces = explode('.', str_replace(' ', '_', $imageName))[0];
+                $filenameToUpload = time() . "_$filenameWithoutSpaces.$extension";
+
+                // no errors, we can process the data
+                $uploadDir = __DIR__ . "/../../../../classroom/assets/media/uploads/";
+                //$uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
+
+                $success = move_uploaded_file($imageTempName, "$uploadDir/$filenameToUpload");
+
+                // something went wrong while storing the image, return an error
+                if (!$success) {
+                    array_push($errors, array('errorType' => "imageNotStored"));
+                    return array('errors' => $errors);
+                }
+
+                // no errors, return data
+                return array(
+                    "filename" => $filenameToUpload,
+                    "src" => "/classroom/assets/media/uploads/$filenameToUpload"
+                );
+            },           
+            'update_from_classroom' => function () {
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["error" => "Not Authenticated"];
+
+                try {
+                    $courseData = json_decode($_POST['course'], true);
+
+                    // sanitize incoming data
+                    $activities = $courseData['courses'] ?? "";
+                    $courseId = htmlspecialchars(strip_tags(trim($_POST['courseId']))) ?? "";
+                    $title = $courseData['title'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
+                    $description = $courseData['description'] ? htmlspecialchars(strip_tags(trim($courseData['description']))) : "";
+                    $image = $courseData['image'] ?? "";
+                    $duration = intval($courseData['parameters']['duration']);
+                    $difficulty = intval($courseData['parameters']['difficulty']);
+                    $language = intval($courseData['parameters']['language']);
+                    $license = intval($courseData['parameters']['license']);
+
+                    $lang = [0 => "Français", 1 => "Anglais", 2 => "Italien", 3 => "Arabe"];
+                    
+                    // initialize $errors array and check for errors if any
+                    $errors = [];
+                    if (empty($activities)) array_push($errors, array("errorType" => "invalidActivities"));
+                    if (empty($title)) array_push($errors, array("errorType" => "invalidTitle"));
+                    if (empty($description)) array_push($errors, array("errorType" => "invalidDescription"));
+                    if (empty($duration)) array_push($errors, array("errorType" => "invalidDuration"));
+
+                    // some errors found, return them
+                    if (!empty($errors)) return array('errors' => $errors);
+                    // no errors, we can process the data
+
+                    $user = $this->entityManager->getRepository(User::class)->findOneBy(["id" => $_SESSION['id']]);
+                    $course = $this->entityManager->getRepository(Course::class)->findOneBy(["id" => $courseId]);
+
+
+                    $course->setTitle($title);
+                    $course->setDescription($description);
+                    //$course->setImg($image);
+                    $course->setFork(null);
+                    $course->setDuration($duration);
+                    $course->setDifficulty($difficulty);
+                    $course->setLang($lang[$language]);
+                    $course->setUser($user);
+                    $course->setRights($license);
+                    $course->setDeleted(false);
+                    $this->entityManager->persist($course);
+                    $this->entityManager->flush();
+                    
+                    // get all courselinkactivity
+                    $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+                    // delete all courselinkactivity
+                    foreach ($courseLinkActivities as $courseLinkActivity) {
+                        $this->entityManager->remove($courseLinkActivity);
+                    }
+                    $this->entityManager->flush();
+
+                    foreach ($activities as $index => $activity) {
+                        $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity['id']]);
+                        if ($acti) {
+                            $courseLinkActivity = new CourseLinkActivity($course, $acti, $index);
+                            $this->entityManager->persist($courseLinkActivity);
+                        }
+                    }
+                    
+                    $this->entityManager->flush();
+                    
+                    return ["success" => true, "message" => "course updated successfully", "course" => $course];
+                } catch (\Error $error) {
+                    return ["success" => false, "message" => $error->getMessage()];
+                }
+            },           
+            'delete_from_classroom' => function () {
+
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["error" => "Not Authenticated"];
+
+                try {
+
+                    $courseId = htmlspecialchars(strip_tags(trim($_POST['courseId']))) ?? "";
+                    if (empty($courseId)) return ["error" => "Invalid course id"];
+                    // no errors, we can process the data
+
+                    $user = $this->entityManager->getRepository(User::class)->findOneBy(["id" => $_SESSION['id']]);
+                    if (!$user) return ["error" => "Not authorized"];
+
+                    $course = $this->entityManager->getRepository(Course::class)->findOneBy(["id" => $courseId, "user" => $user]);
+                    if (!$course) return ["error" => "Not authorized"];
+
+                    $this->entityManager->remove($course);
+
+                    $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+                    foreach ($courseLinkActivity as $cla) {
+                        $this->entityManager->remove($cla);
+                    }
+
+                    $this->entityManager->flush();
+                    return ["success" => true, "message" => "Course and course link successfully deleted"];
+
+                } catch (\Error $error) {
+                    return ["success" => false, "message" => $error->getMessage()];
+                }
+            },
+            'moveCourseToFolder'  => function ($data) {
+
+                $courseId = htmlspecialchars($data['courseId']);
+                $folderId = htmlspecialchars($data['folderId']);
+
+                $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
+
+                // check if allowed 
+                $requester_id = $_SESSION['id'];
+                $creator_id = $course->getUser();
+                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
+
+                if (!$Allowed) {
+                    return array(
+                        'error' => 'notAllowed'
+                    );
+                }
+
+                $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
+                $course->setFolder($folder);
+                $this->entityManager->persist($course);
+                $this->entityManager->flush();
+
+                return [
+                    'success' => true,
+                    'course' => $course,
+                    'folder' => $folder
+                ];
+            },
+            'get_one_from_classroom'  => function ($data) {
+
+                $courseId = htmlspecialchars($data['courseId']);
+                if (empty($courseId)) return ["error" => "Invalid course id"];
+                
+                $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
+
+                if (!$course) return ["error" => "course not found"];
+                if ($course->getUser()->getId() != $_SESSION['id']) return ["error" => "Not authorized"];
+
+                // get course link activities
+                $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+                $activities = [];
+                foreach ($courseLinkActivities as $cla) {
+                    $activities[] = $cla->getActivity();
+                }
+                $courseSerialized = $course->jsonSerialize();
+
+                $courseSerialized['activities'] = $activities;
+
+                return ["success" => true, "course" => $courseSerialized];
+            },
+            'duplicate_from_classroom'  => function ($data) {
+
+                $courseId = htmlspecialchars($data['courseId']);
+                if (empty($courseId)) return ["error" => "Invalid course id"];
+                
+                $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
+
+                if (!$course) return ["error" => "course not found"];
+                if ($course->getUser()->getId() != $_SESSION['id']) return ["error" => "Not authorized"];
+
+                // get course link activities
+                $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+
+                $title = "";
+                $newTitle = "";
+                $regexTrigger = "";
+
+                if ($course->getTitle()) {
+                    $title = $course->getTitle();
+                    $regexTrigger = preg_match('/\(.*?\)/', $course->getTitle(), $title);
+                    if ($regexTrigger) {
+                        $result = str_replace('(', '', $title);
+                        $number = str_replace(')', '', $result);
+                        $increment = (intval($number[0]) + 1);
+                        $newTitle = str_replace($title, "(" . $increment . ")", $course->getTitle());
+                    } else {
+                        $title = 1;
+                        $newTitle =$course->getTitle() . " (1)";
+                    }
+                }
+
+                $courseDuplicate = new Course();
+                $courseDuplicate->setTitle($newTitle);
+                $courseDuplicate->setDescription($course->getDescription());
+                //$course->setImg($image);
+                $courseDuplicate->setDuration($course->getDuration());
+                $courseDuplicate->setDifficulty($course->getDifficulty());
+                $courseDuplicate->setLang($course->getLang());
+                $courseDuplicate->setUser($course->getUser());
+                $courseDuplicate->setRights($course->getRights());
+                $courseDuplicate->setDeleted(false);
+                $courseDuplicate->setFolder($course->getFolder());
+                $this->entityManager->persist($courseDuplicate);
+                $this->entityManager->flush();
+
+                foreach ($courseLinkActivities as $key => $cla) {
+                    $courseLinkActivity = new CourseLinkActivity($courseDuplicate, $cla->getActivity(), $key);
+                    $this->entityManager->persist($courseLinkActivity);
+                    $this->entityManager->flush();
+                }
+
+
+                $activities = [];
+                foreach ($courseLinkActivities as $cla) {
+                    $activities[] = $cla->getActivity();
+                }
+
+                $courseSerialized = $courseDuplicate->jsonSerialize();
+                $courseSerialized['activities'] = $activities;
+
+                return ["success" => true, "course" => $courseSerialized];
+            },
         );
     }
     private function bindIncomingTutorialData($incomingData)
@@ -721,5 +1049,23 @@ class ControllerCourse extends Controller
         }
 
         return $sanitizedFilters;
+    }
+
+    private function isAllowed(Int $creator_id, Int $requester_id)
+    {
+        $Allowed = false;
+        $regular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $requester_id]);
+
+        if ($regular) {
+            if ($regular->getIsAdmin()) {
+                $Allowed = true;
+            }
+        }
+
+        if ($creator_id == $requester_id) {
+            $Allowed = true;
+        }
+
+        return $Allowed;
     }
 }

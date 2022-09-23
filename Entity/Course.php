@@ -4,6 +4,7 @@ namespace Learn\Entity;
 
 use User\Entity\User;
 use Learn\Entity\Comment;
+use Learn\Entity\Folders;
 use Utils\MetaDataMatcher;
 use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityOperatorException;
@@ -25,7 +26,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
 
     const REG_TITLE = "/.{1,1000}/";
     // REG_DESC: Only letters and digits and length of string is between 1 and 1000
-    const REG_DESC = "/.{1,1000}/";
+    //const REG_DESC = "/.,;{1,1000}/";
 
     // REG_LANG: Only  a-z letters length of string is equal 2
     const REG_LANG = "/^[a-z]{2}$/";
@@ -92,7 +93,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
      */
     private $lang = "No lang";
     /**
-     * @ORM\Column(name="support", type="integer", nullable=false)
+     * @ORM\Column(name="support", type="integer", nullable=true, options={"default":0})
      * @var integer
      */
     private $support;
@@ -135,6 +136,16 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
      * @var Course
      */
     private $fork = null;
+
+
+    /**
+     * @ORM\ManyToOne(targetEntity="Learn\Entity\Folders")
+     * @ORM\JoinColumn(name="folder", nullable=true, referencedColumnName="id", onDelete="CASCADE")
+     * @var Folders
+     */
+    private $folder;
+
+
     /**
      * @return int
      */
@@ -231,13 +242,9 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @param string $description
      */
-    public function setDescription($description)
+    public function setDescription(String $description)
     {
-        if (preg_match(self::REG_DESC, $description)) {
-            $this->description = $description;
-        } else {
-            throw new EntityDataIntegrityException("description needs to be string and have between 1 and 1000 characters" . $description);
-        }
+        $this->description = $description;
     }
 
     /**
@@ -322,13 +329,9 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @param string $lang
      */
-    public function setLang($lang)
+    public function setLang(String $lang)
     {
-        if (preg_match(self::REG_LANG, $lang)) {
-            $this->lang = $lang;
-        } else {
-            throw new EntityDataIntegrityException("description needs to be string and have between 1 and 1000 characters");
-        }
+        $this->lang = $lang;
     }
 
     /**
@@ -342,15 +345,9 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @param int $support
      */
-    public function setSupport($support)
+    public function setSupport(Int $support)
     {
-        $support = intval($support);
-        if (is_int($support) && ($support >= 0)) {
-
-            $this->support = $support;
-        } else {
-            throw new EntityDataIntegrityException("support needs to be integer higher than 0");
-        }
+        $this->support = $support;
     }
 
     /**
@@ -478,6 +475,24 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
+    /**
+     * @return Folder
+     */
+    public function getFolder(): ?Folders
+    {
+        return $this->folder;
+    }
+
+    /**
+     * @param Folder $folders
+     * @return Activity
+     */
+    public function setFolder(?Folders $folder): Course
+    {
+        $this->folder = $folder;
+        return $this;
+    }
+
     public function copy($objectToCopyFrom)
     {
         if ($objectToCopyFrom instanceof self) {
@@ -530,6 +545,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             'updatedAt' => $this->getUpdatedAt(),
             'rights' => $this->getRights(),
             'fork' => $fork,
+            'folder' => $this->getFolder()
         ];
     }
 

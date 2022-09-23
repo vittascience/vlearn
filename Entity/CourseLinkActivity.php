@@ -11,7 +11,7 @@ use Utils\MetaDataMatcher;
  * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryCourseLinkActivity")
  * @ORM\Table(name="learn_courses_link_activities" )
  */
-class CourseLinkActivity
+class CourseLinkActivity implements \JsonSerializable, \Utils\JsonDeserializer
 {
     /**
      * @ORM\Id
@@ -98,5 +98,24 @@ class CourseLinkActivity
         } else {
             throw new EntityDataIntegrityException("indexOrder needs to be integer ");
         }
+    }
+
+
+    public function jsonSerialize()
+    {
+        return [
+            "course" => $this->getCourse(),
+            "activity" => $this->getActivity(),
+            "indexOrder" => $this->getIndexOrder()
+        ];
+    }
+
+    public static function jsonDeserialize($jsonDecoded)
+    {
+        $classInstance = new self();
+        foreach ($jsonDecoded as $attributeName => $attributeValue) {
+            $classInstance->{$attributeName} = $attributeValue;
+        }
+        return $classInstance;
     }
 }
