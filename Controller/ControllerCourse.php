@@ -859,10 +859,13 @@ class ControllerCourse extends Controller
 
                     $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
                     foreach ($courseLinkActivity as $cla) {
+                        // get userlinkactivity 
+                        $userLinkActivity = $this->entityManager->getRepository(ActivityLinkUser::class)->findOneBy(["id" => $cla->getActivity()->getId(), "isFromCourse" => 1]);
+                        foreach ($userLinkActivity as $ula) {
+                            $this->entityManager->remove($ula);
+                        }
                         $this->entityManager->remove($cla);
                     }
-
-                    $this->deleteActivityLinkedToCourse();
 
                     $this->entityManager->flush();
                     return ["success" => true, "message" => "Course and course link successfully deleted"];
@@ -985,15 +988,6 @@ class ControllerCourse extends Controller
                 return ["success" => true, "course" => $courseSerialized];
             },
         );
-    }
-
-    private function deleteActivityLinkedToCourse(Course $course)
-    {
-        $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
-        foreach ($courseLinkActivities as $cla) {
-            $this->entityManager->remove($cla);
-        }
-        $this->entityManager->flush();
     }
 
     private function bindIncomingTutorialData($incomingData)
