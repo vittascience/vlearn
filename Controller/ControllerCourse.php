@@ -862,6 +862,8 @@ class ControllerCourse extends Controller
                         $this->entityManager->remove($cla);
                     }
 
+                    $this->deleteActivityLinkedToCourse();
+
                     $this->entityManager->flush();
                     return ["success" => true, "message" => "Course and course link successfully deleted"];
 
@@ -984,6 +986,16 @@ class ControllerCourse extends Controller
             },
         );
     }
+
+    private function deleteActivityLinkedToCourse(Course $course)
+    {
+        $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+        foreach ($courseLinkActivities as $cla) {
+            $this->entityManager->remove($cla);
+        }
+        $this->entityManager->flush();
+    }
+
     private function bindIncomingTutorialData($incomingData)
     {
         $tutorial = new \stdClass;
