@@ -860,7 +860,7 @@ class ControllerCourse extends Controller
                     $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
                     foreach ($courseLinkActivity as $cla) {
                         // get userlinkactivity 
-                        $userLinkActivity = $this->entityManager->getRepository(ActivityLinkUser::class)->findOneBy(["id" => $cla->getActivity()->getId(), "isFromCourse" => 1]);
+                        $userLinkActivity = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $cla->getActivity(), "isFromCourse" => 1]);
                         foreach ($userLinkActivity as $ula) {
                             $this->entityManager->remove($ula);
                         }
