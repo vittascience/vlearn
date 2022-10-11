@@ -696,8 +696,7 @@ class ControllerCourse extends Controller
                     foreach ($activities as $index => $activity) {
                         $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity['id']]);
                         $courseLinkActivity = new CourseLinkActivity($course, $acti, $index);
-                        $this->entityManager->persist($courseLinkActivity);
-                        
+                        $this->entityManager->persist($courseLinkActivity);    
                     }
                     
                     $this->entityManager->flush();
