@@ -10,7 +10,9 @@ use Learn\Entity\Folders;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
 use Learn\Entity\CourseLinkCourse;
+use Classroom\Entity\CourseLinkUser;
 use Learn\Entity\CourseLinkActivity;
+use Classroom\Entity\ActivityLinkUser;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -856,6 +858,11 @@ class ControllerCourse extends Controller
 
                     $this->entityManager->remove($course);
 
+                    $courseLinkActivities = $this->entityManager->getRepository(CourseLinkUser::class)->findBy(["course" => $course]);
+                    foreach ($courseLinkActivities as $courseLinkActivity) {
+                        $this->entityManager->remove($courseLinkActivity);
+                    }
+                    
                     $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
                     foreach ($courseLinkActivity as $cla) {
                         // get userlinkactivity 
