@@ -993,6 +993,29 @@ class ControllerCourse extends Controller
 
                 return ["success" => true, "course" => $courseSerialized];
             },
+            'set_state_from_course' => function ($data) {
+                $courseId = htmlspecialchars($data['courseId']);
+                $state = htmlspecialchars($data['state']);
+                $userId = htmlspecialchars($_SESSION['id']);
+
+                try {
+                    $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
+                    $courseLinkUser = $this->entityManager->getRepository(CourseLinkUser::class)->findOneBy(["course" => $course, "user" => $userId]);
+                    $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+                    if ($courseLinkActivities) {
+                        if (count($courseLinkActivities) == $state) {
+                            $courseLinkUser->setCourseState(999);
+                        } else {
+                            $courseLinkUser->setCourseState($state);
+                        }
+                    }
+                    $this->entityManager->persist($courseLinkUser);
+                    $this->entityManager->flush();
+                    return ["success" => true, "courseLinkUser" => $courseLinkUser];
+                } catch (\Error $error) {
+                    return ["success" => false, "message" => $error->getMessage()];
+                }
+            },
         );
     }
 
