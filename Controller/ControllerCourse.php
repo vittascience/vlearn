@@ -1033,14 +1033,14 @@ class ControllerCourse extends Controller
             }
             $sanitizedFilters['support'] = "(".implode(",",$supports).")";
         }
-        else if(!empty($incomingFilters["difficulty"])){
+        if(!empty($incomingFilters["difficulty"])){
             $difficulties = [];
             foreach($incomingFilters["difficulty"] as $incomingDifficulty){
                 array_push($difficulties,intval($incomingDifficulty));
             }
             $sanitizedFilters['difficulty'] = "(".implode(",",$difficulties).")";
         }
-        else if(!empty($incomingFilters["lang"])){
+        if(!empty($incomingFilters["lang"])){
             $languages = [];
             foreach($incomingFilters["lang"] as $incomingLang){
                 array_push($languages,"'".htmlspecialchars(strip_tags(trim($incomingLang)))."'");
