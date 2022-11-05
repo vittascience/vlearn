@@ -476,7 +476,6 @@ class ControllerActivity extends Controller
                     }
                 } else {
                     $Restrictions[$activity_type] = $foundApp->getMaxPerTeachers();
-                    $Restrictions['message'] = 'Default limit from the application';
                 }
 
                 // Get all the restrictions from his group's applications
