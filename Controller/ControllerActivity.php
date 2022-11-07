@@ -6,12 +6,14 @@ use User\Entity\User;
 use User\Entity\Regular;
 use Learn\Entity\Folders;
 use Learn\Entity\Activity;
+use Classroom\Entity\Groups;
 use Database\DataBaseManager;
 use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
-use Classroom\Entity\UsersRestrictions;
+use Classroom\Entity\UsersLinkGroups;
 use Classroom\Entity\ActivityLinkUser;
+use Classroom\Entity\UsersRestrictions;
 use Classroom\Entity\ActivityRestrictions;
 use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
@@ -444,89 +446,151 @@ class ControllerActivity extends Controller
                     $activity_type = $Activity->getType();
                 }
                 // Only check if the activity have a type
-                if ($activity_type) {
-                    $myActivities = $this->entityManager->getRepository(Activity::class)->findBy(["user" => $this->user]);
-                    $UsersApplications = $this->entityManager->getRepository(UsersLinkApplications::class)->findBy(['user' => $user_id]);
-                    $GroupsApplications = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findBy(['user' => $user_id]);
 
-                    // Get all the restrictions from his applications
-                    if ($UsersApplications) {
-                        foreach ($UsersApplications as $application) {
-                            $applicationRestrictions = $this->entityManager->getRepository(Applications::class)->findOneBy(['id' => $application->getApplication()]);
-                            if ($applicationRestrictions) {
-                                if (array_key_exists($applicationRestrictions->getName(), $Restrictions)) {
-                                    if ($Restrictions[$applicationRestrictions->getName()] < $application->getmaxActivitiesPerTeachers() && $Restrictions[$applicationRestrictions->getName()] != -1) {
-                                        $Restrictions[$applicationRestrictions->getName()] = $application->getmaxActivitiesPerTeachers();
-                                    } else if ($application->getmaxActivitiesPerTeachers() == -1) {
-                                        $Restrictions[$applicationRestrictions->getName()] = -1;
-                                    }
-                                } else {
-                                    $Restrictions[$applicationRestrictions->getName()] = $application->getmaxActivitiesPerTeachers();
-                                }
-                            }
-                        }
-                    } else {
-                        $ActivityRestrictionsDefault = $this->entityManager->getRepository(Applications::class)->findOneBy(['name' => $activity_type]);
-                        if ($ActivityRestrictionsDefault) {
-                            $Restrictions[$activity_type] = $ActivityRestrictionsDefault->getMaxPerTeachers();
-                        }
-                    }
-
-                    // Get all the restrictions from his group's applications
-                    if ($GroupsApplications) {
-                        foreach ($GroupsApplications as $applicationFromGroup) {
-                            $App = $this->entityManager->getRepository(Applications::class)->findOneBy(['id' => $applicationFromGroup->getApplication()]);
-                            $applicationRestrictionsFromGroup = $this->entityManager->getRepository(GroupsLinkApplications::class)->findOneBy(['group' => $applicationFromGroup->getGroup(), 'application' => $applicationFromGroup->getApplication()]);
-                            if ($applicationRestrictionsFromGroup) {
-                                if (array_key_exists($App->getName(), $Restrictions)) {
-                                    if ($Restrictions[$App->getName()] < $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers() && $Restrictions[$App->getName()] != -1) {
-                                        $Restrictions[$App->getName()] = $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers();
-                                    } else if ($applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers() == -1) {
-                                        $Restrictions[$App->getName()] = $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers();
-                                    }
-                                } else {
-                                    $Restrictions[$App->getName()] = $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers();
-                                }
-                            }
-                        }
-                    }
-
-
-                    // Sort the activities by type and count them
-                    foreach ($myActivities as $activity) {
-                        if (array_key_exists($activity->getType(), $Activities)) {
-                            $Activities[$activity->getType()]++;
-                        } else {
-                            $Activities[$activity->getType()] = 1;
-                        }
-                    }
-                    
-                    if (array_key_exists($activity_type, $Restrictions)) {
-                        if ($Restrictions[$activity_type] == -1) {
-                            return ['Limited' => false, 'Restrictions' => $Restrictions];
-                        } else {
-                            if (array_key_exists($activity_type, $Activities)) {
-                                if ($Restrictions[$activity_type] <= $Activities[$activity_type]) {
-                                    return ['Limited' => true, 'Restrictions' => $Restrictions, 'ActualActivity' => $Activities[$activity_type]];
-                                } else {
-                                    return ['Limited' => false, 'Restrictions' => $Restrictions, 'ActualActivity' => $Activities[$activity_type]];
-                                }
-                            } else {
-                                return ['Limited' => false, 'Restrictions' => $Restrictions, 'ActualActivity' => 'none'];
-                            }
-                        }
-                    } else {
-                        return ['Limited' => false, 'Restrictions' => $Restrictions];
-                    }
-                } else {
+                if (!$activity_type) {
+                    // no limit if no type
                     return ['Limited' => false];
                 }
+
+                $foundApp = $this->entityManager->getRepository(Applications::class)->findOneBy(['name' => $activity_type]);
+
+                if (!$foundApp) {
+                    // no limit if no app
+                    return ['Limited' => false];
+                }
+
+
+                $myActivities = $this->entityManager->getRepository(Activity::class)->findBy(["user" => $this->user, "type" => $activity_type]);
+                $UsersApplication = $this->entityManager->getRepository(UsersLinkApplications::class)->findOneBy(['user' => $user_id, 'application' => $foundApp->getId()]);
+                $GroupsApplication = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findOneBy(['user' => $user_id, 'application' => $foundApp->getId()]);
+
+                // Get all the restrictions from his applications
+                if ($UsersApplication) {
+                    if (array_key_exists($foundApp->getName(), $Restrictions)) {
+                        if (($Restrictions[$foundApp->getName()] < $UsersApplication->getmaxActivitiesPerTeachers() && $Restrictions[$foundApp->getName()] != -1) 
+                        || $UsersApplication->getmaxActivitiesPerTeachers() == -1) {
+                            $Restrictions[$foundApp->getName()] = $UsersApplication->getmaxActivitiesPerTeachers();
+                        }
+                    } else {
+                        $Restrictions[$foundApp->getName()] = $UsersApplication->getmaxActivitiesPerTeachers();
+                    }
+                } else {
+                    $Restrictions[$activity_type] = $foundApp->getMaxPerTeachers();
+                }
+
+                // Get all the restrictions from his group's applications
+                if ($GroupsApplication) {
+                    if ($this->getAvailableActivitiesFromGroup($GroupsApplication)) {
+                        $applicationRestrictionsFromGroup = $this->entityManager->getRepository(GroupsLinkApplications::class)->findOneBy(['group' => $GroupsApplication->getGroup(), 'application' => $GroupsApplication->getApplication()]);    
+                        if (array_key_exists($foundApp->getName(), $Restrictions)) {
+                            if (($Restrictions[$foundApp->getName()] < $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers() && $Restrictions[$foundApp->getName()] != -1) 
+                            || $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers() == -1) {
+                                $Restrictions[$foundApp->getName()] = $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers();
+                            }
+                        } else {
+                            $Restrictions[$foundApp->getName()] = $applicationRestrictionsFromGroup->getmaxActivitiesPerTeachers();
+                            $Restrictions['message'] = 'Default limit from group';
+                        }
+                    } else {
+                        $Restrictions['message'] = 'Group limit reached';
+                    }
+                }
+
+
+                // Sort the activities by type and count them
+                foreach ($myActivities as $activity) {
+                    if (array_key_exists($activity->getType(), $Activities)) {
+                        $Activities[$activity->getType()]++;
+                    } else {
+                        $Activities[$activity->getType()] = 1;
+                    }
+                }
+
+                
+                if (array_key_exists($activity_type, $Restrictions)) {
+                    if ($Restrictions[$activity_type] == -1) {
+                        return ['Limited' => false, 'Restrictions' => $Restrictions];
+                    } else {
+                        if (array_key_exists($activity_type, $Activities)) {
+                            if ($Restrictions[$activity_type] <= $Activities[$activity_type]) {
+                                return ['Limited' => true, 'Restrictions' => $Restrictions, 'ActualActivity' => $Activities[$activity_type]];
+                            } else {
+                                return ['Limited' => false, 'Restrictions' => $Restrictions, 'ActualActivity' => $Activities[$activity_type]];
+                            }
+                        } else {
+                            return ['Limited' => false, 'Restrictions' => $Restrictions, 'ActualActivity' => 'none'];
+                        }
+                    }
+                } else {
+                    return ['Limited' => false, 'Restrictions' => $Restrictions];
+                }
+                
             } else {
+                // wrong activity type
                 return ['missing data' => false];
             }
         } else {
+            // no activity id or type provided
             return ['missing data' => false];
         }
     }
-}
+
+
+    private function getAvailableActivitiesFromGroup(UsersLinkApplicationsFromGroups $Ulafg) {
+        $group = $Ulafg->getGroup(); 
+        $application = $Ulafg->getApplication();
+        // Get group link application
+        $groupLinkApplication = $this->entityManager->getRepository(GroupsLinkApplications::class)->findOneBy(['group' => $group, 'application' => $application]);
+        $maxActivitiesPerGroup = $groupLinkApplication->getmaxActivitiesPerGroups();
+
+
+        // Get all users from the group
+        $users = $this->entityManager->getRepository(UsersLinkGroups::class)->findBy(['group' => $group]);
+        //for each user get all his activities
+        $totalActivities = 0;
+        foreach ($users as $user) {
+            $activities = $this->entityManager->getRepository(Activity::class)->findBy(['user' => $user->getUser()]);
+            $userTotalActivities = 0;
+            foreach ($activities as $activity) {
+                if ($activity->getType() == $application->getName()) {
+                    $userTotalActivities++;
+                }
+            }
+
+            // get personal application 
+            $personalApplication = $this->entityManager->getRepository(UsersLinkApplications::class)->findOneBy(['user' => $user->getUser(), 'application' => $application]);
+            if ($personalApplication) {
+                $ownMax = $personalApplication->getmaxActivitiesPerTeachers();
+
+                if ($ownMax == -1) {
+                    $totalActivities = 0;
+                } else if ($ownMax > 0) {
+                    $toAdd = $ownMax - $userTotalActivities;
+                    if ($toAdd > 0) {
+                        $totalActivities += $toAdd;
+                    }
+                } else {
+                    $totalActivities += $userTotalActivities;
+                }
+            } else {
+                $totalActivities += $userTotalActivities;
+            }
+
+        }
+
+        // if the max is -1 it's unlimited
+        if ($maxActivitiesPerGroup == -1) {
+            return true;
+        } else if ($maxActivitiesPerGroup >= 0) {
+            // if the total of available activities is greater than 0 it's ok
+            $activitiesAvailable = $maxActivitiesPerGroup - $totalActivities;
+            if ($activitiesAvailable > 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }   
+}   
 
