@@ -10,7 +10,9 @@ use Learn\Entity\Folders;
 use Learn\Entity\Activity;
 use Database\DataBaseManager;
 use Learn\Entity\CourseLinkCourse;
+use Classroom\Entity\CourseLinkUser;
 use Learn\Entity\CourseLinkActivity;
+use Classroom\Entity\ActivityLinkUser;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -703,8 +705,7 @@ class ControllerCourse extends Controller
                     foreach ($activities as $index => $activity) {
                         $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity['id']]);
                         $courseLinkActivity = new CourseLinkActivity($course, $acti, $index);
-                        $this->entityManager->persist($courseLinkActivity);
-                        
+                        $this->entityManager->persist($courseLinkActivity);    
                     }
                     
                     $this->entityManager->flush();
@@ -864,8 +865,18 @@ class ControllerCourse extends Controller
 
                     $this->entityManager->remove($course);
 
+                    $courseLinkActivities = $this->entityManager->getRepository(CourseLinkUser::class)->findBy(["course" => $course]);
+                    foreach ($courseLinkActivities as $courseLinkActivity) {
+                        $this->entityManager->remove($courseLinkActivity);
+                    }
+                    
                     $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
                     foreach ($courseLinkActivity as $cla) {
+                        // get userlinkactivity 
+                        $userLinkActivity = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $cla->getActivity(), "isFromCourse" => 1]);
+                        foreach ($userLinkActivity as $ula) {
+                            $this->entityManager->remove($ula);
+                        }
                         $this->entityManager->remove($cla);
                     }
 
@@ -989,8 +1000,32 @@ class ControllerCourse extends Controller
 
                 return ["success" => true, "course" => $courseSerialized];
             },
+            'set_state_from_course' => function ($data) {
+                $courseId = htmlspecialchars($data['courseId']);
+                $state = htmlspecialchars($data['state']);
+                $userId = htmlspecialchars($_SESSION['id']);
+
+                try {
+                    $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
+                    $courseLinkUser = $this->entityManager->getRepository(CourseLinkUser::class)->findOneBy(["course" => $course, "user" => $userId]);
+                    $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+                    if ($courseLinkActivities) {
+                        if (count($courseLinkActivities) == $state) {
+                            $courseLinkUser->setCourseState(999);
+                        } else {
+                            $courseLinkUser->setCourseState($state);
+                        }
+                    }
+                    $this->entityManager->persist($courseLinkUser);
+                    $this->entityManager->flush();
+                    return ["success" => true, "courseLinkUser" => $courseLinkUser];
+                } catch (\Error $error) {
+                    return ["success" => false, "message" => $error->getMessage()];
+                }
+            },
         );
     }
+
     private function bindIncomingTutorialData($incomingData)
     {
         $tutorial = new \stdClass;
@@ -1033,14 +1068,14 @@ class ControllerCourse extends Controller
             }
             $sanitizedFilters['support'] = "(".implode(",",$supports).")";
         }
-        else if(!empty($incomingFilters["difficulty"])){
+        if(!empty($incomingFilters["difficulty"])){
             $difficulties = [];
             foreach($incomingFilters["difficulty"] as $incomingDifficulty){
                 array_push($difficulties,intval($incomingDifficulty));
             }
             $sanitizedFilters['difficulty'] = "(".implode(",",$difficulties).")";
         }
-        else if(!empty($incomingFilters["lang"])){
+        if(!empty($incomingFilters["lang"])){
             $languages = [];
             foreach($incomingFilters["lang"] as $incomingLang){
                 array_push($languages,"'".htmlspecialchars(strip_tags(trim($incomingLang)))."'");

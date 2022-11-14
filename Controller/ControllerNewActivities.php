@@ -9,11 +9,12 @@ use Learn\Entity\Activity;
 use Classroom\Entity\Groups;
 use Learn\Controller\Controller;
 use Classroom\Entity\Applications;
+use Learn\Entity\CourseLinkActivity;
 use Classroom\Entity\ActivityLinkUser;
 use Classroom\Entity\UsersRestrictions;
 use Classroom\Entity\UsersLinkApplications;
-use Classroom\Entity\UsersLinkApplicationsFromGroups;
 use Classroom\Entity\GroupsLinkApplications;
+use Classroom\Entity\UsersLinkApplicationsFromGroups;
 
 class ControllerNewActivities extends Controller
 {
@@ -164,6 +165,16 @@ class ControllerNewActivities extends Controller
                 $id = !empty($data['id']) ? htmlspecialchars($data['id']): null;
                 if ($id) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($id);
+                    
+                    // Delete this activity from all the courses
+                    $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(['activity' => $activity]);
+                    if ($courseLinkActivity) {
+                        foreach ($courseLinkActivity as $cla) {
+                            $this->entityManager->remove($cla);
+                        }
+                    }
+
+
                     if ($activity) {
                         // step 1 database cleaning
                         // get all students activity matching with the activity 
