@@ -684,7 +684,8 @@ class ControllerCourse extends Controller
                     $course = new Course();
                     $course->setTitle($title);
                     $course->setDescription($description);
-                    //$course->setImg($image);
+                    // not nullable but we don't ask it to the user for now @Rémi 20221114
+                    $course->setSupport(0);
                     $course->setFork(null);
                     $course->setDuration($duration);
                     $course->setDifficulty($difficulty);
