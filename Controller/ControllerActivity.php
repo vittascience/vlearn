@@ -459,6 +459,8 @@ class ControllerActivity extends Controller
                     return ['Limited' => false];
                 }
 
+                // Set the base restriction
+                $Restrictions[$foundApp->getName()] = $foundApp->getMaxPerTeachers();
 
                 $myActivities = $this->entityManager->getRepository(Activity::class)->findBy(["user" => $this->user, "type" => $activity_type]);
                 $UsersApplication = $this->entityManager->getRepository(UsersLinkApplications::class)->findOneBy(['user' => $user_id, 'application' => $foundApp->getId()]);
