@@ -88,14 +88,13 @@ class ControllerCourse extends Controller
 
                 // bind incoming search param
                 $search = !empty($_POST['filter']['search']) 
-                            ? htmlspecialchars(strip_tags(trim($_POST['filter']['search']))) 
+                            ? htmlspecialchars(strip_tags(trim(addslashes($_POST['filter']['search'])))) 
                             : '';
                 unset($_POST['filter']['search']);
 
                 // bind and/or sanitize other incoming params
                 $page = !empty($_POST['page']) ? intval($_POST['page']) : 1;
                 $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
-                $search = "'%$search%'";
                 
                 // fetch data from db 
                 $results = $this->entityManager->getRepository('Learn\Entity\Course')->getByFilter($sanitizedFilters, $search, $page);
@@ -115,13 +114,12 @@ class ControllerCourse extends Controller
 
                 // bind incoming search param
                 $search = !empty($_POST['filter']['search']) 
-                            ? htmlspecialchars(strip_tags(trim($_POST['filter']['search']))) 
+                            ? htmlspecialchars(strip_tags(trim(addslashes($_POST['filter']['search'])))) 
                             : '';
                 unset($_POST['filter']['search']);
 
                 // bind and/or sanitize other incoming params
                 $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
-                $search = "'%$search%'";
                 
                 // fetch data from db 
                return $this->entityManager->getRepository('Learn\Entity\Course')->countByFilter( $sanitizedFilters,  $search);
