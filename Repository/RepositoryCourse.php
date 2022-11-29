@@ -104,8 +104,8 @@ class RepositoryCourse extends EntityRepository
             ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
             ->andWhere('c.rights=1 OR c.rights=2')
             ->andWhere("
-                c.title LIKE $search OR c.description LIKE $search 
-                OR a.title LIKE $search OR a.content LIKE $search
+                c.title LIKE :search OR c.description LIKE :search 
+                OR a.title LIKE :search OR a.content LIKE :search
             ");
 
         if($options){
@@ -113,7 +113,7 @@ class RepositoryCourse extends EntityRepository
                 $queryBuilder->andWhere("c.$key IN $option");
             }
         }
-        
+        $queryBuilder->setParameter('search',"%$search%");
         $results = $queryBuilder->groupBy('c.id')
                                 ->getQuery()
                                 ->getResult();
