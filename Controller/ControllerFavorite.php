@@ -68,9 +68,20 @@ class ControllerFavorite extends Controller
                             ->find($userId);
                 
                 $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->find($tutorialId);
-                $favorite = new Favorite($user, $tutorial);
-                $this->entityManager->persist($favorite);
-                $this->entityManager->flush();
+
+                // check if the current tutorial is already favorited
+                $alreadyFavorited = $this->entityManager->getRepository(Favorite::class)->findOneBy(array(
+                    'user'=> $user,
+                    'tutorial'=> $tutorial
+                ));
+
+                if(!$alreadyFavorited){
+                     $favorite = new Favorite($user, $tutorial);
+                    $this->entityManager->persist($favorite);
+                    $this->entityManager->flush();
+                }
+               
+                // return true whether the tuto was already favorited or just has been favorited 
                 return true;
             },
             'delete' => function () {
