@@ -13,6 +13,7 @@ use Learn\Entity\CourseLinkCourse;
 use Classroom\Entity\CourseLinkUser;
 use Learn\Entity\CourseLinkActivity;
 use Classroom\Entity\ActivityLinkUser;
+use MailerLiteApi\MailerLite;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -189,6 +190,8 @@ class ControllerCourse extends Controller
                         $tutorial->setImg($_FILES['imgFile']);
                     }
                     $user = $this->entityManager->getRepository('User\Entity\User')->find($this->user['id']);
+                    $regular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $this->user['id']]);
+                    $email = $regular->getEmail();
                     $tutorial->setUser($user);
                     $tutorial->setCreatedAt();
                     //add lessons to the tutorial
@@ -216,6 +219,16 @@ class ControllerCourse extends Controller
                         $this->entityManager->persist($courseLinkActivity);
                     }
                     $this->entityManager->flush();
+                    $groupsApi = (new MailerLite($_ENV['VS_SHOP_MAILERLITE_API_KEY']))->groups();
+                    $subscriber = [
+                        'email' => $email,
+                        'fields' => [
+                            'name' => $user->getSurname(),
+                            'last_name' => $user->getFirstname(),
+                            'ressources_link' => "https://vittascience.com/learn/tutorial.php?id=".$tutorial->getId()."/".$tutorial->getLink()
+                        ]
+                    ];
+                    $response = $groupsApi->addSubscriber("111819557", $subscriber);
                     return $tutorial;
                 } catch (\Error $error) {
                     echo ($error->getMessage());
