@@ -228,7 +228,7 @@ class ControllerCourse extends Controller
                             'ressources_link' => "https://vittascience.com/learn/tutorial.php?id=".$tutorial->getId()."/".$tutorial->getLink()
                         ]
                     ];
-                    $response = $groupsApi->addSubscriber("111819557", $subscriber);
+                    $response = $groupsApi->addSubscriber("111807620", $subscriber);
                     return $tutorial;
                 } catch (\Error $error) {
                     echo ($error->getMessage());
