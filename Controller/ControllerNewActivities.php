@@ -274,6 +274,9 @@ class ControllerNewActivities extends Controller
                 $note = !empty($_POST['note']) ? intval($_POST['note']) : 0;
 
 
+                $optionalData = !empty($_POST['optionalData']) ? $_POST['optionalData'] : null;
+
+
                 if($this->isJson($response)) {
                     $response = json_decode($response, true);
                 }
@@ -324,6 +327,10 @@ class ControllerNewActivities extends Controller
                     }
 
                     $activity->setResponse(serialize($response));
+
+                    if ($optionalData) {
+                        $activity->setOptionalData(serialize($optionalData));
+                    }
     
                     if ($timePassed) {
                         $activity->setTimePassed($timePassed);
