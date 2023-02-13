@@ -519,6 +519,60 @@ class ControllerNewActivities extends Controller
                 
 
                 return ["error" => "Activity not found"];
+            },
+            "import_ressource" => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
+
+                // get id activity and id activity link user
+                $ressourceId = !empty($_POST['ressource_id']) ? intval($_POST['ressource_id']) : 0;
+                $ressourceType = !empty($_POST['ressource_type']) ? ($_POST['ressource_type']) : null;
+
+                if (empty($ressourceType)) {
+                    return ["error" => "Ressource type not found"];
+                } 
+
+                if (empty($ressourceId)) {
+                    return ["error" => "Ressource id not found"];
+                }
+
+                if ($ressourceType == "activity") {
+                    $activity = $this->entityManager->getRepository(Activity::class)->find($ressourceId);
+                    // duplicate with new user
+                    $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
+                    $activityDuplicated = new Activity($activity->getTitle(),  
+                                                        $activity->getContent(), 
+                                                        $user, 
+                                                        $activity->isFromClassroom());        
+                                                        
+                    if ($activity->getType()) {
+                        $activityDuplicated->setType($activity->getType());
+                    }
+                    if ($activity->getSolution()) {
+                        $activityDuplicated->setSolution($activity->getSolution());
+                    }
+                    if ($activity->getTolerance()) {
+                        $activityDuplicated->setTolerance($activity->getTolerance());
+                    }
+                    if ($activity->getIsAutocorrect()) {
+                        $activityDuplicated->setIsAutocorrect($activity->getIsAutocorrect());
+                    }
+                    if ($activity->getFork() != null) {
+                        $activityDuplicated->setFork($activity->getFork()->jsonSerialize());
+                    } else {
+                        $activityDuplicated->setFork(null);
+                    }
+
+                    $this->entityManager->persist($activityDuplicated);
+                    $this->entityManager->flush();
+                    return  ['success' => true, 'id' => $activityDuplicated->getId()];
+                } else if ($ressourceType == "course") {
+                    $course = $this->entityManager->getRepository(Course::class)->find($ressourceId);
+                    return ['success' => true, 'id' => $course->getId()];
+                }
             }
         );
     }
