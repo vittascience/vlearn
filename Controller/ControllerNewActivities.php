@@ -628,7 +628,7 @@ class ControllerNewActivities extends Controller
                     foreach ($courseLinkActivities as $courseLinkActivity) {
                         $courseLinkActivityDuplicated = new CourseLinkActivity($courseDuplicated, 
                                                                                 $courseLinkActivity->getActivity(), 
-                                                                                $courseLinkActivity->getOrder());
+                                                                                $courseLinkActivity->getIndexOrder());
                         $this->entityManager->persist($courseLinkActivityDuplicated);
                     }
                     $this->entityManager->flush();
