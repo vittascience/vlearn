@@ -3,6 +3,7 @@
 namespace Learn\Controller;
 
 use User\Entity\User;
+use Learn\Entity\Course;
 use User\Entity\Regular;
 use Learn\Entity\Folders;
 use Learn\Entity\Activity;
@@ -526,6 +527,122 @@ class ControllerNewActivities extends Controller
                 
 
                 return ["error" => "Activity not found"];
+            },
+            "import_ressource" => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
+
+                // get id activity and id activity link user
+                $ressourceId = !empty($_POST['ressource_id']) ? intval($_POST['ressource_id']) : 0;
+                $ressourceType = !empty($_POST['ressource_type']) ? ($_POST['ressource_type']) : null;
+
+                if (empty($ressourceType)) {
+                    return ["error" => "Ressource type not found"];
+                } 
+
+                if (empty($ressourceId)) {
+                    return ["error" => "Ressource id not found"];
+                }
+
+                if ($ressourceType == "activity") {
+                    $activity = $this->entityManager->getRepository(Activity::class)->find($ressourceId);
+                    // duplicate with new user
+                    $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
+                    $activityDuplicated = new Activity($activity->getTitle(),  
+                                                        $activity->getContent(), 
+                                                        $user, 
+                                                        $activity->isFromClassroom());        
+                                                        
+                    if ($activity->getType()) {
+                        $activityDuplicated->setType($activity->getType());
+                    }
+                    if ($activity->getSolution()) {
+                        $activityDuplicated->setSolution($activity->getSolution());
+                    }
+                    if ($activity->getTolerance()) {
+                        $activityDuplicated->setTolerance($activity->getTolerance());
+                    }
+                    if ($activity->getIsAutocorrect()) {
+                        $activityDuplicated->setIsAutocorrect($activity->getIsAutocorrect());
+                    }
+                    if ($activity->getFork() != null) {
+                        $activityDuplicated->setFork($activity->getFork()->jsonSerialize());
+                    } else {
+                        $activityDuplicated->setFork(null);
+                    }
+
+                    $this->entityManager->persist($activityDuplicated);
+                    $this->entityManager->flush();
+                    return  ['success' => true, 'id' => $activityDuplicated->getId()];
+                } else if ($ressourceType == "course") {
+                    $course = $this->entityManager->getRepository(Course::class)->find($ressourceId);
+                    $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(['course' => $course]);
+                    $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
+
+                    $courseDuplicated = new Course();
+                    if ($course->getTitle()) {
+                        $courseDuplicated->setTitle($course->getTitle());
+                    }
+                    if ($course->getDescription()) {
+                        $courseDuplicated->setDescription($course->getDescription());
+                    }
+                    if ($course->getDuration()) {
+                        $courseDuplicated->setDuration($course->getDuration());
+                    }
+                    if ($course->getViews()) {
+                        $courseDuplicated->setViews($course->getViews());
+                    }
+                    if ($course->getDifficulty()) {
+                        $courseDuplicated->setDifficulty($course->getDifficulty());
+                    }
+                    if ($course->getLang()) {
+                        $courseDuplicated->setLang($course->getLang());
+                    }
+                    if ($course->getSupport()) {
+                        $courseDuplicated->setSupport($course->getSupport());
+                    }
+                    if ($course->getImg()) {
+                        $courseDuplicated->setImg($course->getImg());
+                    }
+                    if ($course->getLink()) {
+                        $courseDuplicated->setLink($course->getLink());
+                    }
+   
+                    $courseDuplicated->setCreatedAt(new \DateTime());
+                    
+                    $courseDuplicated->setUpdatedAt(new \DateTime());
+
+
+                    if ($course->getRights()) {
+                        $courseDuplicated->setRights($course->getRights());
+                    }
+
+                    if ($course->getFork() != null) {
+                        $courseDuplicated->setFork($course->getFork()->jsonSerialize());
+                    } else {
+                        $courseDuplicated->setFork(null);
+                    }
+                    
+                    $courseDuplicated->setFolder(null);
+                    $courseDuplicated->setUser($user);
+
+                    $this->entityManager->persist($courseDuplicated);
+                    $this->entityManager->flush();
+
+                    foreach ($courseLinkActivities as $courseLinkActivity) {
+                        $courseLinkActivityDuplicated = new CourseLinkActivity($courseDuplicated, 
+                                                                                $courseLinkActivity->getActivity(), 
+                                                                                $courseLinkActivity->getIndexOrder());
+                        $this->entityManager->persist($courseLinkActivityDuplicated);
+                    }
+                    $this->entityManager->flush();
+
+                    
+                    return ['success' => true, 'id' => $course->getId()];
+                }
             }
         );
     }
