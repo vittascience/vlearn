@@ -11,6 +11,7 @@ use Classroom\Entity\Groups;
 use Database\DataBaseManager;
 use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
+use Learn\Entity\ActivityLinkTag;
 use Classroom\Entity\Applications;
 use Classroom\Entity\UsersLinkGroups;
 use Classroom\Entity\ActivityLinkUser;
