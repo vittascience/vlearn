@@ -2,6 +2,7 @@
 
 namespace Learn\Controller;
 
+use Learn\Entity\Tag;
 use User\Entity\User;
 use User\Entity\Regular;
 use Learn\Entity\Folders;
@@ -67,7 +68,18 @@ class ControllerActivity extends Controller
                      $activity->isLti = $application
                      ? $application->getIsLti()
                      : false;
+
+
+                    // get the tags of the activity
+                    $tags = $this->entityManager
+                    ->getRepository(ActivityLinkTag::class)
+                    ->findBy(['activity' => $activity]);
                     
+                    $tagsId = [];
+                    foreach($tags as $tag){
+                        array_push($tagsId, $tag->getTag()->getId());
+                    }
+                    $activity->tags = $tagsId;
                 }
                 
                 return $activitiesToSend;
