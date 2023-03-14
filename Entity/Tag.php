@@ -55,8 +55,6 @@ class Tag implements \JsonSerializable, \Utils\JsonDeserializer
         $this->name = $name;
     }
 
-
-
     public function jsonSerialize()
     {
         return [
@@ -68,17 +66,8 @@ class Tag implements \JsonSerializable, \Utils\JsonDeserializer
 
     public static function jsonDeserialize($jsonDecoded)
     {
-        $classInstance = new self("title", "content", 77);
+        $classInstance = new self();
         foreach ($jsonDecoded as $attributeName => $attributeValue) {
-            $attributeType = MetaDataMatcher::matchAttributeType(
-                self::class,
-                $attributeName
-            );
-            if ($attributeType instanceof \DateTime) {
-                $date = new \DateTime();
-                $date->setTimestamp($attributeValue);
-                $attributeValue = $date;
-            }
             $classInstance->{$attributeName} = $attributeValue;
         }
         return $classInstance;

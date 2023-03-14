@@ -3,6 +3,7 @@
 namespace Learn\Entity;
 
 use Learn\Entity\Tag;
+use Learn\Entity\Activity;
 use Utils\MetaDataMatcher;
 use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityOperatorException;
@@ -32,8 +33,8 @@ class ActivityLinkTag implements \JsonSerializable, \Utils\JsonDeserializer
 
     public function __construct(Activity $activity, Tag $tag)
     {
-        $this->setTag($tag);
         $this->setActivity($activity);
+        $this->setTag($tag);
     }
 
     /**
@@ -47,13 +48,9 @@ class ActivityLinkTag implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @param Tag $tag
      */
-    public function setTag($tag)
+    public function setTag(Tag $tag)
     {
-        if ($tag instanceof Tag) {
-            $this->tag = $tag;
-        } else {
-            throw new EntityDataIntegrityException("course attribute needs to be an instance of Tag");
-        }
+        $this->tag = $tag;
     }
 
     /**
@@ -67,21 +64,17 @@ class ActivityLinkTag implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @param Activity $activity
      */
-    public function setActivity($activity)
+    public function setActivity(Activity $activity)
     {
-        if ($activity instanceof Activity) {
-            $this->activity = $activity;
-        } else {
-            throw new EntityDataIntegrityException("activity attribute needs to be an instance of Activity");
-        }
+        $this->activity = $activity;
     }
 
 
     public function jsonSerialize()
     {
         return [
-            "tag" => $this->getTag(),
-            "activity" => $this->getActivity(),
+            "tag" => $this->getTag()->jsonSerialize(),
+            "activity" => $this->getActivity()->jsonSerialize(),
         ];
     }
 

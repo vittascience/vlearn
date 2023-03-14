@@ -70,12 +70,11 @@ class ControllerActivity extends Controller
                      ? $application->getIsLti()
                      : false;
 
-
                     // get the tags of the activity
                     $tags = $this->entityManager
                     ->getRepository(ActivityLinkTag::class)
-                    ->findBy(['activity' => $activity]);
-                    
+                    ->findBy(['activity' => $activity->id]);
+
                     if ($tags) {
                         $tagsId = [];
                         foreach($tags as $tag){
