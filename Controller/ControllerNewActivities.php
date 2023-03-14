@@ -2,6 +2,7 @@
 
 namespace Learn\Controller;
 
+use Learn\Entity\Tag;
 use User\Entity\User;
 use Learn\Entity\Course;
 use User\Entity\Regular;
@@ -9,6 +10,7 @@ use Learn\Entity\Folders;
 use Learn\Entity\Activity;
 use Classroom\Entity\Groups;
 use Learn\Controller\Controller;
+use Learn\Entity\ActivityLinkTag;
 use Classroom\Entity\Applications;
 use Learn\Entity\CourseLinkActivity;
 use Classroom\Entity\ActivityLinkUser;
@@ -104,6 +106,7 @@ class ControllerNewActivities extends Controller
                 $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
                 $autocorrect = !empty($data['autocorrect']) ? htmlspecialchars($data['autocorrect']) : null;
                 $folderId = !empty($data['folder']) ? htmlspecialchars($data['folder']) : null;
+                $tagsList = !empty($data['tags']) ? json_decode($data['tags']) : null;
 
                 $regular = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $this->user['id']]);
 
@@ -137,6 +140,12 @@ class ControllerNewActivities extends Controller
                 $exercice->setType($type);
 
                 $this->entityManager->persist($exercice);
+
+
+                if ($tagsList) {
+                    $this->manageTagsForActivities($exercice, $tagsList);
+                }
+
                 $this->entityManager->flush();
                 
                 return ['success' => true, 'id' => $exercice->getId()];
@@ -166,17 +175,21 @@ class ControllerNewActivities extends Controller
                 $id = !empty($data['id']) ? htmlspecialchars($data['id']): null;
                 if ($id) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($id);
-                    
-                    // Delete this activity from all the courses
-                    $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(['activity' => $activity]);
-                    if ($courseLinkActivity) {
-                        foreach ($courseLinkActivity as $cla) {
-                            $this->entityManager->remove($cla);
-                        }
-                    }
-
-
+                
                     if ($activity) {
+
+                        // Delete this activity from all the courses
+                        $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(['activity' => $activity]);
+                        if ($courseLinkActivity) {
+                            foreach ($courseLinkActivity as $cla) {
+                                $this->entityManager->remove($cla);
+                            }
+                        }
+
+                        // delete all tags 
+                        $this->removeTagsForActivity($activity);
+
+
                         // step 1 database cleaning
                         // get all students activity matching with the activity 
                         $studentsActivity = $this->entityManager
@@ -220,6 +233,7 @@ class ControllerNewActivities extends Controller
                         $solution = !empty($data['solution']) ? json_decode($data['solution'], true) : null;
                         $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
                         $autocorrect = !empty($data['autocorrect']) ? htmlspecialchars($data['autocorrect']) : null;
+                        $tagsList = !empty($data['tags']) ? json_decode($data['tags']) : null;
 
                         $activity->setTitle($title);
                         $activity->setType($type);
@@ -239,6 +253,10 @@ class ControllerNewActivities extends Controller
                             }
                         } else {
                             $activity->setIsAutocorrect(false);
+                        }
+
+                        if ($tagsList) {
+                            $this->manageTagsForActivities($activity, $tagsList);
                         }
 
                         $this->entityManager->persist($activity);
@@ -480,6 +498,9 @@ class ControllerNewActivities extends Controller
                     }
 
                     $this->entityManager->persist($duplicatedActivity);
+
+                    $this->copyTagsForDuplicate($activity, $duplicatedActivity);
+
                     $this->entityManager->flush();
                     
                     return  ['success' => true, 'id' => $duplicatedActivity->getId()];
@@ -520,11 +541,6 @@ class ControllerNewActivities extends Controller
                 } else {
                     return ["error" => "Activity not found"];
                 }
-
-                $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
-                $isRegular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $user]);
-
-                
 
                 return ["error" => "Activity not found"];
             },
@@ -575,6 +591,9 @@ class ControllerNewActivities extends Controller
                     }
 
                     $this->entityManager->persist($activityDuplicated);
+
+                    $this->copyTagsForDuplicate($activity, $activityDuplicated);
+
                     $this->entityManager->flush();
                     return  ['success' => true, 'id' => $activityDuplicated->getId()];
                 } else if ($ressourceType == "course") {
@@ -643,8 +662,138 @@ class ControllerNewActivities extends Controller
                     
                     return ['success' => true, 'id' => $course->getId()];
                 }
-            }
+            },
+            "create_new_tag" => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
+
+                $tagName = !empty($_POST['tag_name']) ? ($_POST['tag_name']) : null;
+                // sanitize
+                $tagName = htmlspecialchars($tagName);
+
+                if (empty($tagName)) {
+                    return ["error" => "Tag name not found"];
+                }
+
+                $tag = new Tag($tagName);
+                $this->entityManager->persist($tag);
+                $this->entityManager->flush();
+                
+                return ['success' => true, 'id' => $tag->getId(), 'name' => $tag->getName()];
+            },
+            "update_tag" => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
+
+                $tagId = !empty($_POST['tag_id']) ? ($_POST['tag_id']) : null;
+                $tagName = !empty($_POST['tag_name']) ? ($_POST['tag_name']) : null;
+                // sanitize 
+                $tagId = htmlspecialchars($tagId);
+                $tagName = htmlspecialchars($tagName);
+
+                if (empty($tagId)) {
+                    return ["error" => "Tag id not found"];
+                }
+
+                if (empty($tagName)) {
+                    return ["error" => "Tag name not found"];
+                }
+
+                $tag = $this->entityManager->getRepository(Tag::class)->find($tagId);
+                if ($tag) {
+                    $tag->setName($tagName);
+                    $this->entityManager->persist($tag);
+                    $this->entityManager->flush();
+                } else {
+                    return ["error" => "Tag not found"];
+                }
+                
+                return ['success' => true, 'id' => $tag->getId(), 'name' => $tag->getName()];
+
+                return ["error" => "Activity not found"];
+            },
+            "delete_tag" => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
+
+
+                $tagId = !empty($_POST['tag_id']) ? ($_POST['tag_id']) : null;
+                // sanitize
+                $tagId = htmlspecialchars($tagId);
+
+                if (empty($tagId)) {
+                    return ["error" => "Tag id not found"];
+                }
+
+                $tag = $this->entityManager->getRepository(Tag::class)->find($tagId);
+                if ($tag) {
+                    $this->entityManager->remove($tag);
+                    $this->entityManager->flush();
+                } else {
+                    return ["error" => "Tag not found"];
+                }
+                
+                return ['success' => true];
+
+                return ["error" => "Activity not found"];
+            }, 
+            "get_all_tags" => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
+
+                $tags = $this->entityManager->getRepository(Tag::class)->findAll();
+                $tagsArray = [];
+                foreach ($tags as $tag) {
+                    $tagsArray[] = $tag->jsonSerialize();
+                }
+                return ['success' => true, 'tags' => $tagsArray];
+            },
         );
+    }
+
+
+    public function manageTagsForActivities(Activity $activity, array $idTagList) {
+        $activityLinkTags = $this->entityManager->getRepository(ActivityLinkTag::class)->findBy(['activity' => $activity]);
+        foreach ($activityLinkTags as $activityLinkTag) {
+            if (!in_array($activityLinkTag->getTag()->getId(), $idTagList)) {
+                $this->entityManager->remove($activityLinkTag);
+            }
+        }
+        $this->entityManager->flush();
+
+        foreach ($idTagList as $idTag) {
+            $tag = $this->entityManager->getRepository(Tag::class)->find($idTag);
+            if ($tag) {
+                $activityLinkTag = new ActivityLinkTag($activity, $tag);
+                $this->entityManager->persist($activityLinkTag);
+            }
+        }
+        $this->entityManager->flush();
+    }
+
+    public function copyTagsForDuplicate(Activity $activity, Activity $activityDuplicated) {
+        $activityLinkTags = $this->entityManager->getRepository(ActivityLinkTag::class)->findBy(['activity' => $activity]);
+        foreach ($activityLinkTags as $activityLinkTag) {
+            $activityLinkTagDuplicated = new ActivityLinkTag($activityDuplicated, $activityLinkTag->getTag());
+            $this->entityManager->persist($activityLinkTagDuplicated);
+        }
+        $this->entityManager->flush();
+    }
+
+    public function removeTagsForActivity(Activity $activity) {
+        $activityLinkTags = $this->entityManager->getRepository(ActivityLinkTag::class)->findBy(['activity' => $activity]);
+        foreach ($activityLinkTags as $activityLinkTag) {
+            $this->entityManager->remove($activityLinkTag);
+        }
+        $this->entityManager->flush();
     }
 
     private function manageFreeAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
