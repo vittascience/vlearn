@@ -76,11 +76,13 @@ class ControllerActivity extends Controller
                     ->getRepository(ActivityLinkTag::class)
                     ->findBy(['activity' => $activity]);
                     
-                    $tagsId = [];
-                    foreach($tags as $tag){
-                        array_push($tagsId, $tag->getTag()->getId());
+                    if ($tags) {
+                        $tagsId = [];
+                        foreach($tags as $tag){
+                            array_push($tagsId, $tag->getTag()->getId());
+                        }
+                        $activity->tags = $tagsId;
                     }
-                    $activity->tags = $tagsId;
                 }
                 
                 return $activitiesToSend;
