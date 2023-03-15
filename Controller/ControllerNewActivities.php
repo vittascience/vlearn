@@ -106,7 +106,7 @@ class ControllerNewActivities extends Controller
                 $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
                 $autocorrect = !empty($data['autocorrect']) ? htmlspecialchars($data['autocorrect']) : null;
                 $folderId = !empty($data['folder']) ? htmlspecialchars($data['folder']) : null;
-                $tagsList = !empty($data['tags']) ? json_decode($data['tags']) : null;
+                $tagsList = !empty($data['tags']) ? $data['tags'] : null;
 
                 $regular = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $this->user['id']]);
 
@@ -142,9 +142,8 @@ class ControllerNewActivities extends Controller
                 $this->entityManager->persist($exercice);
 
 
-                if ($tagsList) {
-                    $this->manageTagsForActivities($exercice, $tagsList);
-                }
+                $this->manageTagsForActivities($exercice, $tagsList);
+                
 
                 $this->entityManager->flush();
                 
@@ -233,7 +232,7 @@ class ControllerNewActivities extends Controller
                         $solution = !empty($data['solution']) ? json_decode($data['solution'], true) : null;
                         $tolerance = !empty($data['tolerance']) ? htmlspecialchars($data['tolerance']) : null;
                         $autocorrect = !empty($data['autocorrect']) ? htmlspecialchars($data['autocorrect']) : null;
-                        $tagsList = !empty($data['tags']) ? json_decode($data['tags']) : null;
+                        $tagsList = !empty($data['tags']) ? $data['tags'] : null;
 
                         $activity->setTitle($title);
                         $activity->setType($type);
@@ -255,9 +254,8 @@ class ControllerNewActivities extends Controller
                             $activity->setIsAutocorrect(false);
                         }
 
-                        if ($tagsList) {
-                            $this->manageTagsForActivities($activity, $tagsList);
-                        }
+                        $this->manageTagsForActivities($activity, $tagsList);
+                        
 
                         $this->entityManager->persist($activity);
                         $this->entityManager->flush();
@@ -760,18 +758,30 @@ class ControllerNewActivities extends Controller
     }
 
 
-    public function manageTagsForActivities(Activity $activity, array $idTagList) {
+    public function manageTagsForActivities(Activity $activity, ?array $idTagList) {
         $activityLinkTags = $this->entityManager->getRepository(ActivityLinkTag::class)->findBy(['activity' => $activity]);
         foreach ($activityLinkTags as $activityLinkTag) {
+            if (empty($idTagList)) {
+                $this->entityManager->remove($activityLinkTag);
+                continue;
+            }
             if (!in_array($activityLinkTag->getTag()->getId(), $idTagList)) {
                 $this->entityManager->remove($activityLinkTag);
             }
         }
         $this->entityManager->flush();
 
+        if (empty($idTagList)) {
+            return;
+        }
+        
         foreach ($idTagList as $idTag) {
             $tag = $this->entityManager->getRepository(Tag::class)->find($idTag);
             if ($tag) {
+                $activityLinkTag = $this->entityManager->getRepository(ActivityLinkTag::class)->findOneBy(['activity' => $activity, 'tag' => $tag]);
+                if ($activityLinkTag) {
+                    continue;
+                }
                 $activityLinkTag = new ActivityLinkTag($activity, $tag);
                 $this->entityManager->persist($activityLinkTag);
             }

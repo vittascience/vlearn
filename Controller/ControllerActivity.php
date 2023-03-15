@@ -109,6 +109,19 @@ class ControllerActivity extends Controller
                 $activity = $this->entityManager->getRepository(Activity::class)
                     ->find($activityId);
                 $activityToSend = json_decode(json_encode($activity));
+
+                // get the tags of the activity
+                $tags = $this->entityManager
+                ->getRepository(ActivityLinkTag::class)
+                ->findBy(['activity' => $activity->getId()]);
+
+                if ($tags) {
+                    $tagsId = [];
+                    foreach($tags as $tag){
+                        array_push($tagsId, $tag->getTag()->getId());
+                    }
+                    $activityToSend->tags = $tagsId;
+                }
                 
                 // a classroomLink is provided to know if the activity is retro attributed to all new students
                 if(!empty($classroomLink)){
