@@ -2,6 +2,7 @@
 
 namespace Learn\Controller;
 
+use Learn\Entity\Tag;
 use User\Entity\User;
 use User\Entity\Regular;
 use Learn\Entity\Folders;
@@ -10,6 +11,7 @@ use Classroom\Entity\Groups;
 use Database\DataBaseManager;
 use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
+use Learn\Entity\ActivityLinkTag;
 use Classroom\Entity\Applications;
 use Classroom\Entity\UsersLinkGroups;
 use Classroom\Entity\ActivityLinkUser;
@@ -67,7 +69,19 @@ class ControllerActivity extends Controller
                      $activity->isLti = $application
                      ? $application->getIsLti()
                      : false;
-                    
+
+                    // get the tags of the activity
+                    $tags = $this->entityManager
+                    ->getRepository(ActivityLinkTag::class)
+                    ->findBy(['activity' => $activity->id]);
+
+                    if ($tags) {
+                        $tagsId = [];
+                        foreach($tags as $tag){
+                            array_push($tagsId, $tag->getTag()->getId());
+                        }
+                        $activity->tags = $tagsId;
+                    }
                 }
                 
                 return $activitiesToSend;
@@ -95,6 +109,19 @@ class ControllerActivity extends Controller
                 $activity = $this->entityManager->getRepository(Activity::class)
                     ->find($activityId);
                 $activityToSend = json_decode(json_encode($activity));
+
+                // get the tags of the activity
+                $tags = $this->entityManager
+                ->getRepository(ActivityLinkTag::class)
+                ->findBy(['activity' => $activity->getId()]);
+
+                if ($tags) {
+                    $tagsId = [];
+                    foreach($tags as $tag){
+                        array_push($tagsId, $tag->getTag()->getId());
+                    }
+                    $activityToSend->tags = $tagsId;
+                }
                 
                 // a classroomLink is provided to know if the activity is retro attributed to all new students
                 if(!empty($classroomLink)){
