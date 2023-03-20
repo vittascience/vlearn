@@ -411,14 +411,26 @@ class ControllerCourse extends Controller
                     $this->entityManager->persist($lesson);
                 }
 
-                //add linked tutorials
+                $this->entityManager->flush();
+
                 foreach ($linked as $tuto) {
                     $tutorial2 = $this->entityManager->getRepository('Learn\Entity\Course')->find($tuto);
-                    $related = new CourseLinkCourse($databaseCourse, $tutorial2);
-                    $this->entityManager->persist($related);
+                    $linkedTutoExists = $this->entityManager
+                        ->getRepository('Learn\Entity\CourseLinkCourse')
+                        ->findOneBy(array(
+                            'tutorial1'=> $databaseCourse->getId(),
+                            'tutorial2'=> $tutorial2->getId()
+                        ));
+                    
+                    
+                    if(!$linkedTutoExists){
+                        $related = new CourseLinkCourse($databaseCourse, $tutorial2);
+                        $this->entityManager->persist($related);
+                        $this->entityManager->flush();
+                    }                    
+                    
                 }
 
-                $this->entityManager->flush();
                 return $databaseCourse;
             },
             'delete' => function ($data) {
