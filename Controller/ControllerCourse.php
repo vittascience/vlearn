@@ -144,6 +144,7 @@ class ControllerCourse extends Controller
                     $tutorialParts = json_decode($_POST['tutorialParts']);
                     $chapters = json_decode($_POST['chapters']);
                     $linked = json_decode($_POST['linkedTuto']);
+                   
                     unset($_POST['linkedTuto']);
                     unset($_POST['tutorialParts']);
                     unset($_POST['chapters']);
@@ -200,12 +201,6 @@ class ControllerCourse extends Controller
                         $this->entityManager->persist($lesson);
                     }
 
-                    foreach ($linked as $tuto) {
-                        $tutorial2 = $this->entityManager->getRepository('Learn\Entity\Course')->find($tuto);
-                        $related = new CourseLinkCourse($tutorial, $tutorial2);
-                        $this->entityManager->persist($related);
-                    }
-
                     $this->entityManager->persist($tutorial);
                     //add parts to the tutorial
                     for ($index = 0; $index < count($tutorialParts); $index++) {
@@ -216,6 +211,26 @@ class ControllerCourse extends Controller
                         $this->entityManager->persist($courseLinkActivity);
                     }
                     $this->entityManager->flush();
+
+                    foreach ($linked as $tuto) {
+                        $tutorial2 = $this->entityManager->getRepository('Learn\Entity\Course')->find($tuto);
+                        $linkedTutoExists = $this->entityManager
+                            ->getRepository('Learn\Entity\CourseLinkCourse')
+                            ->findOneBy(array(
+                                'tutorial1'=> $tutorial->getId(),
+                                'tutorial2'=> $tutorial2->getId()
+                            ));
+                        
+                        
+                        if(!$linkedTutoExists){
+                            $related = new CourseLinkCourse($tutorial, $tutorial2);
+                            $this->entityManager->persist($related);
+                            $this->entityManager->flush();
+                        }                    
+                        
+                    }
+
+
                     return $tutorial;
                 } catch (\Error $error) {
                     echo ($error->getMessage());
