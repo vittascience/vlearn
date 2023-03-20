@@ -476,12 +476,17 @@ class ControllerCourse extends Controller
                     $this->entityManager->remove($val);
                 }
 
-                // remove entries from "learn_tutorials_link_tutorials" table
-                $linkedCourses = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(array( 'tutorial1' => $databaseCourse));
-                foreach ($linkedCourses as $linkedCourse) {
-                    $this->entityManager->remove($linkedCourse);
-                    $this->entityManager->flush();
-                }
+                 // remove entries from "learn_tutorials_link_tutorials" table
+                 $linkedCoursesAsMain = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(array( 'tutorial1' => $databaseCourse));
+                 foreach ($linkedCoursesAsMain as $linkedCourseAsMain) {
+                     $this->entityManager->remove($linkedCourseAsMain);
+                     $this->entityManager->flush();
+                 }
+                 $linkedCoursesAsRelated = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(array( 'tutorial2' => $databaseCourse));
+                 foreach ($linkedCoursesAsRelated as $linkedCourseAsRelated) {
+                     $this->entityManager->remove($linkedCourseAsRelated);
+                     $this->entityManager->flush();
+                 }
 
                 // flush anything that as not been saved in db
                 $this->entityManager->flush();
