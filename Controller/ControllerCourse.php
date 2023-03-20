@@ -213,25 +213,6 @@ class ControllerCourse extends Controller
                     $this->entityManager->flush();
 
                     $this->saveRelatedTutorialsIfNeeded($tutorial, $linked);
-                    // foreach ($linked as $tuto) {
-                    //     $tutorial2Exists = $this->entityManager->getRepository('Learn\Entity\Course')->find($tuto);                  
-                        
-                    //     if($tutorial2Exists){
-                    //         $linkedTutoRelationExists = $this->entityManager
-                    //             ->getRepository('Learn\Entity\CourseLinkCourse')
-                    //             ->findOneBy(array(
-                    //                 'tutorial1' => $tutorial->getId(),
-                    //                 'tutorial2' => $tutorial2Exists->getId()
-                    //             ));
-    
-                    //         if(!$linkedTutoRelationExists){
-                    //             $related = new CourseLinkCourse($tutorial, $tutorial2Exists);
-                    //             $this->entityManager->persist($related);
-                    //             $this->entityManager->flush();
-                    //         }   
-                    //     }
-                    // }
-
 
                     return $tutorial;
                 } catch (\Error $error) {
@@ -416,24 +397,6 @@ class ControllerCourse extends Controller
                 $this->entityManager->flush();
 
                 $this->saveRelatedTutorialsIfNeeded($databaseCourse, $linked);
-                // foreach ($linked as $tuto) {
-                //     $tutorial2Exists = $this->entityManager->getRepository('Learn\Entity\Course')->find($tuto);                  
-                    
-                //     if($tutorial2Exists){
-                //         $linkedTutoRelationExists = $this->entityManager
-                //             ->getRepository('Learn\Entity\CourseLinkCourse')
-                //             ->findOneBy(array(
-                //                 'tutorial1' => $databaseCourse->getId(),
-                //                 'tutorial2' => $tutorial2Exists->getId()
-                //             ));
-
-                //         if(!$linkedTutoRelationExists){
-                //             $related = new CourseLinkCourse($databaseCourse, $tutorial2Exists);
-                //             $this->entityManager->persist($related);
-                //             $this->entityManager->flush();
-                //         }   
-                //     }
-                // }
 
                 return $databaseCourse;
             },
