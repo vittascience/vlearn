@@ -135,20 +135,28 @@ class ControllerCourse extends Controller
                 try {
                     // bind incoming tutorial data
                     $incomingTutorial = $this->bindIncomingTutorialData($_POST);
+                    $userId = intval($_SESSION['id']);
 
                     // check for errors and return them if any
                     $tutorialErrors = $this->validateIncomingTutorialData($incomingTutorial);
                     if (!empty($tutorialErrors)) return array('errors' => $tutorialErrors);
 
+                    // bind and sanitize the remaining data to be inserted in db
+                    $linked = [];
+                    if(!empty($_POST['linkedTuto'])){
+                        foreach(json_decode($_POST['linkedTuto']) as $incomingLinkedTuto){
+                            array_push($linked, intval($incomingLinkedTuto));
+                        }
+                    }
+
+                    $chapters = [];
+                    if(!empty($_POST['chapters'])){
+                        foreach(json_decode($_POST['chapters']) as $incomingchapter){
+                            array_push($chapters, intval($incomingchapter));
+                        }
+                    }
 
                     $tutorialParts = json_decode($_POST['tutorialParts']);
-                    $chapters = json_decode($_POST['chapters']);
-                    $linked = json_decode($_POST['linkedTuto']);
-                   
-                    unset($_POST['linkedTuto']);
-                    unset($_POST['tutorialParts']);
-                    unset($_POST['chapters']);
-
                     // translate first $tutorialPart content from $name and url to full bbcode
                     for ($i = 0; $i < count($tutorialParts); $i++) {
 
@@ -184,12 +192,17 @@ class ControllerCourse extends Controller
                         }
                     }
 
+                     // unset bound data
+                     unset($_POST['linkedTuto']);
+                     unset($_POST['tutorialParts']);
+                     unset($_POST['chapters']);
+
                     $tutorial = Course::jsonDeserialize($incomingTutorial);
 
                     if (isset($_FILES['imgFile'])) {
                         $tutorial->setImg($_FILES['imgFile']);
                     }
-                    $user = $this->entityManager->getRepository('User\Entity\User')->find($this->user['id']);
+                    $user = $this->entityManager->getRepository('User\Entity\User')->find($userId);
                     $tutorial->setUser($user);
                     $tutorial->setCreatedAt();
                     //add lessons to the tutorial
