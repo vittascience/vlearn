@@ -26,6 +26,14 @@ class Tag implements \JsonSerializable, \Utils\JsonDeserializer
     private $name;
 
 
+    /**
+     * @ORM\ManyToOne(targetEntity="Learn\Entity\Tag")
+     * @ORM\JoinColumn(name="parent_tag", nullable=true, referencedColumnName="id", onDelete="CASCADE")
+     * @var Tag
+     */
+    private $parentTag;
+
+
     public function __construct($name)
     {
         $this->name = $name;
@@ -50,16 +58,35 @@ class Tag implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @param string $name
      */
-    public function setName($name)
+    public function setName(String $name)
     {
         $this->name = $name;
     }
+
+    /**
+     * @return Tag
+     */
+    public function getParentTag()
+    {
+        return $this->parentTag;
+    }
+
+    /**
+     * @param Tag $parentTag
+     */
+    public function setParentTag(?Tag $parentTag)
+    {
+        $this->parentTag = $parentTag;
+    }
+
+
 
     public function jsonSerialize()
     {
         return [
             'id' => $this->getId(),
             'name' => $this->getName(),
+            'parentTag' => $this->getParentTag()
         ];
     }
 
