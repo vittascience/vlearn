@@ -205,13 +205,16 @@ class ControllerCourse extends Controller
                     $user = $this->entityManager->getRepository('User\Entity\User')->find($userId);
                     $tutorial->setUser($user);
                     $tutorial->setCreatedAt();
+                    
                     //add lessons to the tutorial
-                    foreach ($chapters as $chapter) {
-                        $chapter = $this->entityManager->getRepository('Learn\Entity\Chapter')->find($chapter);
-                        $lesson = new Lesson();
-                        $lesson->setCourse($tutorial);
-                        $lesson->setChapter($chapter);
-                        $this->entityManager->persist($lesson);
+                    foreach ($chapters as $chapterId) {
+                        $chapterFound = $this->entityManager->getRepository('Learn\Entity\Chapter')->find($chapterId);
+                        if($chapterFound){
+                            $lesson = new Lesson();
+                            $lesson->setCourse($tutorial);
+                            $lesson->setChapter($chapterFound);
+                            $this->entityManager->persist($lesson);
+                        }
                     }
 
                     $this->entityManager->persist($tutorial);
