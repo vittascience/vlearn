@@ -114,6 +114,8 @@ class ControllerComment extends Controller
                 return  $arrayResult;
             },
             'get_multiple_users' => function () {
+                // @Naser disabled this method as it generate errors
+                // @ToBeUpdated
                 $users = $this->entityManager->getRepository('User\Entity\User')->getMultipleUsers($_GET['ids']);
                 $arrayResult = array();
                 foreach ($users as $user) {
