@@ -209,11 +209,21 @@ class ControllerCourse extends Controller
                     //add lessons to the tutorial
                     foreach ($chapters as $chapterId) {
                         $chapterFound = $this->entityManager->getRepository('Learn\Entity\Chapter')->find($chapterId);
+                        
                         if($chapterFound){
-                            $lesson = new Lesson();
-                            $lesson->setCourse($tutorial);
-                            $lesson->setChapter($chapterFound);
-                            $this->entityManager->persist($lesson);
+                            $lessonExists = $this->entityManager->getRepository(Lesson::class)
+                                ->findOneBy(array(
+                                    'chapter' => $chapterFound,
+                                    'tutorial' => $tutorial
+                                ));
+                            
+                            if(!$lessonExists){
+                                $lesson = new Lesson();
+                                $lesson->setCourse($tutorial);
+                                $lesson->setChapter($chapterFound);
+                                $this->entityManager->persist($lesson);
+                                $this->entityManager->flush();
+                            }
                         }
                     }
 
@@ -405,14 +415,20 @@ class ControllerCourse extends Controller
                 foreach ($chapters as $chapterId) {
                     $chapterFound = $this->entityManager->getRepository('Learn\Entity\Chapter')->find($chapterId);
                     if($chapterFound){
-                        $lesson = new Lesson();
-                        $lesson->setCourse($databaseCourse);
-                        $lesson->setChapter($chapterFound);
-                        $this->entityManager->persist($lesson);
+                        $lessonExists = $this->entityManager->getRepository(Lesson::class)->findOneBy(array(
+                            'chapter'=> $chapterFound,
+                            'tutorial'=> $databaseCourse
+                        ));
+                        
+                        if(!$lessonExists){
+                            $lesson = new Lesson();
+                            $lesson->setCourse($databaseCourse);
+                            $lesson->setChapter($chapterFound);
+                            $this->entityManager->persist($lesson);
+                            $this->entityManager->flush();
+                        }
                     }
                 }
-
-                $this->entityManager->flush();
 
                 $this->saveRelatedTutorialsIfNeeded($databaseCourse, $linked);
 
