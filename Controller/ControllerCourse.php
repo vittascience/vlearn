@@ -238,7 +238,7 @@ class ControllerCourse extends Controller
                 }
                 
                 // tutorial already viewed by the user, do nothing
-                if ($_SESSION['views'][$tutorialId])  return false;
+                if (isset($_SESSION['views'][$tutorialId]))  return false;
 
                 // tutorial not already viewed by the user, increment view count in db
                 $_SESSION['views'][$tutorialId] = 1;
