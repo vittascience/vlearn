@@ -23,6 +23,7 @@ class RepositoryCourse extends EntityRepository
             ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
             ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
             ->andWhere('c.rights=1 OR c.rights=2')
+            ->andWhere('a.isFromClassroom=0')
             ->andWhere("
                 c.title LIKE :search OR c.description LIKE :search 
                 OR a.title LIKE :search OR a.content LIKE :search
@@ -103,6 +104,7 @@ class RepositoryCourse extends EntityRepository
             ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
             ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
             ->andWhere('c.rights=1 OR c.rights=2')
+            ->andWhere('a.isFromClassroom=0')
             ->andWhere("
                 c.title LIKE :search OR c.description LIKE :search 
                 OR a.title LIKE :search OR a.content LIKE :search
@@ -158,7 +160,10 @@ class RepositoryCourse extends EntityRepository
 
         $results = $queryBuilder->select('c')
             ->from(Course::class, 'c')
-            ->where('c.rights=1 OR c.rights=2')
+            ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
+            ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
+            ->andWhere('c.rights=1 OR c.rights=2')
+            ->andWhere('a.isFromClassroom=0')
             ->orderBy("c.$doctrineProperty", "$orderByValue")
             ->getQuery()
             ->getResult();
