@@ -15,7 +15,7 @@ class RepositoryCourse extends EntityRepository
     const UNLISTED_RIGHTS = 3;
     // Add dql stuff.
 
-    public function getByFilter($options, $search, $page = 1)
+    public function getByFilter($options, $search,$sort, $page = 1)
     {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
@@ -34,12 +34,19 @@ class RepositoryCourse extends EntityRepository
                 $queryBuilder->andWhere("c.$key IN $option");
             }
         }
+        $sortField = "createdAt";
+        $sortDirection = "DESC";
+        if(!empty($sort)){
+            list($incomingSortField, $incomingSortDirection) = explode('-', $sort);
+            $sortField = !empty($incomingSortField) ? $incomingSortField : "createdAt";
+            $sortDirection = !empty($incomingSortDirection) ? strtoupper($incomingSortDirection) : "DESC";
+        } 
 
         $queryBuilder->setParameter('search',"%$search%");
         $results = $queryBuilder->setFirstResult(($page - 1) * self::RESULT_PER_PAGE)
                                 ->setMaxResults(self::RESULT_PER_PAGE)
                                 ->groupBy('c.id')
-                                ->orderBy("c.createdAt", 'DESC')
+                                ->orderBy("c.$sortField", $sortDirection)
                                 ->getQuery()
                                 ->getResult();
         return $results;
