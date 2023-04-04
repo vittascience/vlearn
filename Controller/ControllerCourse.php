@@ -82,7 +82,7 @@ class ControllerCourse extends Controller
                                 $limit
                             );
             },
-            'get_by_filter' => function ($data) {
+            'get_by_filter' => function () {
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
@@ -92,12 +92,18 @@ class ControllerCourse extends Controller
                             : '';
                 unset($_POST['filter']['search']);
 
+                $sort = !empty($_POST['filter']['sort']) 
+                            ? htmlspecialchars(strip_tags(trim($_POST['filter']['sort'][0]))) 
+                            : '';
+                unset($_POST['filter']['sort']);
+
+
                 // bind and/or sanitize other incoming params
                 $page = !empty($_POST['page']) ? intval($_POST['page']) : 1;
                 $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
                 
                 // fetch data from db 
-                $results = $this->entityManager->getRepository('Learn\Entity\Course')->getByFilter($sanitizedFilters, $search, $page);
+                $results = $this->entityManager->getRepository('Learn\Entity\Course')->getByFilter($sanitizedFilters, $search,$sort, $page);
 
                 // prepare and return data
                 $arrayResult = [];
