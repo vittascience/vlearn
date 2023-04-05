@@ -198,10 +198,13 @@ class ControllerCourse extends Controller
                         }
                     }
 
+                    $forkedFromResourceId = !empty($_POST['forkedFromResourceId']) ? intval($_POST['forkedFromResourceId']) : null;
+
                      // unset bound data
                      unset($_POST['linkedTuto']);
                      unset($_POST['tutorialParts']);
                      unset($_POST['chapters']);
+                     unset($_POST['forkedFromResourceId']);
 
                     $tutorial = Course::jsonDeserialize($incomingTutorial);
 
@@ -212,7 +215,12 @@ class ControllerCourse extends Controller
                     $tutorial->setUser($user);
                     $tutorial->setCreatedAt();
 
+                    if ($forkedFromResourceId) {
+                        $forkedTutorialFound = $this->entityManager->getRepository(Course::class)->find($forkedFromResourceId);
+                        if ($forkedTutorialFound) $tutorial->setFork($forkedTutorialFound);
+                    }
                     $this->entityManager->persist($tutorial);
+
                     //add parts to the tutorial
                     for ($index = 0; $index < count($tutorialParts); $index++) {
                         $activity = new Activity($tutorialParts[$index]->title, $tutorialParts[$index]->content);
@@ -221,6 +229,7 @@ class ControllerCourse extends Controller
                         $courseLinkActivity = new CourseLinkActivity($tutorial, $activity, $index);
                         $this->entityManager->persist($courseLinkActivity);
                     }
+                    
                     $this->entityManager->flush();
 
                     $this->saveLessonsIfNeeded($tutorial, $chapters);
