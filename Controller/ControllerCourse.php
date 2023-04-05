@@ -34,6 +34,11 @@ class ControllerCourse extends Controller
                     ->getRepository('Learn\Entity\Course')
                     ->find($tutorialId);
 
+                $courseForksCount = $this->entityManager->getRepository(Course::class)->getCourseForksCount($tutorialId);
+
+                $tutorialToReturn = json_decode(json_encode($tutorial));
+                $tutorialToReturn->forksCount = intval($courseForksCount);
+                
                 $activities = $this->entityManager
                     ->getRepository('Learn\Entity\CourseLinkActivity')
                     ->getActivitiesOrdered($tutorialId);
@@ -46,7 +51,7 @@ class ControllerCourse extends Controller
 
                 // prepare data to return
                 $tutorial = array(
-                    "tutorial" => $tutorial,
+                    "tutorial" => $tutorialToReturn,
                     "activities" => $arrayActivities
                 );
                 return $tutorial;
@@ -229,7 +234,7 @@ class ControllerCourse extends Controller
                         $courseLinkActivity = new CourseLinkActivity($tutorial, $activity, $index);
                         $this->entityManager->persist($courseLinkActivity);
                     }
-                    
+
                     $this->entityManager->flush();
 
                     $this->saveLessonsIfNeeded($tutorial, $chapters);
