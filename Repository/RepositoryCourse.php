@@ -95,15 +95,23 @@ class RepositoryCourse extends EntityRepository
         return $results;
     }
 
-    public function getCourseForksCount($tutorialId){
+    public function getCourseForksCount($tutorialId, $totalCourseForksCount = 0){
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
-        $courseForksCount = $queryBuilder->select('COUNT(c.id)')
+        $courseForks = $queryBuilder->select('c.id')
             ->from(Course::class,'c')
             ->andWhere('c.fork = :tutorialId')
             ->setParameter('tutorialId',$tutorialId)
             ->getQuery()
-            ->getSingleScalarResult();
-        return $courseForksCount;
+            ->getResult();
+
+        $totalCourseForksCount += count($courseForks);
+       
+        if(count($courseForks) > 0){
+            foreach ($courseForks as $courseFork) {
+                return $this->getCourseForksCount($courseFork['id'],$totalCourseForksCount);
+            }
+        }
+        return $totalCourseForksCount;
     }
 }
 
