@@ -7,6 +7,7 @@ use Doctrine\ORM\EntityRepository;
 use Learn\Entity\Course;
 use Learn\Entity\Activity;
 use Learn\Entity\CourseLinkActivity;
+use User\Entity\User;
 
 class RepositoryCourse extends EntityRepository
 {
@@ -15,7 +16,7 @@ class RepositoryCourse extends EntityRepository
     const UNLISTED_RIGHTS = 3;
     // Add dql stuff.
 
-    public function getByFilter($options, $search,$sort, $page = 1)
+    public function getByFilter($options, $search, $sort, $page = 1)
     {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
@@ -29,30 +30,30 @@ class RepositoryCourse extends EntityRepository
                 OR a.title LIKE :search OR a.content LIKE :search
             ");
 
-        if($options){
+        if ($options) {
             foreach ($options as $key => $option) {
                 $queryBuilder->andWhere("c.$key IN $option");
             }
         }
         $sortField = "createdAt";
         $sortDirection = "DESC";
-        if(!empty($sort)){
+        if (!empty($sort)) {
             list($incomingSortField, $incomingSortDirection) = explode('-', $sort);
             $sortField = !empty($incomingSortField) ? $incomingSortField : "createdAt";
             $sortDirection = !empty($incomingSortDirection) ? strtoupper($incomingSortDirection) : "DESC";
-        } 
+        }
 
-        $queryBuilder->setParameter('search',"%$search%");
+        $queryBuilder->setParameter('search', "%$search%");
         $results = $queryBuilder->setFirstResult(($page - 1) * self::RESULT_PER_PAGE)
-                                ->setMaxResults(self::RESULT_PER_PAGE)
-                                ->groupBy('c.id')
-                                ->orderBy("c.$sortField", $sortDirection)
-                                ->getQuery()
-                                ->getResult();
+            ->setMaxResults(self::RESULT_PER_PAGE)
+            ->groupBy('c.id')
+            ->orderBy("c.$sortField", $sortDirection)
+            ->getQuery()
+            ->getResult();
         return $results;
     }
 
-    public function countByFilter($options,$search)
+    public function countByFilter($options, $search)
     {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
@@ -66,15 +67,15 @@ class RepositoryCourse extends EntityRepository
                 OR a.title LIKE :search OR a.content LIKE :search
             ");
 
-        if($options){
+        if ($options) {
             foreach ($options as $key => $option) {
                 $queryBuilder->andWhere("c.$key IN $option");
             }
         }
-        $queryBuilder->setParameter('search',"%$search%");
+        $queryBuilder->setParameter('search', "%$search%");
         $results = $queryBuilder->groupBy('c.id')
-                                ->getQuery()
-                                ->getSingleScalarResult();
+            ->getQuery()
+            ->getSingleScalarResult();
 
         return intval($results);
     }
@@ -95,23 +96,76 @@ class RepositoryCourse extends EntityRepository
         return $results;
     }
 
-    public function getCourseForksCount($tutorialId, $totalCourseForksCount = 0){
-        $queryBuilder = $this->getEntityManager()->createQueryBuilder();
-        $courseForks = $queryBuilder->select('c.id')
-            ->from(Course::class,'c')
+    public function getCourseForksCountAndTree($tutorialId)
+    {
+        $totalCourseForksCount = 0;
+        $tree = array();
+        $qb = $this->getEntityManager()->createQueryBuilder();
+
+        $course = $qb->select("
+                c.id,c.title,
+                CONCAT(u.firstname, ' ', u.surname) AS author,
+                u.picture AS author_img
+            ")
+            ->from(Course::class, 'c')
+            ->leftJoin(User::class, 'u', 'WITH', 'c.user=u.id')
+            ->andWhere('c.id = :tutorialId')
+            ->setParameter('tutorialId', $tutorialId)
+            ->getQuery()
+            ->getSingleResult();
+
+        $courseToReturn = array(
+            'id' => $course['id'],
+            'title' => $course['title'],
+            'author' => $course['author'],
+            'author_img' => $course['author_img'],
+            'children' => []
+        );
+
+        $courseForks = $this->getCourseForks($tutorialId);
+        $totalCourseForksCount += count($courseForks);
+
+        if (count($courseForks) > 0) {
+            $courseForksToReturn = [];
+            foreach ($courseForks as $courseFork) {
+
+                $children = !empty($this->getCourseForks($courseFork['id']))
+                    ? $this->getCourseForks($courseFork['id'])
+                    : [];
+                $totalCourseForksCount += count($children);
+                $courseForkToReturn = array(
+                    'id' => $courseFork['id'],
+                    'title' => $courseFork['title'],
+                    'author' => $courseFork['author'],
+                    'author_img' => $courseFork['author_img'],
+                    'children' => $children
+                );
+                array_push($courseForksToReturn, $courseForkToReturn);
+            }
+            $courseToReturn['children'] = $courseForksToReturn;
+        }
+        $tree[] = $courseToReturn;
+        return array(
+            'forksCount' => $totalCourseForksCount,
+            'tree' => $tree
+        );
+    }
+
+    public function getCourseForks($tutorialId)
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $courseForks = $qb->select("
+                c.id,c.title,
+                CONCAT(u.firstname, ' ', u.surname) AS author,
+                u.picture AS author_img
+            ")
+            ->from(Course::class, 'c')
+            ->leftJoin(User::class, 'u', 'WITH', 'c.user=u.id')
             ->andWhere('c.fork = :tutorialId')
-            ->setParameter('tutorialId',$tutorialId)
+            ->setParameter('tutorialId', $tutorialId)
             ->getQuery()
             ->getResult();
-
-        $totalCourseForksCount += count($courseForks);
-       
-        if(count($courseForks) > 0){
-            foreach ($courseForks as $courseFork) {
-                return $this->getCourseForksCount($courseFork['id'],$totalCourseForksCount);
-            }
-        }
-        return $totalCourseForksCount;
+        return $courseForks;
     }
 }
 

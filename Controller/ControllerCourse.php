@@ -34,7 +34,7 @@ class ControllerCourse extends Controller
                     ->getRepository('Learn\Entity\Course')
                     ->find($tutorialId);
 
-                $courseForksCount = $this->entityManager->getRepository(Course::class)->getCourseForksCount($tutorialId);
+                    $courseForksCount = $this->entityManager->getRepository(Course::class)->getCourseForksCountAndTree($tutorialId)['forksCount'];
 
                 $tutorialToReturn = json_decode(json_encode($tutorial));
                 $tutorialToReturn->forksCount = intval($courseForksCount);
