@@ -14,6 +14,7 @@ class RepositoryCourse extends EntityRepository
     const RESULT_PER_PAGE = 25;
     const PRIVATE_RIGHTS = 0;
     const UNLISTED_RIGHTS = 3;
+    private $totalCourseForksCount = 0;
     // Add dql stuff.
 
     public function getByFilter($options, $search, $sort, $page = 1)
@@ -98,74 +99,53 @@ class RepositoryCourse extends EntityRepository
 
     public function getCourseForksCountAndTree($tutorialId)
     {
-        $totalCourseForksCount = 0;
-        $tree = array();
-        $qb = $this->getEntityManager()->createQueryBuilder();
-
-        $course = $qb->select("
-                c.id,c.title,
-                CONCAT(u.firstname, ' ', u.surname) AS author,
-                u.picture AS author_img
-            ")
-            ->from(Course::class, 'c')
-            ->leftJoin(User::class, 'u', 'WITH', 'c.user=u.id')
-            ->andWhere('c.id = :tutorialId')
-            ->setParameter('tutorialId', $tutorialId)
-            ->getQuery()
-            ->getSingleResult();
-
-        $courseToReturn = array(
-            'id' => $course['id'],
-            'title' => $course['title'],
-            'author' => $course['author'],
-            'author_img' => $course['author_img'],
-            'children' => []
-        );
-
-        $courseForks = $this->getCourseForks($tutorialId);
-        $totalCourseForksCount += count($courseForks);
-
-        if (count($courseForks) > 0) {
-            $courseForksToReturn = [];
-            foreach ($courseForks as $courseFork) {
-
-                $children = !empty($this->getCourseForks($courseFork['id']))
-                    ? $this->getCourseForks($courseFork['id'])
-                    : [];
-                $totalCourseForksCount += count($children);
-                $courseForkToReturn = array(
-                    'id' => $courseFork['id'],
-                    'title' => $courseFork['title'],
-                    'author' => $courseFork['author'],
-                    'author_img' => $courseFork['author_img'],
-                    'children' => $children
-                );
-                array_push($courseForksToReturn, $courseForkToReturn);
-            }
-            $courseToReturn['children'] = $courseForksToReturn;
-        }
-        $tree[] = $courseToReturn;
+        $tree = $this->buildChildren($this->getCourseForks($tutorialId));
         return array(
-            'forksCount' => $totalCourseForksCount,
+            'forksCount' => $this->totalCourseForksCount,
             'tree' => $tree
         );
+    }
+
+    public function buildChildren($children)
+    {
+        if (count($children) > 0) {
+            $this->totalCourseForksCount  += count($children);
+            for ($i = 0; $i < count($children); $i++) {
+                if ($this->getCourseForks($children[$i]['id'])) {
+                    $children[$i]['children'] = $this->buildChildren($this->getCourseForks($children[$i]['id']));
+                }
+            }
+        }
+        return $children;
     }
 
     public function getCourseForks($tutorialId)
     {
         $qb = $this->getEntityManager()->createQueryBuilder();
         $courseForks = $qb->select("
-                c.id,c.title,
-                CONCAT(u.firstname, ' ', u.surname) AS author,
-                u.picture AS author_img
-            ")
+                 c.id,c.title,
+                 CONCAT(u.firstname, ' ', u.surname) AS author,
+                 u.picture AS author_img
+             ")
             ->from(Course::class, 'c')
             ->leftJoin(User::class, 'u', 'WITH', 'c.user=u.id')
             ->andWhere('c.fork = :tutorialId')
             ->setParameter('tutorialId', $tutorialId)
             ->getQuery()
             ->getResult();
-        return $courseForks;
+
+        $courseForksToReturn = [];
+        foreach ($courseForks as $courseFork) {
+            $courseToReturn = array(
+                'id' => $courseFork['id'],
+                'title' => $courseFork['title'],
+                'author' => $courseFork['author'],
+                'author_img' => $courseFork['author_img'],
+                'children' => []
+            );
+            array_push($courseForksToReturn, $courseToReturn);
+        }
+        return $courseForksToReturn;
     }
 }
 
