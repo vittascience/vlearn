@@ -99,6 +99,7 @@ class RepositoryCourse extends EntityRepository
 
     public function getCourseForksCountAndTree($tutorialId)
     {
+        $this->totalCourseForksCount = 0;
         $tree = $this->buildChildren($this->getCourseForks($tutorialId));
         return array(
             'forksCount' => $this->totalCourseForksCount,
