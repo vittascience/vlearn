@@ -115,7 +115,9 @@ class ControllerCourse extends Controller
                 $arrayResult = [];
                 foreach ($results as $result) {
                     if (json_encode($result) != NULL && json_encode($result) != false) {
-                        $arrayResult[] = $result;
+                        $resultToReturn = json_decode(json_encode(($result)));
+                        $resultToReturn->forksCount = $this->entityManager->getRepository('Learn\Entity\Course')->getCourseForksCountAndTree($resultToReturn->id)['forksCount'];
+                        $arrayResult[] =  $resultToReturn;
                     }
                 }
                 return $arrayResult;
