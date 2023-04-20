@@ -140,7 +140,10 @@ class ControllerFavorite extends Controller
                 // create empty array to return and fill it
                 $dataToReturn = [];
                 foreach ($favorites as $favorite) {
-                    array_push($dataToReturn, $favorite->getTutorial());
+                    $favoriteToReturn = json_decode(json_encode($favorite->getTutorial()));
+                    $favoriteToReturn->forksCount = $this->entityManager->getRepository('Learn\Entity\Course')
+                        ->getCourseForksCountAndTree($favoriteToReturn->id)['forksCount'];
+                    array_push($dataToReturn, $favoriteToReturn);
                 }
                 return $dataToReturn;
             }
