@@ -70,23 +70,34 @@ class ControllerCourse extends Controller
 
                 $user = $this->entityManager->getRepository(User::class)->find($userId);
 
-                if(empty($limit)){
-                    return $this->entityManager
-                                ->getRepository('Learn\Entity\Course')
-                                ->findBy(
-                                    array("user" => $user),
-                                    array('createdAt'=> 'DESC') //order
-                                );
+                if (empty($limit)) {
+                    $results =  $this->entityManager
+                        ->getRepository('Learn\Entity\Course')
+                        ->findBy(
+                            array("user" => $user),
+                            array('createdAt' => 'DESC') //order
+                        );
+                } else {
+                    // fetch data according to $limit
+                    $results =  $this->entityManager
+                        ->getRepository('Learn\Entity\Course')
+                        ->findBy(
+                            array("user" => $user),
+                            array('createdAt' => 'DESC'), //order
+                            $limit
+                        );
                 }
 
-                // return data according to $limit
-                return $this->entityManager
-                            ->getRepository('Learn\Entity\Course')
-                            ->findBy(
-                                array("user" => $user),
-                                array('createdAt'=> 'DESC'), //order
-                                $limit
-                            );
+                // prepare and return data
+                $arrayResult = [];
+                foreach ($results as $result) {
+                    if (json_encode($result) != NULL && json_encode($result) != false) {
+                        $resultToReturn = json_decode(json_encode(($result)));
+                        $resultToReturn->forksCount = $this->entityManager->getRepository('Learn\Entity\Course')->getCourseForksCountAndTree($resultToReturn->id)['forksCount'];
+                        $arrayResult[] =  $resultToReturn;
+                    }
+                }
+                return $arrayResult;
             },
             'get_by_filter' => function () {
                 // accept only POST request
