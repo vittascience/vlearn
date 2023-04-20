@@ -73,12 +73,12 @@ class RepositoryCourse extends EntityRepository
                 $queryBuilder->andWhere("c.$key IN $option");
             }
         }
-        $queryBuilder->setParameter('search', "%$search%");
-        $results = $queryBuilder->groupBy('c.id')
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        return intval($results);
+        $queryBuilder->setParameter('search', "%$search%")
+            ->groupBy('c.id');
+            
+            
+        $results = $queryBuilder->getQuery()->getResult();
+        return count($results);
     }
 
     public function getCoursesSortedBy($doctrineProperty, $orderByValue)
