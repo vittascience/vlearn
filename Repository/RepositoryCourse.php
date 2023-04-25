@@ -141,7 +141,7 @@ class RepositoryCourse extends EntityRepository
                 'id' => $courseFork['id'],
                 'title' => $courseFork['title'],
                 'author' => $courseFork['author'],
-                'author_img' => $courseFork['author_img'],
+                'authorImg' => $courseFork['author_img'],
                 'children' => []
             );
             array_push($courseForksToReturn, $courseToReturn);
