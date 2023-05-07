@@ -694,6 +694,7 @@ class ControllerCourse extends Controller
                     $difficulty = intval($courseData['parameters']['difficulty']);
                     $language = intval($courseData['parameters']['language']);
                     $license = intval($courseData['parameters']['license']);
+                    $format = boolval($courseData['parameters']['format']);
                     $folderId = !empty($_POST['folder']) ? htmlspecialchars($_POST['folder']) : null;
                     
                     // initialize $errors array and check for errors if any
@@ -720,6 +721,7 @@ class ControllerCourse extends Controller
                     $course->setUser($user);
                     $course->setRights($license);
                     $course->setDeleted(false);
+                    $course->setFormat($format);
 
                     if ($folderId != null) {
                         $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
