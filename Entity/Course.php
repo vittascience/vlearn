@@ -145,6 +145,11 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
      */
     private $folder;
 
+    /**
+     * @ORM\Column(name="format", type="boolean", nullable=true, options={"default":false})
+     * @var bool
+     */
+    private $format;
 
     /**
      * @return int
@@ -493,6 +498,24 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         return $this;
     }
 
+    /**
+     * @return bool
+     */
+    public function getFormat()
+    {
+        return $this->format;
+    }
+
+    /**
+     * @param bool $format
+     */
+    public function setFormat(?bool $format)
+    {
+        $this->format = $format;
+        return $this;
+    }
+
+
     public function copy($objectToCopyFrom)
     {
         if ($objectToCopyFrom instanceof self) {
@@ -545,7 +568,8 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             'updatedAt' => $this->getUpdatedAt(),
             'rights' => $this->getRights(),
             'fork' => $fork,
-            'folder' => $this->getFolder()
+            'folder' => $this->getFolder(),
+            'format' => $this->getFormat()
         ];
     }
 
