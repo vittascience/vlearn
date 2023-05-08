@@ -1012,6 +1012,7 @@ class ControllerCourse extends Controller
                 $courseDuplicate->setRights($course->getRights());
                 $courseDuplicate->setDeleted(false);
                 $courseDuplicate->setFolder($course->getFolder());
+                $courseDuplicate->setFormat($course->getFormat());
                 $this->entityManager->persist($courseDuplicate);
                 $this->entityManager->flush();
 
