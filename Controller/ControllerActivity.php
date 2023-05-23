@@ -174,8 +174,15 @@ class ControllerActivity extends Controller
                     ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $_POST['title'])))
                     : '';
                 $content = isset($_POST['content'])
-                    ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $_POST['content'])))
+                    ? trim(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $_POST['content']))
                     : '';
+
+                // decode the content if needed
+                if(preg_match("/&quot;/i", $content, $matches)) $content = htmlspecialchars_decode($content);
+
+                // encode/re-encode the whole content
+                $content = htmlspecialchars($content);
+
                 $isFromClassroom = isset($_POST['isFromClassroom']) && is_bool($_POST['isFromClassroom'])
                     ? $_POST['isFromClassroom']
                     : null;
@@ -216,7 +223,6 @@ class ControllerActivity extends Controller
                         'error' => 'userNotExists'
                     );
                 }
-
 
                 // create the activity
                 $activity = new Activity($title, $content, $user, $isFromClassroom);
