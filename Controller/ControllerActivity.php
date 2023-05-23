@@ -173,16 +173,16 @@ class ControllerActivity extends Controller
                 $title = isset($_POST['title'])
                     ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $_POST['title'])))
                     : '';
-                    $content = isset($_POST['content'])
+                $content = isset($_POST['content'])
                     ? trim(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $_POST['content']))
                     : '';
 
                 // decode the content if needed
-                if(preg_match("/&quot;/i",$content,$matches)) $content = htmlspecialchars_decode($content);
+                if(preg_match("/&quot;/i", $content, $matches)) $content = htmlspecialchars_decode($content);
 
                 // encode/re-encode the whole content
                 $content = htmlspecialchars($content);
-           
+
                 $isFromClassroom = isset($_POST['isFromClassroom']) && is_bool($_POST['isFromClassroom'])
                     ? $_POST['isFromClassroom']
                     : null;
