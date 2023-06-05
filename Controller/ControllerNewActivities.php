@@ -485,11 +485,8 @@ class ControllerNewActivities extends Controller
                     if ($activity->getIsAutocorrect()) {
                         $duplicatedActivity->setIsAutocorrect($activity->getIsAutocorrect());
                     }
-                    if ($activity->getFork() != null) {
-                        $duplicatedActivity->setFork($activity->getFork()->jsonSerialize());
-                    } else {
-                        $duplicatedActivity->setFork(null);
-                    }
+
+                    $duplicatedActivity->setFork($activity);
 
                     if ($activity->getFolder() != null) {
                         $duplicatedActivity->setFolder($activity->getFolder());
@@ -582,11 +579,9 @@ class ControllerNewActivities extends Controller
                     if ($activity->getIsAutocorrect()) {
                         $activityDuplicated->setIsAutocorrect($activity->getIsAutocorrect());
                     }
-                    if ($activity->getFork() != null) {
-                        $activityDuplicated->setFork($activity->getFork()->jsonSerialize());
-                    } else {
-                        $activityDuplicated->setFork(null);
-                    }
+
+                    // 
+                    $activityDuplicated->setFork($activity);
 
                     $this->entityManager->persist($activityDuplicated);
 
@@ -637,11 +632,7 @@ class ControllerNewActivities extends Controller
                         $courseDuplicated->setRights($course->getRights());
                     }
 
-                    if ($course->getFork() != null) {
-                        $courseDuplicated->setFork($course->getFork()->jsonSerialize());
-                    } else {
-                        $courseDuplicated->setFork(null);
-                    }
+                    $courseDuplicated->setFork($course);
                     
                     $courseDuplicated->setFolder(null);
                     $courseDuplicated->setUser($user);
