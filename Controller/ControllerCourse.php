@@ -960,6 +960,12 @@ class ControllerCourse extends Controller
 
                 // get course link activities
                 $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+
+                // order activities by position
+                usort($courseLinkActivities, function($a, $b) {
+                    return $a->getIndexOrder() <=> $b->getIndexOrder();
+                });
+
                 $activities = [];
                 foreach ($courseLinkActivities as $cla) {
                     $activities[] = $cla->getActivity();
