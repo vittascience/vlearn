@@ -442,35 +442,8 @@ class ControllerNewActivities extends Controller
                         }
                     }
 
-                    $isLti = false;
-                    if ($activity->getType()) {
-                        // get application from the restriction
-                        $application = $this->entityManager->getRepository(Applications::class)->findOneBy(['name' => $activity->getType()]);
-                        // check if the application is lti
-                        if ($application->getIsLti() == true) {
-                            $isLti = true;
-                        }
-                    }
-
-                    // Add duplicate parameter if we are in lti activity case
-                    $unserialized = @unserialize($activity->getContent());
-                    if ($unserialized) {
-                        $content = json_encode($unserialized);
-                    } else {
-                        $content = $activity->getContent();
-                    }
-                    if ($isLti) {
-                        $content = json_decode($content, true);
-                        if (!str_contains($content["description"], "&duplicate=1")) {
-                            $content["description"] .= "&duplicate=1";
-                        }
-                        $content = json_encode($content);
-                    }
-
-                    $duplicatedActivity = new Activity( $newTitle,  
-                                                        $content, 
-                                                        $activity->getUser(), 
-                                                        $activity->isFromClassroom());
+                    $content = $this->manageLtiContentForDuplicate($activity);
+                    $duplicatedActivity = new Activity($newTitle, $content, $activity->getUser(), $activity->isFromClassroom());
 
 
                     if ($activity->getType()) {
@@ -590,66 +563,51 @@ class ControllerNewActivities extends Controller
                     $this->entityManager->flush();
                     return  ['success' => true, 'id' => $activityDuplicated->getId()];
                 } else if ($ressourceType == "course") {
-                    $course = $this->entityManager->getRepository(Course::class)->find($ressourceId);
-                    $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(['course' => $course]);
-                    $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
-
-                    $courseDuplicated = new Course();
-                    if ($course->getTitle()) {
-                        $courseDuplicated->setTitle($course->getTitle());
-                    }
-                    if ($course->getDescription()) {
-                        $courseDuplicated->setDescription($course->getDescription());
-                    }
-                    if ($course->getDuration()) {
-                        $courseDuplicated->setDuration($course->getDuration());
-                    }
-                    if ($course->getViews()) {
-                        $courseDuplicated->setViews($course->getViews());
-                    }
-                    if ($course->getDifficulty()) {
-                        $courseDuplicated->setDifficulty($course->getDifficulty());
-                    }
-                    if ($course->getLang()) {
-                        $courseDuplicated->setLang($course->getLang());
-                    }
-                    if ($course->getSupport()) {
-                        $courseDuplicated->setSupport($course->getSupport());
-                    }
-                    if ($course->getImg()) {
-                        $courseDuplicated->setImg($course->getImg());
-                    }
-                    if ($course->getLink()) {
-                        $courseDuplicated->setLink($course->getLink());
-                    }
-   
-                    $courseDuplicated->setCreatedAt(new \DateTime());
                     
-                    $courseDuplicated->setUpdatedAt(new \DateTime());
+                    $course = $this->entityManager->getRepository(Course::class)->find(["id" => $ressourceId]);
+
+                    if (!$course) return ["error" => "course not found"];
+
+                    $user = $this->entityManager->getRepository(User::class)->find(["id" => $_SESSION['id']]);
+
+                    // get course link activities
+                    $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
 
 
-                    if ($course->getRights()) {
-                        $courseDuplicated->setRights($course->getRights());
-                    }
-
-                    $courseDuplicated->setFork($course);
-                    
-                    $courseDuplicated->setFolder(null);
-                    $courseDuplicated->setUser($user);
-
-                    $this->entityManager->persist($courseDuplicated);
+                    $courseDuplicate = new Course();
+                    $courseDuplicate->setTitle($course->getTitle());
+                    $courseDuplicate->setDescription($course->getDescription());
+                    //$course->setImg($image);
+                    $courseDuplicate->setDuration($course->getDuration());
+                    $courseDuplicate->setDifficulty($course->getDifficulty());
+                    $courseDuplicate->setLang($course->getLang());
+                    $courseDuplicate->setUser($user);
+                    $courseDuplicate->setFork($course);
+                    $courseDuplicate->setRights($course->getRights());
+                    $courseDuplicate->setDeleted(false);
+                    $courseDuplicate->setFolder($course->getFolder());
+                    $courseDuplicate->setFormat($course->getFormat());
+                    $this->entityManager->persist($courseDuplicate);
                     $this->entityManager->flush();
 
-                    foreach ($courseLinkActivities as $courseLinkActivity) {
-                        $courseLinkActivityDuplicated = new CourseLinkActivity($courseDuplicated, 
-                                                                                $courseLinkActivity->getActivity(), 
-                                                                                $courseLinkActivity->getIndexOrder());
-                        $this->entityManager->persist($courseLinkActivityDuplicated);
+                    foreach ($courseLinkActivities as $key => $cla) {
+                        $result = $this->importRessource($cla->getActivity()->getId());
+                        if ($result['success'] == false) return $result;
+                        $courseLinkActivity = new CourseLinkActivity($courseDuplicate, $result['activity'], $cla->getIndexOrder());
+                        $this->entityManager->persist($courseLinkActivity);
+                        $this->entityManager->flush();
                     }
-                    $this->entityManager->flush();
 
-                    
-                    return ['success' => true, 'id' => $course->getId()];
+
+                    $activities = [];
+                    foreach ($courseLinkActivities as $cla) {
+                        $activities[] = $cla->getActivity();
+                    }
+
+                    $courseSerialized = $courseDuplicate->jsonSerialize();
+                    $courseSerialized['activities'] = $activities;
+
+                    return ["success" => true, "course" => $courseSerialized];
                 }
             },
             "create_new_tag" => function () {
@@ -795,6 +753,67 @@ class ControllerNewActivities extends Controller
             $this->entityManager->remove($activityLinkTag);
         }
         $this->entityManager->flush();
+    }
+
+    private function manageLtiContentForDuplicate(Activity $activity): ?string {
+        $isLti = false;
+        if ($activity->getType()) {
+            // get application from the restriction
+            $application = $this->entityManager->getRepository(Applications::class)->findOneBy(['name' => $activity->getType()]);
+            // check if the application is lti
+            if ($application->getIsLti() == true) {
+                $isLti = true;
+            }
+        }
+
+        // Add duplicate parameter if we are in lti activity case
+        $unserialized = @unserialize($activity->getContent());
+        if ($unserialized) {
+            $content = json_encode($unserialized);
+        } else {
+            $content = $activity->getContent();
+        }
+        if ($isLti) {
+            $content = json_decode($content, true);
+            if (!str_contains($content["description"], "&duplicate=1")) {
+                $content["description"] .= "&duplicate=1";
+            }
+            $content = json_encode($content);
+        }
+        return $content;
+    }
+
+    private function importRessource(int $Id) {
+        $activity = $this->entityManager->getRepository(Activity::class)->find($Id);
+        // duplicate with new user
+        
+        $content = $this->manageLtiContentForDuplicate($activity);
+        
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
+        $activityDuplicated = new Activity($activity->getTitle(), $content, $user, $activity->isFromClassroom());
+                                            
+        if ($activity->getType()) {
+            $activityDuplicated->setType($activity->getType());
+        }
+        if ($activity->getSolution()) {
+            $activityDuplicated->setSolution($activity->getSolution());
+        }
+        if ($activity->getTolerance()) {
+            $activityDuplicated->setTolerance($activity->getTolerance());
+        }
+        if ($activity->getIsAutocorrect()) {
+            $activityDuplicated->setIsAutocorrect($activity->getIsAutocorrect());
+        }
+
+        // 
+        $activityDuplicated->setFork($activity);
+
+        $this->entityManager->persist($activityDuplicated);
+
+        $this->copyTagsForDuplicate($activity, $activityDuplicated);
+
+        $this->entityManager->flush();
+        return  ['success' => true, 'activity' => $activityDuplicated];
     }
 
     private function manageFreeAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
