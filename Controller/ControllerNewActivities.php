@@ -442,35 +442,8 @@ class ControllerNewActivities extends Controller
                         }
                     }
 
-                    $isLti = false;
-                    if ($activity->getType()) {
-                        // get application from the restriction
-                        $application = $this->entityManager->getRepository(Applications::class)->findOneBy(['name' => $activity->getType()]);
-                        // check if the application is lti
-                        if ($application->getIsLti() == true) {
-                            $isLti = true;
-                        }
-                    }
-
-                    // Add duplicate parameter if we are in lti activity case
-                    $unserialized = @unserialize($activity->getContent());
-                    if ($unserialized) {
-                        $content = json_encode($unserialized);
-                    } else {
-                        $content = $activity->getContent();
-                    }
-                    if ($isLti) {
-                        $content = json_decode($content, true);
-                        if (!str_contains($content["description"], "&duplicate=1")) {
-                            $content["description"] .= "&duplicate=1";
-                        }
-                        $content = json_encode($content);
-                    }
-
-                    $duplicatedActivity = new Activity( $newTitle,  
-                                                        $content, 
-                                                        $activity->getUser(), 
-                                                        $activity->isFromClassroom());
+                    $content = $this->manageLtiContentForDuplicate($activity);
+                    $duplicatedActivity = new Activity($newTitle, $content, $activity->getUser(), $activity->isFromClassroom());
 
 
                     if ($activity->getType()) {
@@ -782,14 +755,42 @@ class ControllerNewActivities extends Controller
         $this->entityManager->flush();
     }
 
+    private function manageLtiContentForDuplicate(Activity $activity): ?string {
+        $isLti = false;
+        if ($activity->getType()) {
+            // get application from the restriction
+            $application = $this->entityManager->getRepository(Applications::class)->findOneBy(['name' => $activity->getType()]);
+            // check if the application is lti
+            if ($application->getIsLti() == true) {
+                $isLti = true;
+            }
+        }
+
+        // Add duplicate parameter if we are in lti activity case
+        $unserialized = @unserialize($activity->getContent());
+        if ($unserialized) {
+            $content = json_encode($unserialized);
+        } else {
+            $content = $activity->getContent();
+        }
+        if ($isLti) {
+            $content = json_decode($content, true);
+            if (!str_contains($content["description"], "&duplicate=1")) {
+                $content["description"] .= "&duplicate=1";
+            }
+            $content = json_encode($content);
+        }
+        return $content;
+    }
+
     private function importRessource(int $Id) {
         $activity = $this->entityManager->getRepository(Activity::class)->find($Id);
         // duplicate with new user
+        
+        $content = $this->manageLtiContentForDuplicate($activity);
+        
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
-        $activityDuplicated = new Activity($activity->getTitle(),  
-                                            $activity->getContent(), 
-                                            $user, 
-                                            $activity->isFromClassroom());        
+        $activityDuplicated = new Activity($activity->getTitle(), $content, $user, $activity->isFromClassroom());
                                             
         if ($activity->getType()) {
             $activityDuplicated->setType($activity->getType());
