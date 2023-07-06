@@ -39,7 +39,7 @@ class ControllerCourse extends Controller
                 $tutorialToReturn = json_decode(json_encode($tutorial));
                 $tutorialToReturn->forksCount = intval($courseForksCountAndTree['forksCount']);
                 $tutorialToReturn->forksTree = $courseForksCountAndTree['tree'];
-                
+
                 $activities = $this->entityManager
                     ->getRepository('Learn\Entity\CourseLinkActivity')
                     ->getActivitiesOrdered($tutorialId);
@@ -104,23 +104,23 @@ class ControllerCourse extends Controller
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
                 // bind incoming search param
-                $search = !empty($_POST['filter']['search']) 
-                            ? htmlspecialchars(strip_tags(trim(addslashes($_POST['filter']['search'])))) 
-                            : '';
+                $search = !empty($_POST['filter']['search'])
+                    ? htmlspecialchars(strip_tags(trim(addslashes($_POST['filter']['search']))))
+                    : '';
                 unset($_POST['filter']['search']);
 
-                $sort = !empty($_POST['filter']['sort']) 
-                            ? htmlspecialchars(strip_tags(trim($_POST['filter']['sort'][0]))) 
-                            : '';
+                $sort = !empty($_POST['filter']['sort'])
+                    ? htmlspecialchars(strip_tags(trim($_POST['filter']['sort'][0])))
+                    : '';
                 unset($_POST['filter']['sort']);
 
 
                 // bind and/or sanitize other incoming params
                 $page = !empty($_POST['page']) ? intval($_POST['page']) : 1;
                 $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
-                
+
                 // fetch data from db 
-                $results = $this->entityManager->getRepository('Learn\Entity\Course')->getByFilter($sanitizedFilters, $search,$sort, $page);
+                $results = $this->entityManager->getRepository('Learn\Entity\Course')->getByFilter($sanitizedFilters, $search, $sort, $page);
 
                 // prepare and return data
                 $arrayResult = [];
@@ -138,16 +138,16 @@ class ControllerCourse extends Controller
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
                 // bind incoming search param
-                $search = !empty($_POST['filter']['search']) 
-                            ? htmlspecialchars(strip_tags(trim(addslashes($_POST['filter']['search'])))) 
-                            : '';
+                $search = !empty($_POST['filter']['search'])
+                    ? htmlspecialchars(strip_tags(trim(addslashes($_POST['filter']['search']))))
+                    : '';
                 unset($_POST['filter']['search']);
 
                 // bind and/or sanitize other incoming params
                 $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
-                
+
                 // fetch data from db 
-               return $this->entityManager->getRepository('Learn\Entity\Course')->countByFilter( $sanitizedFilters,  $search);
+                return $this->entityManager->getRepository('Learn\Entity\Course')->countByFilter($sanitizedFilters,  $search);
             },
             'add' => function () {
 
@@ -168,15 +168,15 @@ class ControllerCourse extends Controller
 
                     // bind and sanitize the remaining data to be inserted in db
                     $linked = [];
-                    if(!empty($_POST['linkedTuto'])){
-                        foreach(json_decode($_POST['linkedTuto']) as $incomingLinkedTuto){
+                    if (!empty($_POST['linkedTuto'])) {
+                        foreach (json_decode($_POST['linkedTuto']) as $incomingLinkedTuto) {
                             array_push($linked, intval($incomingLinkedTuto));
                         }
                     }
 
                     $chapters = [];
-                    if(!empty($_POST['chapters'])){
-                        foreach(json_decode($_POST['chapters']) as $incomingchapter){
+                    if (!empty($_POST['chapters'])) {
+                        foreach (json_decode($_POST['chapters']) as $incomingchapter) {
                             array_push($chapters, intval($incomingchapter));
                         }
                     }
@@ -209,21 +209,21 @@ class ControllerCourse extends Controller
                             // bind and sanitize incoming data
                             $title = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->title)));
                             $content = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->content)));
-                            $isCollapsed = filter_var($tutorialParts[$i]->isCollapsed, FILTER_VALIDATE_BOOL,FILTER_NULL_ON_FAILURE);
+                            $isCollapsed = filter_var($tutorialParts[$i]->isCollapsed, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
                             // replace values by the same values but sanitized
                             $tutorialParts[$i]->title =  $title;
-                            $tutorialParts[$i]->content =  $content; 
-                            $tutorialParts[$i]->isCollapsed =  $isCollapsed; 
+                            $tutorialParts[$i]->content =  $content;
+                            $tutorialParts[$i]->isCollapsed =  $isCollapsed;
                         }
                     }
 
                     $forkedFromResourceId = !empty($_POST['forkedFromResourceId']) ? intval($_POST['forkedFromResourceId']) : null;
 
-                     // unset bound data
-                     unset($_POST['linkedTuto']);
-                     unset($_POST['tutorialParts']);
-                     unset($_POST['chapters']);
-                     unset($_POST['forkedFromResourceId']);
+                    // unset bound data
+                    unset($_POST['linkedTuto']);
+                    unset($_POST['tutorialParts']);
+                    unset($_POST['chapters']);
+                    unset($_POST['forkedFromResourceId']);
 
                     $tutorial = Course::jsonDeserialize($incomingTutorial);
 
@@ -267,10 +267,10 @@ class ControllerCourse extends Controller
                 $tutorialId = !empty($_POST['id']) ? intval($_POST['id']) : null;
 
                 // invalid tutorial id, return an error
-                if(empty($tutorialId)){
+                if (empty($tutorialId)) {
                     return array('errors' => array('errorType' => 'tutorialIdInvalid'));
                 }
-                
+
                 // tutorial already viewed by the user, do nothing
                 if (isset($_SESSION['views'][$tutorialId]))  return false;
 
@@ -313,20 +313,20 @@ class ControllerCourse extends Controller
 
                 // bind and sanitize the remaining data to be inserted in db
                 $linked = [];
-                if(!empty($_POST['linkedTuto'])){
-                    foreach(json_decode($_POST['linkedTuto']) as $incomingLinkedTuto){
+                if (!empty($_POST['linkedTuto'])) {
+                    foreach (json_decode($_POST['linkedTuto']) as $incomingLinkedTuto) {
                         array_push($linked, intval($incomingLinkedTuto));
                     }
                 }
 
                 $chapters = [];
-                if(!empty($_POST['chapters'])){
-                    foreach(json_decode($_POST['chapters']) as $incomingchapter){
+                if (!empty($_POST['chapters'])) {
+                    foreach (json_decode($_POST['chapters']) as $incomingchapter) {
                         array_push($chapters, intval($incomingchapter));
                     }
                 }
 
-                $tutorialParts = json_decode($_POST['tutorialParts']); 
+                $tutorialParts = json_decode($_POST['tutorialParts']);
                 // translate first $tutorialPart content from $name and url to full bbcode
                 for ($i = 0; $i < count($tutorialParts); $i++) {
 
@@ -347,17 +347,16 @@ class ControllerCourse extends Controller
                         }
                         $content .= "[/list]";
                         $tutorialParts[$i]->content = $content;
-                        $tutorialParts[$i]->isCollapsed = false; 
+                        $tutorialParts[$i]->isCollapsed = false;
                     } else {
                         // bind and sanitize incoming data
                         $title = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->title)));
                         $content = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->content)));
-                        $isCollapsed = filter_var($tutorialParts[$i]->isCollapsed, FILTER_VALIDATE_BOOL,FILTER_NULL_ON_FAILURE);
+                        $isCollapsed = filter_var($tutorialParts[$i]->isCollapsed, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
                         // replace values by the same values but sanitized
                         $tutorialParts[$i]->title =  $title;
                         $tutorialParts[$i]->content =  $content;
                         $tutorialParts[$i]->isCollapsed =  $isCollapsed;
-
                     }
                 }
 
@@ -365,13 +364,13 @@ class ControllerCourse extends Controller
                 unset($_POST['tutorialParts']);
                 unset($_POST['chapters']);
                 unset($_POST['linkedTuto']);
-                
+
                 $incomingTutorial = $this->bindIncomingTutorialData($_POST);
 
                 // check for errors and return them if any
                 $tutorialErrors = $this->validateIncomingTutorialData($incomingTutorial);
                 if (!empty($tutorialErrors)) return array('errors' => $tutorialErrors);
-                
+
                 $tutorial = Course::jsonDeserialize($_POST);
 
                 //no error, get the matching tutorial from database
@@ -442,25 +441,25 @@ class ControllerCourse extends Controller
                 $errors = [];
 
                 // invalid course id, return an error
-                if(empty($courseIdToDelete)){
-                    array_push($errors,array('errorType' => 'courseIdInvalid'));
+                if (empty($courseIdToDelete)) {
+                    array_push($errors, array('errorType' => 'courseIdInvalid'));
                     return $errors;
                 }
 
                 $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->find($courseIdToDelete);
 
                 // course does not exists, return an error
-                if(!$databaseCourse){
-                    array_push($errors,array('errorType' => 'courseNotFound'));
+                if (!$databaseCourse) {
+                    array_push($errors, array('errorType' => 'courseNotFound'));
                     return $errors;
                 }
 
                 // course exists but does not belong to current user, return an error
-                if($databaseCourse->getUser()->getId() != $userId){
-                    array_push($errors,array('errorType' => 'userNotCourseOwner'));
+                if ($databaseCourse->getUser()->getId() != $userId) {
+                    array_push($errors, array('errorType' => 'userNotCourseOwner'));
                     return $errors;
                 }
-                
+
                 // remove entries from "learn_chapters_link_tutorials" table
                 $lessonsDatabase = $this->entityManager->getRepository('Learn\Entity\Lesson')->findBy(array("tutorial" => $databaseCourse));
                 foreach ($lessonsDatabase as $val) {
@@ -473,17 +472,17 @@ class ControllerCourse extends Controller
                     $this->entityManager->remove($val);
                 }
 
-                 // remove entries from "learn_tutorials_link_tutorials" table
-                 $linkedCoursesAsMain = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(array( 'tutorial1' => $databaseCourse));
-                 foreach ($linkedCoursesAsMain as $linkedCourseAsMain) {
-                     $this->entityManager->remove($linkedCourseAsMain);
-                     $this->entityManager->flush();
-                 }
-                 $linkedCoursesAsRelated = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(array( 'tutorial2' => $databaseCourse));
-                 foreach ($linkedCoursesAsRelated as $linkedCourseAsRelated) {
-                     $this->entityManager->remove($linkedCourseAsRelated);
-                     $this->entityManager->flush();
-                 }
+                // remove entries from "learn_tutorials_link_tutorials" table
+                $linkedCoursesAsMain = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(array('tutorial1' => $databaseCourse));
+                foreach ($linkedCoursesAsMain as $linkedCourseAsMain) {
+                    $this->entityManager->remove($linkedCourseAsMain);
+                    $this->entityManager->flush();
+                }
+                $linkedCoursesAsRelated = $this->entityManager->getRepository('Learn\Entity\CourseLinkCourse')->findBy(array('tutorial2' => $databaseCourse));
+                foreach ($linkedCoursesAsRelated as $linkedCourseAsRelated) {
+                    $this->entityManager->remove($linkedCourseAsRelated);
+                    $this->entityManager->flush();
+                }
 
                 // flush anything that as not been saved in db
                 $this->entityManager->flush();
@@ -506,29 +505,29 @@ class ControllerCourse extends Controller
                 $userId = $receivedUserId ?? $loggedUserId ??   null;
 
                 // invalid user id, return an error
-                if(empty($userId)){
-                    return array('errors'=> array('errorType' => 'userIdInvalid'));
+                if (empty($userId)) {
+                    return array('errors' => array('errorType' => 'userIdInvalid'));
                 }
-               
+
                 $user = $this->entityManager
-                                ->getRepository('User\Entity\User')
-                                ->findOneBy(array("id" => $userId));
-                
+                    ->getRepository('User\Entity\User')
+                    ->findOneBy(array("id" => $userId));
+
                 // user not found, return an error
-                if(!$user){
-                    return array('errors'=> array('errorType' => 'userNotFound'));
+                if (!$user) {
+                    return array('errors' => array('errorType' => 'userNotFound'));
                 }
-               
-                if($receivedUserId){
+
+                if ($receivedUserId) {
                     // return data if a link has been clicked
-                   return $this->entityManager
-                                ->getRepository('Learn\Entity\Course')
-                                ->findBy(array("user" => $user, "deleted" => false, "rights" => [1, 2]));
+                    return $this->entityManager
+                        ->getRepository('Learn\Entity\Course')
+                        ->findBy(array("user" => $user, "deleted" => false, "rights" => [1, 2]));
                 }
 
                 // return data if a user open its profile page
                 return $this->entityManager->getRepository('Learn\Entity\Course')
-                        ->findBy(array("user" => $user, "deleted" => false));
+                    ->findBy(array("user" => $user, "deleted" => false));
             },
             'get_courses_sorted_by' => function () {
                 // accept only POST request
@@ -696,7 +695,7 @@ class ControllerCourse extends Controller
                     $license = intval($courseData['parameters']['license']);
                     $format = boolval($courseData['parameters']['format']);
                     $folderId = !empty($_POST['folder']) ? htmlspecialchars($_POST['folder']) : null;
-                    
+
                     // initialize $errors array and check for errors if any
                     $errors = [];
                     if (empty($activities)) array_push($errors, array("errorType" => "invalidActivities"));
@@ -731,13 +730,13 @@ class ControllerCourse extends Controller
                     }
                     $this->entityManager->persist($course);
                     $this->entityManager->flush();
-                    
+
                     foreach ($activities as $index => $activity) {
                         $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity['id']]);
                         $courseLinkActivity = new CourseLinkActivity($course, $acti, $index);
-                        $this->entityManager->persist($courseLinkActivity);    
+                        $this->entityManager->persist($courseLinkActivity);
                     }
-                    
+
                     $this->entityManager->flush();
                     return ["success" => true, "message" => "course added successfully", "course" => $course];
                 } catch (\Error $error) {
@@ -797,7 +796,7 @@ class ControllerCourse extends Controller
                     "filename" => $filenameToUpload,
                     "src" => "/classroom/assets/media/uploads/$filenameToUpload"
                 );
-            },           
+            },
             'update_from_classroom' => function () {
 
                 // accept only POST request
@@ -822,7 +821,7 @@ class ControllerCourse extends Controller
                     $format = boolval($courseData['parameters']['format']);
 
                     $lang = [0 => "Français", 1 => "Anglais", 2 => "Italien", 3 => "Arabe"];
-                    
+
                     // initialize $errors array and check for errors if any
                     $errors = [];
                     if (empty($activities)) array_push($errors, array("errorType" => "invalidActivities"));
@@ -851,7 +850,7 @@ class ControllerCourse extends Controller
                     $course->setFormat($format);
                     $this->entityManager->persist($course);
                     $this->entityManager->flush();
-                    
+
                     // get all courselinkactivity
                     $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
                     // delete all courselinkactivity
@@ -867,14 +866,14 @@ class ControllerCourse extends Controller
                             $this->entityManager->persist($courseLinkActivity);
                         }
                     }
-                    
+
                     $this->entityManager->flush();
-                    
+
                     return ["success" => true, "message" => "course updated successfully", "course" => $course];
                 } catch (\Error $error) {
                     return ["success" => false, "message" => $error->getMessage()];
                 }
-            },           
+            },
             'delete_from_classroom' => function () {
 
                 // accept only POST request
@@ -901,11 +900,11 @@ class ControllerCourse extends Controller
                     foreach ($courseLinkActivities as $courseLinkActivity) {
                         $this->entityManager->remove($courseLinkActivity);
                     }
-                    
+
                     $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
                     foreach ($courseLinkActivity as $cla) {
                         // get userlinkactivity 
-                        $userLinkActivity = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $cla->getActivity(), "isFromCourse" => 1]);
+                        $userLinkActivity = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $cla->getActivity(), "isFromCourse" => 1, "course" => $course->getId()]);
                         foreach ($userLinkActivity as $ula) {
                             $this->entityManager->remove($ula);
                         }
@@ -914,7 +913,6 @@ class ControllerCourse extends Controller
 
                     $this->entityManager->flush();
                     return ["success" => true, "message" => "Course and course link successfully deleted"];
-
                 } catch (\Error $error) {
                     return ["success" => false, "message" => $error->getMessage()];
                 }
@@ -952,7 +950,7 @@ class ControllerCourse extends Controller
 
                 $courseId = htmlspecialchars($data['courseId']);
                 if (empty($courseId)) return ["error" => "Invalid course id"];
-                
+
                 $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
 
                 if (!$course) return ["error" => "course not found"];
@@ -962,7 +960,7 @@ class ControllerCourse extends Controller
                 $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
 
                 // order activities by position
-                usort($courseLinkActivities, function($a, $b) {
+                usort($courseLinkActivities, function ($a, $b) {
                     return $a->getIndexOrder() <=> $b->getIndexOrder();
                 });
 
@@ -980,7 +978,7 @@ class ControllerCourse extends Controller
 
                 $courseId = htmlspecialchars($data['courseId']);
                 if (empty($courseId)) return ["error" => "Invalid course id"];
-                
+
                 $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
 
                 if (!$course) return ["error" => "course not found"];
@@ -1003,7 +1001,7 @@ class ControllerCourse extends Controller
                         $newTitle = str_replace($title, "(" . $increment . ")", $course->getTitle());
                     } else {
                         $title = 1;
-                        $newTitle =$course->getTitle() . " (1)";
+                        $newTitle = $course->getTitle() . " (1)";
                     }
                 }
 
@@ -1098,28 +1096,29 @@ class ControllerCourse extends Controller
         return $errors;
     }
 
-    private function sanitizeAndFormatFilterParams($incomingFilters){
+    private function sanitizeAndFormatFilterParams($incomingFilters)
+    {
         $sanitizedFilters = [];
-        if(!empty($incomingFilters["support"])){
+        if (!empty($incomingFilters["support"])) {
             $supports = [];
-            foreach($incomingFilters["support"] as $incomingSupport){
-                array_push($supports,intval($incomingSupport));
+            foreach ($incomingFilters["support"] as $incomingSupport) {
+                array_push($supports, intval($incomingSupport));
             }
-            $sanitizedFilters['support'] = "(".implode(",",$supports).")";
+            $sanitizedFilters['support'] = "(" . implode(",", $supports) . ")";
         }
-        if(!empty($incomingFilters["difficulty"])){
+        if (!empty($incomingFilters["difficulty"])) {
             $difficulties = [];
-            foreach($incomingFilters["difficulty"] as $incomingDifficulty){
-                array_push($difficulties,intval($incomingDifficulty));
+            foreach ($incomingFilters["difficulty"] as $incomingDifficulty) {
+                array_push($difficulties, intval($incomingDifficulty));
             }
-            $sanitizedFilters['difficulty'] = "(".implode(",",$difficulties).")";
+            $sanitizedFilters['difficulty'] = "(" . implode(",", $difficulties) . ")";
         }
-        if(!empty($incomingFilters["lang"])){
+        if (!empty($incomingFilters["lang"])) {
             $languages = [];
-            foreach($incomingFilters["lang"] as $incomingLang){
-                array_push($languages,"'".htmlspecialchars(strip_tags(trim($incomingLang)))."'");
+            foreach ($incomingFilters["lang"] as $incomingLang) {
+                array_push($languages, "'" . htmlspecialchars(strip_tags(trim($incomingLang))) . "'");
             }
-            $sanitizedFilters['lang'] = "(".implode(",",$languages).")";
+            $sanitizedFilters['lang'] = "(" . implode(",", $languages) . ")";
         }
 
         return $sanitizedFilters;
@@ -1143,11 +1142,12 @@ class ControllerCourse extends Controller
         return $Allowed;
     }
 
-    private function saveRelatedTutorialsIfNeeded($mainTutorial, $relatedTutorialsIds){
+    private function saveRelatedTutorialsIfNeeded($mainTutorial, $relatedTutorialsIds)
+    {
         foreach ($relatedTutorialsIds as $relatedTutorialId) {
-            $tutorial2Exists = $this->entityManager->getRepository('Learn\Entity\Course')->find($relatedTutorialId);                  
-            
-            if($tutorial2Exists){
+            $tutorial2Exists = $this->entityManager->getRepository('Learn\Entity\Course')->find($relatedTutorialId);
+
+            if ($tutorial2Exists) {
                 $linkedTutoRelationExists = $this->entityManager
                     ->getRepository('Learn\Entity\CourseLinkCourse')
                     ->findOneBy(array(
@@ -1155,28 +1155,29 @@ class ControllerCourse extends Controller
                         'tutorial2' => $tutorial2Exists->getId()
                     ));
 
-                if(!$linkedTutoRelationExists){
+                if (!$linkedTutoRelationExists) {
                     $related = new CourseLinkCourse($mainTutorial, $tutorial2Exists);
                     $this->entityManager->persist($related);
                     $this->entityManager->flush();
-                }   
+                }
             }
         }
     }
 
-    private function saveLessonsIfNeeded($mainTutorial, $chapterIds){
+    private function saveLessonsIfNeeded($mainTutorial, $chapterIds)
+    {
         //add lessons to the tutorial
         foreach ($chapterIds as $chapterId) {
             $chapterFound = $this->entityManager->getRepository('Learn\Entity\Chapter')->find($chapterId);
-            
-            if($chapterFound){
+
+            if ($chapterFound) {
                 $lessonExists = $this->entityManager->getRepository(Lesson::class)
                     ->findOneBy(array(
                         'chapter' => $chapterFound,
                         'tutorial' => $mainTutorial
                     ));
-                
-                if(!$lessonExists){
+
+                if (!$lessonExists) {
                     $lesson = new Lesson();
                     $lesson->setCourse($mainTutorial);
                     $lesson->setChapter($chapterFound);
