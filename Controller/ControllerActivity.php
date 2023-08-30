@@ -4,6 +4,7 @@ namespace Learn\Controller;
 
 use Learn\Entity\Tag;
 use User\Entity\User;
+use Learn\Entity\Course;
 use User\Entity\Regular;
 use Learn\Entity\Folders;
 use Learn\Entity\Activity;
@@ -13,6 +14,7 @@ use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
 use Learn\Entity\ActivityLinkTag;
 use Classroom\Entity\Applications;
+use Learn\Entity\CourseLinkActivity;
 use Classroom\Entity\UsersLinkGroups;
 use Classroom\Entity\ActivityLinkUser;
 use Classroom\Entity\UsersRestrictions;
@@ -21,7 +23,6 @@ use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\GroupsLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
-use Learn\Entity\CourseLinkActivity;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
