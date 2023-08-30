@@ -334,8 +334,9 @@ class ControllerNewActivities extends Controller
 
                     $activity->setResponse($response);
 
-                    if($this->isJson($response)) {
-                        $response = json_decode($response, true);
+                    $arr = [];
+                    if ($this->isJson($response)) {
+                        $arr = json_decode($response, true);
                     }
 
                     if ($optionalData) {
@@ -350,19 +351,19 @@ class ControllerNewActivities extends Controller
                     $errorsArray = [];
 
                     if ($acti->getType() == "fillIn") {
-                        $fillInReturn = $this->manageFillInAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
+                        $fillInReturn = $this->manageFillInAutocorrection($acti, $activity, $arr, $acti->getIsAutocorrect());
                         $activity = $fillInReturn[0];
                         $errorsArray = $fillInReturn[1];
                     } else if (($acti->getType() == "free" || $acti->getType() == "")) {
-                        $freeReturn = $this->manageFreeAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());     
+                        $freeReturn = $this->manageFreeAutocorrection($acti, $activity, $arr, $acti->getIsAutocorrect());     
                         $activity = $freeReturn[0];
                         $errorsArray = $freeReturn[1];
                     } else if ($acti->getType() == "quiz") {
-                        $quizReturn = $this->manageQuizAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
+                        $quizReturn = $this->manageQuizAutocorrection($acti, $activity, $arr, $acti->getIsAutocorrect());
                         $activity = $quizReturn[0];
                         $errorsArray = $quizReturn[1];
                     } else if ($acti->getType() == "dragAndDrop") {
-                        $dragAndDropReturn = $this->manageDragAndDropAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
+                        $dragAndDropReturn = $this->manageDragAndDropAutocorrection($acti, $activity, $arr, $acti->getIsAutocorrect());
                         $activity = $dragAndDropReturn[0];
                         $errorsArray = $dragAndDropReturn[1];
                     }
@@ -816,7 +817,7 @@ class ControllerNewActivities extends Controller
     }
 
     private function manageQuizAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
-        $solution = $this->manageUnserialize($activity->getSolution());
+        $solution = json_decode($this->manageUnserialize($activity->getSolution()), true);
         $errorsArray = [];
         $correct = 0;
         $total = 0;
@@ -839,7 +840,7 @@ class ControllerNewActivities extends Controller
     }
 
     private function manageDragAndDropAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
-        $solution = $this->manageUnserialize($activity->getSolution());
+        $solution = json_decode($this->manageUnserialize($activity->getSolution()), true);
         $errorsArray = [];
         $correct = 0;
         $total = 0;
@@ -863,7 +864,7 @@ class ControllerNewActivities extends Controller
     }
 
     private function manageFillInAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
-        $solution = $this->manageUnserialize($activity->getSolution());
+        $solution = json_decode($this->manageUnserialize($activity->getSolution()), true);
         $errorsArray = [];
         $tolerance = $activity->getTolerance();
 
