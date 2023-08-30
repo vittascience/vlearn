@@ -21,6 +21,7 @@ use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\GroupsLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
+use Learn\Entity\CourseLinkActivity;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -417,6 +418,20 @@ class ControllerActivity extends Controller
     private function deleteChildren($folder) {
         $Childrens = $this->entityManager->getRepository(Folders::class)->findBy(["parentFolder" => $folder]);
         $Activities = $this->entityManager->getRepository(Activity::class)->findBy(["folder" => $folder]);
+        $Courses = $this->entityManager->getRepository(Course::class)->findBy(["folder" => $folder]);
+
+        foreach ($Courses as $course) {
+            $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+            foreach ($courseLinkActivity as $cla) {
+                // get userlinkactivity 
+                $userLinkActivity = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $cla->getActivity(), "isFromCourse" => 1, "course" => $course->getId()]);
+                foreach ($userLinkActivity as $ula) {
+                    $this->entityManager->remove($ula);
+                }
+                $this->entityManager->remove($cla);
+            }
+            $this->entityManager->remove($course);
+        }
  
         foreach ($Activities as $activity) {
             $activitiesLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $activity->getId()]);
