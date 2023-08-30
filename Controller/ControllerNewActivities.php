@@ -293,11 +293,6 @@ class ControllerNewActivities extends Controller
 
                 $optionalData = !empty($_POST['optionalData']) ? $_POST['optionalData'] : null;
 
-
-                if($this->isJson($response)) {
-                    $response = json_decode($response, true);
-                }
-
                 // initiate an empty errors array 
                 $errors = [];
                 if (empty($activityId)) $errors['invalidActivityId'] = true;
@@ -338,6 +333,10 @@ class ControllerNewActivities extends Controller
                     }
 
                     $activity->setResponse($response);
+
+                    if($this->isJson($response)) {
+                        $response = json_decode($response, true);
+                    }
 
                     if ($optionalData) {
                         $activity->setOptionalData($optionalData);
