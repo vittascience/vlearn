@@ -799,8 +799,6 @@ class ControllerNewActivities extends Controller
     }
 
     private function manageFreeAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
-
-        dd($response);
         $solution = $this->manageUnserialize($this->manageJsonDecode($activity->getSolution()));
         $errorsArray = [];
 
