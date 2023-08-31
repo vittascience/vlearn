@@ -4,6 +4,7 @@ namespace Learn\Controller;
 
 use Learn\Entity\Tag;
 use User\Entity\User;
+use Learn\Entity\Course;
 use User\Entity\Regular;
 use Learn\Entity\Folders;
 use Learn\Entity\Activity;
@@ -13,6 +14,7 @@ use Classroom\Entity\Classroom;
 use Learn\Controller\Controller;
 use Learn\Entity\ActivityLinkTag;
 use Classroom\Entity\Applications;
+use Learn\Entity\CourseLinkActivity;
 use Classroom\Entity\UsersLinkGroups;
 use Classroom\Entity\ActivityLinkUser;
 use Classroom\Entity\UsersRestrictions;
@@ -417,6 +419,20 @@ class ControllerActivity extends Controller
     private function deleteChildren($folder) {
         $Childrens = $this->entityManager->getRepository(Folders::class)->findBy(["parentFolder" => $folder]);
         $Activities = $this->entityManager->getRepository(Activity::class)->findBy(["folder" => $folder]);
+        $Courses = $this->entityManager->getRepository(Course::class)->findBy(["folder" => $folder]);
+
+        foreach ($Courses as $course) {
+            $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+            foreach ($courseLinkActivity as $cla) {
+                // get userlinkactivity 
+                $userLinkActivity = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $cla->getActivity(), "isFromCourse" => 1, "course" => $course->getId()]);
+                foreach ($userLinkActivity as $ula) {
+                    $this->entityManager->remove($ula);
+                }
+                $this->entityManager->remove($cla);
+            }
+            $this->entityManager->remove($course);
+        }
  
         foreach ($Activities as $activity) {
             $activitiesLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $activity->getId()]);

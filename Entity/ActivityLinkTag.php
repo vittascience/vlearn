@@ -70,7 +70,7 @@ class ActivityLinkTag implements \JsonSerializable, \Utils\JsonDeserializer
     }
 
 
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return [
             "tag" => $this->getTag()->jsonSerialize(),
