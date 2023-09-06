@@ -819,7 +819,7 @@ class ControllerNewActivities extends Controller
         $total = 0;
         foreach ($solution as $key => $value) {
             $total++;
-            if ($value['isCorrect'] == $response[$key]['isCorrect'] && $value['inputVal'] == $response[$key]['inputVal']) {
+            if ($value['isCorrect'] == $response[$key]->isCorrect && $value['inputVal'] == $response[$key]->inputVal) {
                 $correct++;
             } else {
                 $errorsArray[] = $key;
