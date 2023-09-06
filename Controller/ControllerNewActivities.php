@@ -333,6 +333,7 @@ class ControllerNewActivities extends Controller
                     }
 
                     $activity->setResponse($response);
+
                     $response = $this->manageJsonDecode($response);
 
                     if ($optionalData) {
@@ -481,8 +482,8 @@ class ControllerNewActivities extends Controller
                 if ($activityId && $activityLinkId) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($activityId);
                     $activityLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findOneBy(["id" => $activityLinkId]);
-                    $response = $this->manageUnserialize($activityLinkUser->getResponse());
-
+                    $response = $this->manageUnserialize($this->manageJsonDecode($activityLinkUser->getResponse()));
+                
                     if ($activity && $activityLinkUser) {
                         $errorsArray = [];
                         if ($activity->getType() == "fillIn") {
@@ -758,6 +759,7 @@ class ControllerNewActivities extends Controller
         }
 
         // Add duplicate parameter if we are in lti activity case
+        dd($content);
         $content = $this->manageUnserialize($activity->getContent());
         if ($isLti) {
             $content = json_decode($content, true);
@@ -817,9 +819,10 @@ class ControllerNewActivities extends Controller
         $errorsArray = [];
         $correct = 0;
         $total = 0;
+
         foreach ($solution as $key => $value) {
             $total++;
-            if ($value['isCorrect'] == $response[$key]->isCorrect && $value['inputVal'] == $response[$key]->inputVal) {
+            if ($value['isCorrect'] == $response[$key]['isCorrect'] && $value['inputVal'] == $response[$key]['inputVal']) {
                 $correct++;
             } else {
                 $errorsArray[] = $key;
@@ -891,7 +894,7 @@ class ControllerNewActivities extends Controller
     }
 
     private function manageUnserialize($string) {
-        if (@unserialize($string) == false) {
+        if (gettype($string) != "string" || @unserialize($string) == false) {
             return $string;
         } else {
             return unserialize($string);
@@ -900,7 +903,7 @@ class ControllerNewActivities extends Controller
 
     private function manageJsonDecode($string) {
         if ($this->isJson($string)) {
-            return json_decode($string);
+            return json_decode($string, true);
         } else {
             return $string;
         }
