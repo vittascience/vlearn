@@ -334,8 +334,8 @@ class ControllerNewActivities extends Controller
 
                     $activity->setResponse($response);
 
+                    
                     $response = $this->manageJsonDecode($response);
-
                     if ($optionalData) {
                         $activity->setOptionalData($optionalData);
                     }
@@ -759,8 +759,10 @@ class ControllerNewActivities extends Controller
         }
 
         // Add duplicate parameter if we are in lti activity case
-        dd($content);
         $content = $this->manageUnserialize($activity->getContent());
+        if (gettype($content) == "array") {
+            $content = json_encode($content);
+        }
         if ($isLti) {
             $content = json_decode($content, true);
             if (!str_contains($content["description"], "&duplicate=1")) {
@@ -894,7 +896,7 @@ class ControllerNewActivities extends Controller
     }
 
     private function manageUnserialize($string) {
-        if (gettype($string) != "string" || @unserialize($string) == false) {
+        if (gettype($string) == "array" || @unserialize($string) == false) {
             return $string;
         } else {
             return unserialize($string);
