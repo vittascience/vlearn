@@ -333,8 +333,7 @@ class ControllerNewActivities extends Controller
                     }
 
                     $activity->setResponse($response);
-
-                    
+                    //dd($response);
                     $response = $this->manageJsonDecode($response);
                     if ($optionalData) {
                         $activity->setOptionalData($optionalData);
@@ -382,15 +381,15 @@ class ControllerNewActivities extends Controller
                     $this->entityManager->flush();
 
                     if ($correction == 0) {
-                        return ['success' => true, 'message' => "activitySaved"];
+                        return ['success' => true, 'message' => "activitySaved", 'id' => $activity->getId()];
                     }
 
                     if (count($errorsArray) > 0 && $activity->getEvaluation() != 1) {
                         if (empty($response)) {
-                            return ['success'=> false, 'message' => 'emptyAnswer'];
+                            return ['success'=> false, 'message' => 'emptyAnswer', 'id' => $activity->getId()];
                         }
 
-                        return ['badResponse' => $errorsArray, 'hint' => $hint];
+                        return ['badResponse' => $errorsArray, 'hint' => $hint, 'id' => $activity->getId()];
                     }
 
                     return  $activity;
