@@ -381,15 +381,15 @@ class ControllerNewActivities extends Controller
                     $this->entityManager->flush();
 
                     if ($correction == 0) {
-                        return ['success' => true, 'message' => "activitySaved", 'id' => $activity->getId()];
+                        return ['success' => true, 'message' => "activitySaved", 'id' => $activityId, 'link' => $activityLinkId];
                     }
 
                     if (count($errorsArray) > 0 && $activity->getEvaluation() != 1) {
                         if (empty($response)) {
-                            return ['success'=> false, 'message' => 'emptyAnswer', 'id' => $activity->getId()];
+                            return ['success'=> false, 'message' => 'emptyAnswer', 'id' => $activityId, 'link' => $activityLinkId];
                         }
 
-                        return ['badResponse' => $errorsArray, 'hint' => $hint, 'id' => $activity->getId()];
+                        return ['badResponse' => $errorsArray, 'hint' => $hint, 'id' => $activityId, 'link' => $activityLinkId];
                     }
 
                     return  $activity;
