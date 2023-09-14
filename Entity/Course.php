@@ -540,7 +540,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         }
     }
 
-    public function jsonSerialize(): mixed
+    public function jsonSerialize()
     {
         if ($this->getFork() != null) {
             $fork = $this->getFork()->jsonSerialize();

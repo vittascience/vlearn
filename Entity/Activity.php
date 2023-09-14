@@ -354,7 +354,7 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
         $this->setIsFromClassroom($objectToCopyFrom->isFromClassroom());
     }
 
-    public function jsonSerialize(): mixed
+    public function jsonSerialize()
     {
         if ($this->getFork() != null) {
             $fork = $this->getFork()->jsonSerialize();
