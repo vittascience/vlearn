@@ -13,6 +13,7 @@ use Learn\Entity\CourseLinkCourse;
 use Classroom\Entity\CourseLinkUser;
 use Learn\Entity\CourseLinkActivity;
 use Classroom\Entity\ActivityLinkUser;
+use Classroom\Entity\ClassroomLinkUser;
 
 /* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
@@ -820,6 +821,12 @@ class ControllerCourse extends Controller
                     $license = intval($courseData['parameters']['license']);
                     $format = boolval($courseData['parameters']['format']);
 
+                    $dateBegin = !empty($_POST['dateBegin']) ? $_POST['dateBegin'] : '';
+                    $dateEnd = !empty($_POST['dateEnd']) ? $_POST['dateEnd'] : '';
+
+                    $dateTimeBegin = new \DateTime($dateBegin);
+                    $dayeTimeEnd = new \DateTime($dateEnd);
+
                     $lang = [0 => "Français", 1 => "Anglais", 2 => "Italien", 3 => "Arabe"];
 
                     // initialize $errors array and check for errors if any
@@ -867,6 +874,66 @@ class ControllerCourse extends Controller
                         }
                     }
 
+
+                    //Manage attribution for the activites added to the course
+                    $randomStr = "";
+                    // cgecj if the course is linked to user
+                    $linkCourseToClassroomExists = $this->entityManager->getRepository(CourseLinkUser::class)->findAll(['course' => $course->getId()]);
+                    // if the course is linked to user
+                    if ($linkCourseToClassroomExists) {
+                        // foreach user linked to the course
+                        foreach ($linkCourseToClassroomExists as $link) {
+                            // get the user
+                            $userLinked = $link->getUser();
+                            // for each activity in the course
+                            foreach ($activities as $key => $activity) {
+
+                                $randomStr = strval(time()) . $key;
+                                //check if activityLinkUser exists
+                                $activityLinkUserExists = $this->entityManager->getRepository(ActivityLinkUser::class)->findOneBy(['activity' => $activity['id'], 'user' => $userLinked->getId(), 'isFromCourse' => 1, 'course' => $course->getId()]);
+                                if (!$activityLinkUserExists) {
+                                    $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity['id']]);
+
+                                    if ($acti) {
+
+                                        $classroomLinkUser = $this->entityManager->getRepository(ClassroomLinkUser::class)->findOneBy(['user' => $link->getUser()->getId()]);
+                                        $classroomId = $classroomLinkUser->getClassroom()->getId();
+                                        // get students in classroom
+                                        $students = $this->entityManager->getRepository(ClassroomLinkUser::class)->findBy(['classroom' => $classroomId, 'rights' => 0]);
+                                        if (count($students) > 0) {
+                                            foreach ($students as $student) {
+                                                if ($student->getUser()->getId() != $link->getUser()->getId()) {
+                                                    $actlinkuser = $this->entityManager->getRepository(ActivityLinkUser::class)->findOneBy(['course' => $course, 'activity' => $activity['id'], 'user' => $student->getUser()->getId()]);
+                                                    if ($actlinkuser) {
+                                                        $randomStr = $actlinkuser->getReference();
+                                                        $dateTimeBegin = $actlinkuser->getDateBegin();
+                                                        $dayeTimeEnd = $actlinkuser->getDateEnd();
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+
+
+                                        $activityLinkUser = new ActivityLinkUser($acti, $link->getUser());
+                                        if ($acti->getType() == "reading" && $course->getFormat() == 1) {
+                                            $activityLinkUser->setCorrection(2);
+                                            $activityLinkUser->setNote(4);
+                                            if ($course->getFormat() == 1) {
+                                                $link->setCourseState($link->getCourseState() + 1);
+                                            }
+                                        }
+                                        $activityLinkUser->setCourse($course);
+                                        $activityLinkUser->setReference($randomStr);
+                                        $activityLinkUser->setDateBegin($dateTimeBegin);
+                                        $activityLinkUser->setDateEnd($dayeTimeEnd);
+                                        $activityLinkUser->setIsFromCourse(1);
+                                        $this->entityManager->persist($activityLinkUser);
+                                    }
+                                }
+                            }
+                        }
+                    }
                     $this->entityManager->flush();
 
                     return ["success" => true, "message" => "course updated successfully", "course" => $course];
