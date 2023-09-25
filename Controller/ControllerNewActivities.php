@@ -318,6 +318,11 @@ class ControllerNewActivities extends Controller
                     if (array_key_exists('hint', $content)) {
                         $hint = $content['hint'];
                     }
+                } else if (is_string($content)) {
+                    $decodedContent = json_decode($content);
+                    if (property_exists($decodedContent, 'hint')) {
+                        $hint = $decodedContent->hint;
+                    }
                 }
                    
                 if ($actualTries > 1 && $activity->getEvaluation() == 1) {
