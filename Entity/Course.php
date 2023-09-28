@@ -577,6 +577,13 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         } else {
             $user = null;
         }
+
+        if ($this->getOptionalData() != null) {
+            $optionalData = json_decode($this->getOptionalData());
+        } else {
+            $optionalData = null;
+        }
+
         return [
             'id' => $this->getId(),
             'user' => $user,
@@ -595,7 +602,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             'fork' => $fork,
             'folder' => $this->getFolder(),
             'format' => $this->getFormat(),
-            'optionalData' => $this->getOptionalData(),
+            'optionalData' => $optionalData,
         ];
     }
 
