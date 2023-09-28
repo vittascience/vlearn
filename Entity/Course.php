@@ -532,7 +532,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
     /**
      * @param String $optionalData
      */
-    public function setOptionalData(?String $optionalData)
+    public function setOptionalData($optionalData)
     {
         $this->optionalData = $optionalData;
         return $this;
