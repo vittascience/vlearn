@@ -822,7 +822,8 @@ class ControllerCourse extends Controller
                     $language = intval($courseData['parameters']['language']);
                     $license = intval($courseData['parameters']['license']);
                     $format = boolval($courseData['parameters']['format']);
-
+                    $optionalData = $courseData['parameters']['optionalData'];
+                    
                     $dateBegin = !empty($_POST['dateBegin']) ? $_POST['dateBegin'] : '';
                     $dateEnd = !empty($_POST['dateEnd']) ? $_POST['dateEnd'] : '';
 
@@ -857,6 +858,7 @@ class ControllerCourse extends Controller
                     $course->setRights($license);
                     $course->setDeleted(false);
                     $course->setFormat($format);
+                    $course->setOptionalData($optionalData);
                     $this->entityManager->persist($course);
                     $this->entityManager->flush();
 
