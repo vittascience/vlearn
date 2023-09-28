@@ -152,6 +152,12 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
     private $format;
 
     /**
+     * @ORM\Column(name="optional_data", type="text", nullable=true)
+     * @var String
+     */
+    private $optionalData = null;
+
+    /**
      * @return int
      */
     public function getId()
@@ -515,6 +521,22 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         return $this;
     }
 
+    /**
+     * @return String
+     */
+    public function getOptionalData()
+    {
+        return $this->optionalData;
+    }
+
+    /**
+     * @param String $optionalData
+     */
+    public function setOptionalData(?String $optionalData)
+    {
+        $this->optionalData = $optionalData;
+        return $this;
+    }
 
     public function copy($objectToCopyFrom)
     {
@@ -533,8 +555,11 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             }
             $this->setLink($objectToCopyFrom->getLink());
             $this->setUpdatedAt();
-
             $this->setRights($objectToCopyFrom->getRights());
+
+            $this->setFolder($objectToCopyFrom->getFolder());
+            $this->setFormat($objectToCopyFrom->getFormat());
+            $this->setOptionalData($objectToCopyFrom->getOptionalData());
         } else {
             throw new EntityOperatorException("ObjectToCopyFrom attribute needs to be an instance of Course");
         }
@@ -569,7 +594,8 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             'rights' => $this->getRights(),
             'fork' => $fork,
             'folder' => $this->getFolder(),
-            'format' => $this->getFormat()
+            'format' => $this->getFormat(),
+            'optionalData' => $this->getOptionalData(),
         ];
     }
 
