@@ -695,6 +695,7 @@ class ControllerCourse extends Controller
                     $language = intval($courseData['parameters']['language']);
                     $license = intval($courseData['parameters']['license']);
                     $format = boolval($courseData['parameters']['format']);
+                    $optionalData = json_encode($courseData['parameters']['optionalData']);
                     $folderId = !empty($_POST['folder']) ? htmlspecialchars($_POST['folder']) : null;
 
                     // initialize $errors array and check for errors if any
@@ -722,6 +723,7 @@ class ControllerCourse extends Controller
                     $course->setRights($license);
                     $course->setDeleted(false);
                     $course->setFormat($format);
+                    $course->setOptionalData($optionalData);
 
                     if ($folderId != null) {
                         $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
@@ -820,6 +822,7 @@ class ControllerCourse extends Controller
                     $language = intval($courseData['parameters']['language']);
                     $license = intval($courseData['parameters']['license']);
                     $format = boolval($courseData['parameters']['format']);
+                    $optionalData = json_encode($courseData['parameters']['optionalData']);
 
                     $dateBegin = !empty($_POST['dateBegin']) ? $_POST['dateBegin'] : '';
                     $dateEnd = !empty($_POST['dateEnd']) ? $_POST['dateEnd'] : '';
@@ -855,6 +858,7 @@ class ControllerCourse extends Controller
                     $course->setRights($license);
                     $course->setDeleted(false);
                     $course->setFormat($format);
+                    $course->setOptionalData($optionalData);
                     $this->entityManager->persist($course);
                     $this->entityManager->flush();
 
