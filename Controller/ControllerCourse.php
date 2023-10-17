@@ -1052,11 +1052,12 @@ class ControllerCourse extends Controller
             'set_state_from_course' => function ($data) {
                 $courseId = htmlspecialchars($data['courseId']);
                 $state = htmlspecialchars($data['state']);
+                $courseLinkUserId = htmlspecialchars($data['courseLinkUserId']);
                 $userId = htmlspecialchars($_SESSION['id']);
 
                 try {
                     $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
-                    $courseLinkUser = $this->entityManager->getRepository(CourseLinkUser::class)->findOneBy(["course" => $course, "user" => $userId]);
+                    $courseLinkUser = $this->entityManager->getRepository(CourseLinkUser::class)->findOneBy(["course" => $course, "user" => $userId, "id" => $courseLinkUserId]);
                     $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
                     if ($courseLinkActivities) {
                         if (count($courseLinkActivities) == $state) {
