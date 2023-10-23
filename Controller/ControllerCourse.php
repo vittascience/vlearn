@@ -1280,11 +1280,15 @@ class ControllerCourse extends Controller
     }
 
     private function updateCourseToNewSystem() {
+        // Get all courses
         $myCourses = $this->entityManager->getRepository(Course::class)->findAll();
-
         $myCoursesLinkUserId = [];
+
+        // loop in all course
         foreach ($myCourses as $course) { 
+            // get all courselinkuser with reference null
             $oldCourses = $this->entityManager->getRepository(CourseLinkUser::class)->findBy(['reference' => null, 'course' => $course->getId()]);
+            // if there is some
             if ($oldCourses) {
                 foreach ($oldCourses as $oldCourse) {
                     $myCoursesLinkUserId[] = [$oldCourse->getId(), $course->getId()];
@@ -1295,6 +1299,7 @@ class ControllerCourse extends Controller
 
         $activitiesLinkUser = [];
         $activitiesReferences = [];
+        // for each course link user
         foreach ($myCoursesLinkUserId as $courseId) {
             $activitiesLinkCourse = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(['course' => $courseId[1]]);
             foreach ($activitiesLinkCourse as $activityLinkCourse) {
