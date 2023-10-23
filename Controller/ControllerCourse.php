@@ -1052,11 +1052,12 @@ class ControllerCourse extends Controller
             'set_state_from_course' => function ($data) {
                 $courseId = htmlspecialchars($data['courseId']);
                 $state = htmlspecialchars($data['state']);
+                $courseLinkUserId = htmlspecialchars($data['courseLinkUserId']);
                 $userId = htmlspecialchars($_SESSION['id']);
 
                 try {
                     $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
-                    $courseLinkUser = $this->entityManager->getRepository(CourseLinkUser::class)->findOneBy(["course" => $course, "user" => $userId]);
+                    $courseLinkUser = $this->entityManager->getRepository(CourseLinkUser::class)->findOneBy(["course" => $course, "user" => $userId, "id" => $courseLinkUserId]);
                     $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
                     if ($courseLinkActivities) {
                         if (count($courseLinkActivities) == $state) {
@@ -1072,6 +1073,19 @@ class ControllerCourse extends Controller
                     return ["success" => false, "message" => $error->getMessage()];
                 }
             },
+            'debug_course' => function () {
+                try {
+                    $user = $this->entityManager->getRepository(User::class)->findOneBy(["id" => $_SESSION['id']]);
+                    if (!$user) return ["error" => "Not authorized"];
+                    $userR = $this->entityManager->getRepository(Regular::class)->findOneBy(["user" => $user]);
+                    if (!$userR->getIsAdmin()) return ["error" => "Not authorized"];
+                    
+                    $this->updateCourseToNewSystem();
+                    return ["success" => true];
+                } catch (\Error $error) {
+                    return ["success" => false, "message" => $error->getMessage()];
+                }
+            }
         );
     }
 
@@ -1262,6 +1276,75 @@ class ControllerCourse extends Controller
                 }
             }
             $this->entityManager->flush();
+        }
+    }
+
+    private function updateCourseToNewSystem() {
+        // Get all courses
+        $myCourses = $this->entityManager->getRepository(Course::class)->findAll();
+        $myCoursesLinkUserId = [];
+
+        // loop in all course
+        foreach ($myCourses as $course) { 
+            // get all courselinkuser with reference null
+            $oldCourses = $this->entityManager->getRepository(CourseLinkUser::class)->findBy(['reference' => null, 'course' => $course->getId()]);
+            // if there is some
+            if ($oldCourses) {
+                foreach ($oldCourses as $oldCourse) {
+                    $myCoursesLinkUserId[] = [$oldCourse->getId(), $course->getId()];
+                }
+            }
+        }
+
+
+        $activitiesLinkUser = [];
+        $activitiesReferences = [];
+        // for each course link user
+        foreach ($myCoursesLinkUserId as $courseId) {
+            $activitiesLinkCourse = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(['course' => $courseId[1]]);
+            foreach ($activitiesLinkCourse as $activityLinkCourse) {
+                $activities = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(['activity' => $activityLinkCourse->getActivity()->getId(), 'course' => $courseId, 'isFromCourse' => 1]);
+                foreach ($activities as $activity) {
+                    $activitiesLinkUser[] = $activity->getId();
+                    if (!in_array([$activity->getReference(), $courseId[1], $courseId[0]], $activitiesReferences)) {
+                        $activitiesReferences[] = [$activity->getReference(), $courseId[1], $courseId[0]];
+                    }
+                }
+            }
+        }
+
+        $coursesActivityReferences = [];
+        foreach ($activitiesReferences as $reference) {
+            if (!in_array($reference, $coursesActivityReferences)) {
+                if (!array_key_exists($reference[1], $coursesActivityReferences)) {
+                    $coursesActivityReferences[$reference[1]] = [];
+                }
+
+                if (!in_array($reference[0], $coursesActivityReferences[$reference[1]])) {
+                    $coursesActivityReferences[$reference[1]][] = $reference[0];
+                }
+            }
+        }
+
+        foreach ($myCoursesLinkUserId as $courseId) {
+            $oldCourses = $this->entityManager->getRepository(CourseLinkUser::class)->findBy(['reference' => null, 'course' => $courseId[1]]);
+            foreach ($oldCourses as $oldCourse) {
+                $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(['course' => $courseId[1]]);
+                // we need the exact same number of activities
+                if (count($courseLinkActivities) == count($coursesActivityReferences[$courseId[1]])) {
+                    $oldCourse->setActivitiesReferences(json_encode(array_values(($coursesActivityReferences[$courseId[1]]))));
+                } else {
+                    $references = [];
+                    for($i = 0; $i < count($courseLinkActivities); $i++) {
+                        $references[] = $coursesActivityReferences[$courseId[1]][$i];
+                    }
+                    $oldCourse->setActivitiesReferences(json_encode(array_values($references)));
+                }
+                $ref = substr($coursesActivityReferences[$courseId[1]][0], 0, -1);
+                $oldCourse->setReference($ref);
+                $this->entityManager->persist($oldCourse);
+                $this->entityManager->flush();
+            }
         }
     }
 }
