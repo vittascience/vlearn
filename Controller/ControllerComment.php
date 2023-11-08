@@ -12,17 +12,19 @@ class ControllerComment extends Controller
         parent::__construct($entityManager, $user);
         $this->actions = array(
             'add' => function ($data) {
-                $commentAnswered = $this->entityManager->getRepository('Learn\Entity\Comment')
-                    ->find($data['comid']);
-                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')
-                    ->find($data['tutoid']);
+                $commentAnswered = $this->entityManager->getRepository('Learn\Entity\Comment')->find($data['comid']);
+                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['tutoid']);
+                $user = $this->entityManager->getRepository('User\Entity\User')->find($_SESSION['id']);
+
                 $comment = new Comment();
-                $comment->setUser($this->user);
+                $comment->setUser($user);
                 $comment->setCommentAnswered($commentAnswered);
                 $comment->setTutorial($tutorial);
                 $comment->setMessage($data['message']);
+
                 $this->entityManager->persist($comment);
                 $this->entityManager->flush();
+
                 $arrayComment = array(
                     'id' => $comment->getId(),
                     'picture' => $comment->getUser()->getPicture(),
@@ -30,32 +32,44 @@ class ControllerComment extends Controller
                     'message' => $comment->getMessage(),
                     'date' => $comment->getUpdatedAt(),
                 );
-                mailComment("Un utilisateur a posté un commentaire.", $this->user, $comment, $data);
-                return  $arrayComment;
+
+                mailComment("Un utilisateur a posté un commentaire.", $user, $comment, $data);
+
+                return $arrayComment;
             },
             'update' => function ($data) {
                 // This function can be accessed by post method only
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
-                $comment = $this->entityManager->getRepository('Learn\Entity\Comment')
-                    ->find($data['comid']);
+                $comment = $this->entityManager->getRepository('Learn\Entity\Comment')->find($data['comid']);
+                
                 $comment->setMessage($data['message']);
                 $comment->setUpdatedAt(new \DateTime());
+                
+                $user = $this->entityManager->getRepository('User\Entity\User')->find($_SESSION['id']);
+                $userRegular = $this->entityManager->getRepository('User\Entity\Regular')->findOneBy(array("user" => $user));
 
+                if ($user != $comment->getUser()) {
+                    return ["error" => "Vous n'avez pas le droit de modifier ce commentaire."];
+                }
+                
                 $this->entityManager->persist($comment);
                 $this->entityManager->flush();
 
-                if ($this->user->isPrivateFlag() == 1) {
+                if ($userRegular->isPrivateFlag() == 1) {
                     $username = "Anonyme";
                 } else {
-                    $username = $this->user->getFirstname() . " " . $this->user->getSurname();
+                    $username = $user->getFirstname() . " " . $user->getSurname();
                 }
-                if ($this->user->getPicture() !== NULL) {
-                    $picture = "/public/content/user_data/user_img/" . $this->user->getPicture();
+                
+                if ($user->getPicture() !== NULL) {
+                    $picture = "/public/content/user_data/user_img/" . $user->getPicture();
                 } else {
                     $picture = "/public/content/img/login.png";
                 }
-                mailComment("Un utilisateur a modifié un commentaire.", $this->user, $comment, $data);
+
+                mailComment("Un utilisateur a modifié un commentaire.", $user, $comment, $data);
+
                 return  [
                     "id" => $comment->getId(),
                     "username" => $username,
@@ -76,14 +90,18 @@ class ControllerComment extends Controller
             },
             'alert' => function ($data) {
                 $comment = $this->entityManager->getRepository('Learn\Entity\Comment')->find(intval($data['comid']));
-                $mail = new Mailer();
-                $subject = "Un utilisateur a fait une demande de modération.";
-                $body = "L'utilisateur " . $this->user->getFirstname() . " " . $this->user->getSurname() . " (#ID : " . $this->user['id'] . ")
-    a fait une demande de modération concernant le message #" . $comment->getId() . ".</br><b>Raison :</b><br/>";
-                $body .= trim(htmlspecialchars($data['message'])) . "</br></br><b>Message :</b>";
-                $body .= "</br><p>" . $comment['message'] . "</p>";
 
-                $mail->sendMail("contact@vittascience.com", $subject, $body, strip_tags($body));
+                $user = $this->entityManager->getRepository('User\Entity\User')->find($_SESSION['id']);
+
+                $mail = new Mailer();
+                
+                $subject = "Un utilisateur a fait une demande de modération.";
+                $body = "L'utilisateur " . $user->getFirstname() . " " . $user->getSurname() . " (#ID : " . $user->getId() . ") a fait une demande de modération concernant le message #" . $comment->getId() . ".</br><b>Raison :</b><br/>";
+                $body .= trim(htmlspecialchars($data['message'])) . "</br></br><b>Message :</b>";
+                $body .= "</br><p>" . trim(htmlspecialchars($comment->getMessage())) . "</p>";
+                
+
+                $mail->sendMail("contact@vittascience.com", $subject, $body, strip_tags($body), "fr_default", "support@vittascience.com", "Support Vittascience");
             },
             'get_from_tutorials' => function ($data) {
                 $comments = $this->entityManager->getRepository('Learn\Entity\Comment')->findBy(array("tutorial" => $data['tutorial_id']));
@@ -111,17 +129,20 @@ class ControllerComment extends Controller
                     ];
                     array_push($arrayResult, $result);
                 }
-                return  $arrayResult;
+                return $arrayResult;
             },
             'get_multiple_users' => function () {
-                // @Naser disabled this method as it generate errors
-                return array();
-                // @ToBeUpdated
+                $users = $this->entityManager->getRepository('User\Entity\User')->getMultipleUsers($_POST['ids']);
 
-                $users = $this->entityManager->getRepository('User\Entity\User')->getMultipleUsers($_GET['ids']);
                 $arrayResult = array();
+
                 foreach ($users as $user) {
-                    if ($user->isPrivateFlag() == 1) {
+                    $regularUser = $this->entityManager->getRepository('User\Entity\Regular')->findOneBy(array("user" => $user));
+                    if (!$regularUser) {
+                        continue;
+                    }
+
+                    if ($regularUser->isPrivateFlag() == 1) {
                         $username = "Anonyme";
                     } else {
                         $username = $user->getFirstname() . " " . $user->getSurname();
@@ -131,13 +152,20 @@ class ControllerComment extends Controller
                     } else {
                         $picture = "/public/content/img/login.png";
                     }
-                    $result = [
-                        "user_is_deleted" => $user->isDeleted(),
-                        "id" => $user->getId(),
-                        "username" => $username,
-                        "picture" => $picture,
-                        "private_flag" => $user->isPrivateFlag()
-                    ];
+
+                    if ($regularUser->isPrivateFlag() == 1) {
+                        $result = [
+                            "id" => $user->getId(),
+                            "private_flag" => $regularUser->isPrivateFlag()
+                        ];
+                    } else {
+                        $result = [
+                            "id" => $user->getId(),
+                            "username" => $username,
+                            "picture" => $picture,
+                            "private_flag" => $regularUser->isPrivateFlag()
+                        ];
+                    }
                     array_push($arrayResult, $result);
                 }
                 return  $arrayResult;
@@ -150,9 +178,9 @@ function mailComment($subject, $user, $comment, $data)
     $mail = new Mailer();
     $subject = "Un utilisateur a posté un commentaire.";
     $body = "L'utilisateur " . $user->getFirstname() . " " . $user->getSurname() . " (#ID : " . $user->getId() . ")
-a modifié le message #" . $comment->getId() . ".";
+a fait une action sur le message #" . $comment->getId() . ".";
     $body .= "<b>Message :</b>";
     $body .= "</br><p>" . trim(htmlspecialchars($data['message'])) . "</p>";
 
-    $mail->sendMail("contact@vittascience.com", $subject, $body, strip_tags($body));
+    $mail->sendMail("contact@vittascience.com", $subject, $body, strip_tags($body), "fr_default", "support@vittascience.com", "Support Vittascience");
 }
