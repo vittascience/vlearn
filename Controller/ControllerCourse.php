@@ -695,7 +695,7 @@ class ControllerCourse extends Controller
                     $language = intval($courseData['parameters']['language']);
                     $license = intval($courseData['parameters']['license']);
                     $format = boolval($courseData['parameters']['format']);
-                    $optionalData = json_encode($courseData['parameters']['optionalData']);
+                    $optionalData = !empty($courseData['parameters']['optionalData']) ? json_encode($courseData['parameters']['optionalData']) : null;
                     $folderId = !empty($_POST['folder']) ? htmlspecialchars($_POST['folder']) : null;
 
                     // initialize $errors array and check for errors if any
