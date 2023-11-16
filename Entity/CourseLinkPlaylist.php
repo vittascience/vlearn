@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryCourseLinkPlaylist")
  * @ORM\Table(name="Learn_course_link_playlist")
  */
-class Playlist
+class CourseLinkPlaylist
 {
     /**
      * @ORM\Id
@@ -18,14 +18,12 @@ class Playlist
     private $id;
 
     /**
-     * @ORM\Id
      * @ORM\ManyToOne(targetEntity="Learn\Entity\Course")
      * @ORM\JoinColumn(name="course_id", referencedColumnName="id", onDelete="CASCADE")
      */
     private $courseId;
 
     /**
-     * @ORM\Id
      * @ORM\ManyToOne(targetEntity="Learn\Entity\Playlist")
      * @ORM\JoinColumn(name="playlist_id", referencedColumnName="id", onDelete="CASCADE")
      */
@@ -36,12 +34,6 @@ class Playlist
      */
     private $indexOrder;
 
-
-    public function __construct($id, $title)
-    {
-        $this->id = $id;
-        $this->title = $title;
-    }
     
     public function getId()
     {

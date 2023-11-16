@@ -56,9 +56,8 @@ class Playlist
      */
     private $rights;
 
-    public function __construct($id, $title)
+    public function __construct($title)
     {
-        $this->id = $id;
         $this->title = $title;
     }
 
