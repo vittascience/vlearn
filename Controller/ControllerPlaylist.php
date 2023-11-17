@@ -125,6 +125,64 @@ class ControllerPlaylist extends Controller
                     return ['success' => false, 'message' => $e->getMessage()];
                 }
             },
+            'get_by_filter' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                // bind incoming search param
+                $search = !empty($_POST['filter']['search']) ? htmlspecialchars(strip_tags(trim(addslashes($_POST['filter']['search'])))) : '';
+                unset($_POST['filter']['search']);
+
+                $sort = !empty($_POST['filter']['sort']) ? htmlspecialchars(strip_tags(trim($_POST['filter']['sort'][0]))) : '';
+                unset($_POST['filter']['sort']);
+
+
+                // bind and/or sanitize other incoming params
+                $page = !empty($_POST['page']) ? intval($_POST['page']) : 1;
+                $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
+
+                // fetch data from db 
+                $results = $this->entityManager->getRepository(Playlist::class)->getByFilter($sanitizedFilters, $search, $sort, $page);
+
+                // prepare and return data
+                $arrayResult = [];
+                foreach ($results as $result) {
+                    if (json_encode($result) != NULL && json_encode($result) != false) {
+                        $resultToReturn = json_decode(json_encode(($result)));
+                        $resultToReturn->forksCount = $this->entityManager->getRepository('Learn\Entity\Course')->getCourseForksCountAndTree($resultToReturn->id)['forksCount'];
+                        $arrayResult[] =  $resultToReturn;
+                    }
+                }
+                return $arrayResult;
+            },
+            'get_by_id' => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+
+                $user = $this->isUserLogged();
+                if (!$user) {
+                    return ['success' => false, 'message' => 'User not logged'];
+                }
+
+                //get the request payload
+                $data = json_decode(file_get_contents('php://input'), true);
+                //sanitize the data
+                $id = !empty($data['id']) ? htmlspecialchars(strip_tags($data['id'])) : '';
+
+
+
+                // fetch data from db 
+                $result = $this->entityManager->getRepository(Playlist::class)->findOneBy(["id" => $id, "user" => $user->getId()]);
+
+                // prepare and return data
+                if (json_encode($result) != NULL && json_encode($result) != false) {
+                    $resultToReturn = json_decode(json_encode(($result)));
+                    $resultToReturn->forksCount = $this->entityManager->getRepository('Learn\Entity\Course')->getCourseForksCountAndTree($resultToReturn->id)['forksCount'];
+                    return $resultToReturn;
+                }
+                return [];
+            },
         );
     }
 
