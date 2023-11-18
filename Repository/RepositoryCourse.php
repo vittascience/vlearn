@@ -148,6 +148,18 @@ class RepositoryCourse extends EntityRepository
         }
         return $courseForksToReturn;
     }
+
+    public function getCoursesInArrayOfIds($ids)
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder();
+        $courses = $qb->select('c.title, c.')
+            ->from(Course::class, 'c')
+            ->andWhere('c.id IN (:ids)')
+            ->setParameter('ids', $ids)
+            ->getQuery()
+            ->getResult();
+        return $courses;
+    }
 }
 
 // $filtered_chars = array(
