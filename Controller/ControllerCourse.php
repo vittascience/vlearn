@@ -122,7 +122,6 @@ class ControllerCourse extends Controller
 
                 // fetch data from db 
                 $results = $this->entityManager->getRepository('Learn\Entity\Course')->getByFilter($sanitizedFilters, $search, $sort, $page);
-
                 // prepare and return data
                 $arrayResult = [];
                 foreach ($results as $result) {

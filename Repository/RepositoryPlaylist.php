@@ -2,13 +2,20 @@
 
 namespace Learn\Repository;
 
+use User\Entity\User;
+use Learn\Entity\Course;
+use Learn\Entity\Activity;
+use Learn\Entity\Playlist;
 use Doctrine\ORM\EntityRepository;
+use Learn\Entity\CourseLinkActivity;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 
 class RepositoryPlaylist extends EntityRepository
 {
 
     public function getByFilter($options, $search, $sort, $page = 1)
     {
+        // same query with union all with the playlist table and course table
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
             ->from(Course::class, 'c')
@@ -26,6 +33,7 @@ class RepositoryPlaylist extends EntityRepository
                 $queryBuilder->andWhere("c.$key IN $option");
             }
         }
+
         $sortField = "createdAt";
         $sortDirection = "DESC";
         if (!empty($sort)) {
@@ -34,14 +42,54 @@ class RepositoryPlaylist extends EntityRepository
             $sortDirection = !empty($incomingSortDirection) ? strtoupper($incomingSortDirection) : "DESC";
         }
 
+
         $queryBuilder->setParameter('search', "%$search%");
-        $results = $queryBuilder->setFirstResult(($page - 1) * self::RESULT_PER_PAGE)
-            ->setMaxResults(self::RESULT_PER_PAGE)
-            ->groupBy('c.id')
+        $results = $queryBuilder->groupBy('c.id')
             ->orderBy("c.$sortField", $sortDirection)
-            ->getQuery()
-            ->getResult();
+            ->getQuery();
+
+        //get playlists
+        $queryBuilder2 = $this->getEntityManager()->createQueryBuilder();
+        $results2 = $queryBuilder2->select('p')
+            ->from(Playlist::class, 'p')
+            ->andWhere("p.title LIKE :search OR p.description LIKE :search")
+            ->setParameter('search', "%$search%")
+            ->getQuery()->getResult();
+
+
+        // Utilisez le Paginator pour paginer les résultats combinés
+        $paginator = new Paginator($queryBuilder->getQuery());
+        $results = iterator_to_array($paginator->getIterator());
+        $results = array_merge($results, $results2);
+
+        // Configurez le nombre d'éléments par page
+        $itemsPerPage = 25;
+        $returnResults = array_slice($results, ($page - 1) * $itemsPerPage, $itemsPerPage);
+
+        $paginatorData = [
+            'pagination' => [
+                'currentPage' => $page,
+                'itemsPerPage' => $itemsPerPage,
+                'totalItems' => count($results),
+                'totalPages' => ceil(count($results) / $itemsPerPage),
+            ],
+            'items' => $returnResults,
+        ];
+
+        return $paginatorData;
+    }
+
+    public function getLightDataPlaylistById($id, $user)
+    {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder();
+        $queryBuilder->select('p.id, p.title, p.description')
+            ->from(Playlist::class, 'p')
+            ->leftJoin(User::class, 'u', 'WITH', "u.id=p.user")
+            ->andWhere('p.id = :id')
+            ->andWhere('p.user = :user')
+            ->setParameter('id', $id)
+            ->setParameter('user', $user);
+        $results = $queryBuilder->getQuery()->getOneOrNullResult();
         return $results;
     }
-    
 }

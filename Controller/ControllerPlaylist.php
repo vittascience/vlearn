@@ -17,12 +17,12 @@ class ControllerPlaylist extends Controller
         $this->actions = array(
             'save_my_playlist' => function () {
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                    return ['success' => false, 'message' => 'Method not allowed'];
+                    return ['success' => false, 'message' => 'method_not_allowed'];
                 }
 
                 $user = $this->isUserLogged();
                 if (!$user) {
-                    return ['success' => false, 'message' => 'User not logged'];
+                    return ['success' => false, 'message' => 'user_not_logged'];
                 }
 
                 //get the request payload
@@ -32,7 +32,7 @@ class ControllerPlaylist extends Controller
                 $data['description'] = !empty($data['description']) ? htmlspecialchars(strip_tags($data['description'])) : '';
 
                 if (empty($data['title'])) {
-                    return ['success' => false, 'message' => 'Title is empty'];
+                    return ['success' => false, 'message' => 'title_empty'];
                 }
 
                 $ids = [];
@@ -41,11 +41,11 @@ class ControllerPlaylist extends Controller
                         $ids[] = (int)htmlspecialchars(strip_tags($id));
                     }
                 } catch (\Exception $e) {
-                    return ['success' => false, 'message' => 'Course ids are not valid'];
+                    return ['success' => false, 'message' => 'course_ids_invalid'];
                 }
 
                 if (empty($ids)) {
-                    return ['success' => false, 'message' => 'Course ids are empty'];
+                    return ['success' => false, 'message' => 'course_ids_empty'];
                 }
 
                 try {
@@ -62,7 +62,7 @@ class ControllerPlaylist extends Controller
                     for ($i = 0; $i < count($ids); $i++) {
                         $course = $this->entityManager->getRepository(Course::class)->findOneBy(["id" => $ids[$i]]);
                         if (!$course) {
-                            return ['success' => false, 'message' => 'Course not found'];
+                            return ['success' => false, 'message' => 'course_not_found'];
                         }
 
                         $courseLinkPlaylist = new CourseLinkPlaylist();
@@ -73,7 +73,7 @@ class ControllerPlaylist extends Controller
                     }
                     $this->entityManager->flush();
                     
-                    return ['success' => true, 'message' => 'Playlist saved'];
+                    return ['success' => true, 'message' => 'playlist_saved'];
                 } catch (\Exception $e) {
                     return ['success' => false, 'message' => $e->getMessage()];
                 }
@@ -81,21 +81,21 @@ class ControllerPlaylist extends Controller
             'delete_my_playlist' => function ($data) {
 
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                    return ['success' => false, 'message' => 'Method not allowed'];
+                    return ['success' => false, 'message' => 'method_not_allowed'];
                 }
 
                 if (!$this->isUserLogged()) {
-                    return ['success' => false, 'message' => 'User not logged'];
+                    return ['success' => false, 'message' => 'user_not_logged'];
                 }
 
                 try {
                     $playlist = $this->entityManager->getRepository(Playlist::class)->findOneBy(["id" => $data['id'], "user" => $this->user->getId()]);
                     if (!$playlist) {
-                        return ['success' => false, 'message' => 'Playlist not found'];
+                        return ['success' => false, 'message' => 'playlist_not_found'];
                     }
                     $this->entityManager->remove($playlist);
                     $this->entityManager->flush();
-                    return ['success' => true, 'message' => 'Playlist deleted'];
+                    return ['success' => true, 'message' => 'playlist_deleted'];
                 } catch (\Exception $e) {
                     return ['success' => false, 'message' => $e->getMessage()];
                 }
@@ -103,57 +103,27 @@ class ControllerPlaylist extends Controller
             'update_my_playlist' => function ($data) {
 
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                    return ['success' => false, 'message' => 'Method not allowed'];
+                    return ['success' => false, 'message' => 'method_not_allowed'];
                 }
 
                 if (!$this->isUserLogged()) {
-                    return ['success' => false, 'message' => 'User not logged'];
+                    return ['success' => false, 'message' => 'user_not_logged'];
                 }
 
                 try {
                     $playlist = $this->entityManager->getRepository(Playlist::class)->findOneBy(["id" => $data['id'], "user" => $this->user->getId()]);
                     if (!$playlist) {
-                        return ['success' => false, 'message' => 'Playlist not found'];
+                        return ['success' => false, 'message' => 'playlist_not_found'];
                     }
                     $playlist->setTitle($data['title']);
                     $playlist->setDescription($data['description']);
                     $playlist->setUpdatedAt(new \DateTime());
                     $this->entityManager->persist($playlist);
                     $this->entityManager->flush();
-                    return ['success' => true, 'message' => 'Playlist updated'];
+                    return ['success' => true, 'message' => 'playlist_updated'];
                 } catch (\Exception $e) {
                     return ['success' => false, 'message' => $e->getMessage()];
                 }
-            },
-            'get_by_filter' => function () {
-                // accept only POST request
-                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
-
-                // bind incoming search param
-                $search = !empty($_POST['filter']['search']) ? htmlspecialchars(strip_tags(trim(addslashes($_POST['filter']['search'])))) : '';
-                unset($_POST['filter']['search']);
-
-                $sort = !empty($_POST['filter']['sort']) ? htmlspecialchars(strip_tags(trim($_POST['filter']['sort'][0]))) : '';
-                unset($_POST['filter']['sort']);
-
-
-                // bind and/or sanitize other incoming params
-                $page = !empty($_POST['page']) ? intval($_POST['page']) : 1;
-                $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
-
-                // fetch data from db 
-                $results = $this->entityManager->getRepository(Playlist::class)->getByFilter($sanitizedFilters, $search, $sort, $page);
-
-                // prepare and return data
-                $arrayResult = [];
-                foreach ($results as $result) {
-                    if (json_encode($result) != NULL && json_encode($result) != false) {
-                        $resultToReturn = json_decode(json_encode(($result)));
-                        $resultToReturn->forksCount = $this->entityManager->getRepository('Learn\Entity\Course')->getCourseForksCountAndTree($resultToReturn->id)['forksCount'];
-                        $arrayResult[] =  $resultToReturn;
-                    }
-                }
-                return $arrayResult;
             },
             'get_by_id' => function () {
                 // accept only POST request
@@ -162,27 +132,61 @@ class ControllerPlaylist extends Controller
 
                 $user = $this->isUserLogged();
                 if (!$user) {
-                    return ['success' => false, 'message' => 'User not logged'];
+                    return ['success' => false, 'message' => 'user_not_logged'];
                 }
 
-                //get the request payload
                 $data = json_decode(file_get_contents('php://input'), true);
-                //sanitize the data
                 $id = !empty($data['id']) ? htmlspecialchars(strip_tags($data['id'])) : '';
 
-
-
-                // fetch data from db 
-                $result = $this->entityManager->getRepository(Playlist::class)->findOneBy(["id" => $id, "user" => $user->getId()]);
-
-                // prepare and return data
-                if (json_encode($result) != NULL && json_encode($result) != false) {
-                    $resultToReturn = json_decode(json_encode(($result)));
-                    $resultToReturn->forksCount = $this->entityManager->getRepository('Learn\Entity\Course')->getCourseForksCountAndTree($resultToReturn->id)['forksCount'];
-                    return $resultToReturn;
+                try {
+                    $result = $this->entityManager->getRepository(Playlist::class)->getLightDataPlaylistById($id, $user->getId());
+                    if (!$result) {
+                        return ['success' => false, 'message' => 'playlist_not_found'];
+                    }
+                    $resources = $this->entityManager->getRepository(CourseLinkPlaylist::class)->getCourseLinkPlaylistByArrayOfIds($id);
+                    $result['resources'] = $resources;
+                    // prepare and return data
+                    return ['success' => true, 'playlist' => $result];
+                } catch (\Exception $e) {
+                    return ['success' => false, 'message' => $e->getMessage()];
                 }
-                return [];
             },
+            'get_by_filter' => function ($data) {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                $user = $this->isUserLogged();
+                if (!$user) {
+                    return ['success' => false, 'message' => 'user_not_logged'];
+                }
+
+                $data = json_decode(file_get_contents('php://input'), true);
+
+                $sort = !empty($_POST['sort']) ? htmlspecialchars(strip_tags($_POST['sort'])) : '';
+                $page = !empty($_POST['page']) ? htmlspecialchars(strip_tags($_POST['page'])) : 1;
+                $search = !empty($_POST['filter']['search']) ? htmlspecialchars(strip_tags($_POST['filter']['search'])) : null;
+                //$lang = !empty($_POST['filter']['lang']) ? htmlspecialchars(strip_tags($_POST['filter']['lang'])) : 1;
+                $options = !empty($data['options']) ? $data['options'] : [];
+
+                try {
+                    $results = $this->entityManager->getRepository(Playlist::class)->getByFilter($options, $search, $sort, $page, $user->getId());
+                    $arrayResult['pagination'] = $results['pagination'];
+                    foreach ($results["items"] as $item) {
+                        if (json_encode($item) != NULL && json_encode($item) != false) {
+                            $resultToReturn = json_decode(json_encode(($item)));
+                            if (property_exists($resultToReturn, 'folder')) {
+                                $resultToReturn->forksCount = $this->entityManager->getRepository(Course::class)->getCourseForksCountAndTree($resultToReturn->id)['forksCount'];
+                                $arrayResult['courses'][] =  $resultToReturn;
+                            } else {
+                                $arrayResult['playlists'][] =  $item->jsonSerialize();
+                            }
+                        }
+                    }
+                    return ['success' => true, 'results' => $arrayResult];
+                } catch (\Exception $e) {
+                    return ['success' => false, 'message' => $e->getMessage()];
+                }
+            }
         );
     }
 

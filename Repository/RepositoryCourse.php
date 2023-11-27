@@ -3,11 +3,12 @@
 namespace Learn\Repository;
 
 
-use Doctrine\ORM\EntityRepository;
+use User\Entity\User;
 use Learn\Entity\Course;
 use Learn\Entity\Activity;
+use Doctrine\ORM\EntityRepository;
 use Learn\Entity\CourseLinkActivity;
-use User\Entity\User;
+use Learn\Entity\CourseLinkPlaylist;
 
 class RepositoryCourse extends EntityRepository
 {
@@ -147,18 +148,6 @@ class RepositoryCourse extends EntityRepository
             array_push($courseForksToReturn, $courseToReturn);
         }
         return $courseForksToReturn;
-    }
-
-    public function getCoursesInArrayOfIds($ids)
-    {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $courses = $qb->select('c.title, c.')
-            ->from(Course::class, 'c')
-            ->andWhere('c.id IN (:ids)')
-            ->setParameter('ids', $ids)
-            ->getQuery()
-            ->getResult();
-        return $courses;
     }
 }
 
