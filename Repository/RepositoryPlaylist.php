@@ -8,6 +8,7 @@ use Learn\Entity\Activity;
 use Learn\Entity\Playlist;
 use Doctrine\ORM\EntityRepository;
 use Learn\Entity\CourseLinkActivity;
+use Learn\Entity\CourseLinkPlaylist;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 
 class RepositoryPlaylist extends EntityRepository
@@ -54,7 +55,8 @@ class RepositoryPlaylist extends EntityRepository
             ->from(Playlist::class, 'p')
             ->andWhere("p.title LIKE :search OR p.description LIKE :search")
             ->setParameter('search', "%$search%")
-            ->getQuery()->getResult();
+            ->getQuery()
+            ->getResult();
 
 
         // Utilisez le Paginator pour paginer les résultats combinés
@@ -89,6 +91,19 @@ class RepositoryPlaylist extends EntityRepository
             ->andWhere('p.user = :user')
             ->setParameter('id', $id)
             ->setParameter('user', $user);
+        $results = $queryBuilder->getQuery()->getOneOrNullResult();
+        return $results;
+    }
+
+    public function getImageOfFirstCourseInPlaylist($id) {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder();
+        $queryBuilder->select('c.img')
+            ->from(Course::class, 'c')
+            ->leftJoin(CourseLinkPlaylist::class, 'clp', 'WITH', "c.id=clp.courseId")
+            ->andWhere('clp.playlistId = :id')
+            ->andWhere('clp.indexOrder = 0')
+            ->setParameter('id', $id)
+            ->setMaxResults(1);
         $results = $queryBuilder->getQuery()->getOneOrNullResult();
         return $results;
     }

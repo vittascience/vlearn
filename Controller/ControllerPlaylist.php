@@ -152,13 +152,7 @@ class ControllerPlaylist extends Controller
                 }
             },
             'get_by_filter' => function ($data) {
-                // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
-
-                $user = $this->isUserLogged();
-                if (!$user) {
-                    return ['success' => false, 'message' => 'user_not_logged'];
-                }
 
                 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -169,7 +163,7 @@ class ControllerPlaylist extends Controller
                 $options = !empty($data['options']) ? $data['options'] : [];
 
                 try {
-                    $results = $this->entityManager->getRepository(Playlist::class)->getByFilter($options, $search, $sort, $page, $user->getId());
+                    $results = $this->entityManager->getRepository(Playlist::class)->getByFilter($options, $search, $sort, $page);
                     $arrayResult['pagination'] = $results['pagination'];
                     foreach ($results["items"] as $item) {
                         if (json_encode($item) != NULL && json_encode($item) != false) {
@@ -178,7 +172,15 @@ class ControllerPlaylist extends Controller
                                 $resultToReturn->forksCount = $this->entityManager->getRepository(Course::class)->getCourseForksCountAndTree($resultToReturn->id)['forksCount'];
                                 $arrayResult['courses'][] =  $resultToReturn;
                             } else {
-                                $arrayResult['playlists'][] =  $item->jsonSerialize();
+                                $playlistTMP = $item->jsonSerialize();
+                                $reuqestImg = $this->entityManager->getRepository(Playlist::class)->getImageOfFirstCourseInPlaylist($playlistTMP['id']);
+                                if ($reuqestImg) {
+                                    $playlistTMP['image'] = $reuqestImg['img'];
+                                } else {
+                                    $playlistTMP['image'] = null;
+                                }
+
+                                $arrayResult['playlists'][] = $playlistTMP;
                             }
                         }
                     }
