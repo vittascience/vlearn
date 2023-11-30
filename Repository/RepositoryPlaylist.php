@@ -4,6 +4,7 @@ namespace Learn\Repository;
 
 use User\Entity\User;
 use Learn\Entity\Course;
+use User\Entity\Regular;
 use Learn\Entity\Activity;
 use Learn\Entity\Playlist;
 use Doctrine\ORM\EntityRepository;
@@ -86,7 +87,7 @@ class RepositoryPlaylist extends EntityRepository
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('p.id, p.title, p.description')
             ->from(Playlist::class, 'p')
-            ->leftJoin(User::class, 'u', 'WITH', "u.id=p.user")
+            ->leftJoin(User::class, 'u', 'WITH', "u.id=p.id")
             ->andWhere('p.id = :id')
             ->andWhere('p.user = :user')
             ->setParameter('id', $id)

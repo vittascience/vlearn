@@ -149,17 +149,52 @@ class RepositoryCourse extends EntityRepository
         }
         return $courseForksToReturn;
     }
-}
 
-// $filtered_chars = array(
-//     "Š" => "S", "š" => "s",
-//     "Ž" => "Z", "ž" => "z",
-//     "À" => "A", "Á" => "A", "Â" => "A", "Ã" => "A", "Ä" => "A", "Å" => "A", "Æ" => "A", "à" => "a", "á" => "a", "â" => "a", "ã" => "a", "ä" => "a", "å" => "a", "æ" => "a",
-//     "Ç" => "C", "ç" => "c",
-//     "È" => "E", "É" => "E", "Ê" => "E", "Ë" => "E", "è" => "e", "é" => "e", "ê" => "e", "ë" => "e",
-//     "Ì" => "I", "Í" => "I", "Î" => "I", "Ï" => "I", "ì" => "i", "í" => "i", "î" => "i", "ï" => "i",
-//     "Ñ" => "N", "ñ" => "n",
-//     "Ò" => "O", "Ó" => "O", "Ô" => "O", "Õ" => "O", "Ö" => "O", "Ø" => "O", "ð" => "o", "ò" => "o", "ó" => "o", "ô" => "o", "õ" => "o", "ö" => "o", "ø" => "o",
-//     "Ù" => "U", "Ú" => "U", "Û" => "U", "Ü" => "U", "ù" => "u", "ú" => "u", "û" => "u",
-//     "ý" => "y", "þ" => "b", "ÿ" => "y"
-// );
+    public function getRandomResourcesByLang($lang, $number, $sort) {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder();
+        $queryBuilder->select('c.id, c.title, c.img, c.description, c.updatedAt, c.views, u.firstname, u.surname, u.id')
+            ->from(Course::class, 'c')
+            ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
+            ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
+            ->leftJoin(User::class, 'u', 'WITH', 'c.user=u.id')
+            ->andWhere('c.lang = :lang')
+            ->andWhere('c.rights=1 OR c.rights=2')
+            ->andWhere('a.isFromClassroom=0')
+            ->setParameter('lang', $lang)
+            ->setMaxResults(10);
+
+        if ($sort != null) {
+            $queryBuilder->orderBy("c.$sort", 'DESC');
+        }
+        
+        $results = $queryBuilder->getQuery()->getResult();
+
+        $randomCoursesToReturn = [];
+        if (count($results) > 0) {
+            $randomCourses = array_rand($results, $number);
+    
+            if (!is_array($randomCourses)) {
+                $randomCoursesToReturn = $results[$randomCourses];
+            } else {
+                foreach ($randomCourses as $randomCourse) {
+                    array_push($randomCoursesToReturn, $results[$randomCourse]);
+                }
+            }
+        }
+
+        return $randomCoursesToReturn;
+    }
+
+    public function countResources() {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder();
+        $queryBuilder->select('count(DISTINCT c.id)')
+            ->from(Course::class, 'c')
+            ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
+            ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
+            ->andWhere('c.rights=1 OR c.rights=2')
+            ->andWhere('a.isFromClassroom=0');
+
+        $results = $queryBuilder->getQuery()->getSingleScalarResult();
+        return $results;
+    }
+}
