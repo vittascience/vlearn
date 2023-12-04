@@ -177,7 +177,7 @@ class ControllerPlaylist extends Controller
                                 $playlistLength = $this->entityManager->getRepository(Playlist::class)->getLengthOfCourseLinkPlaylistById($playlistTMP['id']);
                                 if ($reuqestImg && $playlistLength) {
                                     $playlistTMP['image'] = $reuqestImg['img'];
-                                    $playlistTMP['length'] = $playlistLength;
+                                    $playlistTMP['length'] = $playlistLength['length'];
                                 } else {
                                     $playlistTMP['image'] = null;
                                     $playlistTMP['length'] = 0;
