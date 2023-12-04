@@ -28,6 +28,8 @@ class ControllerPlaylist extends Controller
                 //get the request payload
                 $data = json_decode(file_get_contents('php://input'), true);
                 //sanitize the data
+
+                $data['id'] = !empty($data['id']) ? htmlspecialchars(strip_tags($data['id'])) : '';
                 $data['title'] = !empty($data['title']) ? htmlspecialchars(strip_tags($data['title'])) : '';
                 $data['description'] = !empty($data['description']) ? htmlspecialchars(strip_tags($data['description'])) : '';
 
@@ -49,12 +51,21 @@ class ControllerPlaylist extends Controller
                 }
 
                 try {
-                    $playlist = new Playlist($data['title']);
+
+                    if (!empty($data['id'])) {
+                        $playlist = $this->entityManager->getRepository(Playlist::class)->findOneBy(["id" => $data['id'], "user" => $user->getId()]);
+                        if (!$playlist) {
+                            return ['success' => false, 'message' => 'playlist_not_found'];
+                        }
+                    } else {
+                        $playlist = new Playlist($data['title']);
+                        $playlist->setCreatedAt(new \DateTime());
+                        $playlist->setUser($user);
+                        $playlist->setRights(0);
+                    }
+
                     $playlist->setDescription($data['description']);
-                    $playlist->setUser($user);
-                    $playlist->setCreatedAt(new \DateTime());
                     $playlist->setUpdatedAt(new \DateTime());
-                    $playlist->setRights(0);
                     $this->entityManager->persist($playlist);
                     $this->entityManager->flush();
 
@@ -96,31 +107,6 @@ class ControllerPlaylist extends Controller
                     $this->entityManager->remove($playlist);
                     $this->entityManager->flush();
                     return ['success' => true, 'message' => 'playlist_deleted'];
-                } catch (\Exception $e) {
-                    return ['success' => false, 'message' => $e->getMessage()];
-                }
-            },
-            'update_my_playlist' => function ($data) {
-
-                if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                    return ['success' => false, 'message' => 'method_not_allowed'];
-                }
-
-                if (!$this->isUserLogged()) {
-                    return ['success' => false, 'message' => 'user_not_logged'];
-                }
-
-                try {
-                    $playlist = $this->entityManager->getRepository(Playlist::class)->findOneBy(["id" => $data['id'], "user" => $this->user->getId()]);
-                    if (!$playlist) {
-                        return ['success' => false, 'message' => 'playlist_not_found'];
-                    }
-                    $playlist->setTitle($data['title']);
-                    $playlist->setDescription($data['description']);
-                    $playlist->setUpdatedAt(new \DateTime());
-                    $this->entityManager->persist($playlist);
-                    $this->entityManager->flush();
-                    return ['success' => true, 'message' => 'playlist_updated'];
                 } catch (\Exception $e) {
                     return ['success' => false, 'message' => $e->getMessage()];
                 }
