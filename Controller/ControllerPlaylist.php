@@ -76,11 +76,25 @@ class ControllerPlaylist extends Controller
                             return ['success' => false, 'message' => 'course_not_found'];
                         }
 
-                        $courseLinkPlaylist = new CourseLinkPlaylist();
-                        $courseLinkPlaylist->setCourseId($course);
-                        $courseLinkPlaylist->setPlaylistId($playlist);
-                        $courseLinkPlaylist->setIndexOrder($i);
-                        $this->entityManager->persist($courseLinkPlaylist);
+                        if (!empty($data['id'])) {
+                            $courseLinkPlaylist = $this->entityManager->getRepository(CourseLinkPlaylist::class)->findOneBy(["courseId" => $course->getId(), "playlistId" => $playlist->getId()]);
+                            if (!$courseLinkPlaylist) {
+                                $courseLinkPlaylist = new CourseLinkPlaylist();
+                                $courseLinkPlaylist->setCourseId($course);
+                                $courseLinkPlaylist->setPlaylistId($playlist);
+                                $courseLinkPlaylist->setIndexOrder($i);
+                                $this->entityManager->persist($courseLinkPlaylist);
+                            } else {
+                                $courseLinkPlaylist->setIndexOrder($i);
+                                $this->entityManager->persist($courseLinkPlaylist);
+                            }
+                        } else {
+                            $courseLinkPlaylist = new CourseLinkPlaylist();
+                            $courseLinkPlaylist->setCourseId($course);
+                            $courseLinkPlaylist->setPlaylistId($playlist);
+                            $courseLinkPlaylist->setIndexOrder($i);
+                            $this->entityManager->persist($courseLinkPlaylist);
+                        }
                     }
                     $this->entityManager->flush();
                     
