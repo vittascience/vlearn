@@ -71,32 +71,28 @@ class ControllerPlaylist extends Controller
                     $this->entityManager->flush();
 
 
+                    //get course link playlist
+                    $courseLinkPlaylist = $this->entityManager->getRepository(CourseLinkPlaylist::class)->findBy(["playlistId" => $playlist->getId()]);
+                    if ($courseLinkPlaylist) {
+                        foreach ($courseLinkPlaylist as $courseLink) {
+                            $this->entityManager->remove($courseLink);
+                        }
+                        $this->entityManager->flush();
+                    }
+
                     for ($i = 0; $i < count($ids); $i++) {
                         $course = $this->entityManager->getRepository(Course::class)->findOneBy(["id" => $ids[$i]]);
                         if (!$course) {
                             return ['success' => false, 'message' => 'course_not_found'];
                         }
 
-                        if (!empty($data['id'])) {
-                            $courseLinkPlaylist = $this->entityManager->getRepository(CourseLinkPlaylist::class)->findOneBy(["courseId" => $course->getId(), "playlistId" => $playlist->getId()]);
-                            if (!$courseLinkPlaylist) {
-                                $courseLinkPlaylist = new CourseLinkPlaylist();
-                                $courseLinkPlaylist->setCourseId($course);
-                                $courseLinkPlaylist->setPlaylistId($playlist);
-                                $courseLinkPlaylist->setIndexOrder($i);
-                                $this->entityManager->persist($courseLinkPlaylist);
-                            } else {
-                                $courseLinkPlaylist->setIndexOrder($i);
-                                $this->entityManager->persist($courseLinkPlaylist);
-                            }
-                        } else {
-                            $courseLinkPlaylist = new CourseLinkPlaylist();
-                            $courseLinkPlaylist->setCourseId($course);
-                            $courseLinkPlaylist->setPlaylistId($playlist);
-                            $courseLinkPlaylist->setIndexOrder($i);
-                            $this->entityManager->persist($courseLinkPlaylist);
-                        }
+                        $courseLinkPlaylist = new CourseLinkPlaylist();
+                        $courseLinkPlaylist->setCourseId($course);
+                        $courseLinkPlaylist->setPlaylistId($playlist);
+                        $courseLinkPlaylist->setIndexOrder($i);
+                        $this->entityManager->persist($courseLinkPlaylist);
                     }
+                    
                     $this->entityManager->flush();
                     
                     return ['success' => true, 'message' => 'playlist_saved'];
