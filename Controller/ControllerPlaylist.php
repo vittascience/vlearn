@@ -64,6 +64,7 @@ class ControllerPlaylist extends Controller
                         $playlist->setRights(0);
                     }
 
+                    $playlist->setTitle($data['title']);
                     $playlist->setDescription($data['description']);
                     $playlist->setUpdatedAt(new \DateTime());
                     $this->entityManager->persist($playlist);
