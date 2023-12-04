@@ -174,10 +174,13 @@ class ControllerPlaylist extends Controller
                             } else {
                                 $playlistTMP = $item->jsonSerialize();
                                 $reuqestImg = $this->entityManager->getRepository(Playlist::class)->getImageOfFirstCourseInPlaylist($playlistTMP['id']);
-                                if ($reuqestImg) {
+                                $playlistLength = $this->entityManager->getRepository(Playlist::class)->getLengthOfCourseLinkPlaylistById($playlistTMP['id']);
+                                if ($reuqestImg && $playlistLength) {
                                     $playlistTMP['image'] = $reuqestImg['img'];
+                                    $playlistTMP['length'] = $playlistLength;
                                 } else {
                                     $playlistTMP['image'] = null;
+                                    $playlistTMP['length'] = 0;
                                 }
 
                                 $arrayResult['playlists'][] = $playlistTMP;

@@ -108,4 +108,14 @@ class RepositoryPlaylist extends EntityRepository
         $results = $queryBuilder->getQuery()->getOneOrNullResult();
         return $results;
     }
+
+    public function getLengthOfCourseLinkPlaylistById($id) {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder();
+        $queryBuilder->select('COUNT(clp.id) as length')
+            ->from(CourseLinkPlaylist::class, 'clp')
+            ->andWhere('clp.playlistId = :id')
+            ->setParameter('id', $id);
+        $results = $queryBuilder->getQuery()->getOneOrNullResult();
+        return $results;
+    }
 }
