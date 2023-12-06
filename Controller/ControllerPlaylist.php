@@ -32,6 +32,7 @@ class ControllerPlaylist extends Controller
                 $data['id'] = !empty($data['id']) ? htmlspecialchars(strip_tags($data['id'])) : '';
                 $data['title'] = !empty($data['title']) ? htmlspecialchars(strip_tags($data['title'])) : '';
                 $data['description'] = !empty($data['description']) ? htmlspecialchars(strip_tags($data['description'])) : '';
+                $data['rights'] = !empty($data['rights']) ? htmlspecialchars(strip_tags($data['rights'])) : '';
 
                 if (empty($data['title'])) {
                     return ['success' => false, 'message' => 'title_empty'];
@@ -61,11 +62,11 @@ class ControllerPlaylist extends Controller
                         $playlist = new Playlist($data['title']);
                         $playlist->setCreatedAt(new \DateTime());
                         $playlist->setUser($user);
-                        $playlist->setRights(0);
                     }
 
                     $playlist->setTitle($data['title']);
                     $playlist->setDescription($data['description']);
+                    $playlist->setRights((int)$data['rights']);
                     $playlist->setUpdatedAt(new \DateTime());
                     $this->entityManager->persist($playlist);
                     $this->entityManager->flush();
@@ -106,15 +107,33 @@ class ControllerPlaylist extends Controller
                     return ['success' => false, 'message' => 'method_not_allowed'];
                 }
 
-                if (!$this->isUserLogged()) {
+                $user = $this->isUserLogged();
+                if (!$user) {
                     return ['success' => false, 'message' => 'user_not_logged'];
                 }
 
+                $data = json_decode(file_get_contents('php://input'), true);
+                $data['id'] = !empty($data['id']) ? htmlspecialchars(strip_tags($data['id'])) : '';
+
+                if (empty($data['id'])) {
+                    return ['success' => false, 'message' => 'id_empty'];
+                }
+
                 try {
-                    $playlist = $this->entityManager->getRepository(Playlist::class)->findOneBy(["id" => $data['id'], "user" => $this->user->getId()]);
+                    $playlist = $this->entityManager->getRepository(Playlist::class)->findOneBy(["id" => $data['id'], "user" => $user->getId()]);
                     if (!$playlist) {
                         return ['success' => false, 'message' => 'playlist_not_found'];
                     }
+
+                    $courseLinkPlaylist = $this->entityManager->getRepository(CourseLinkPlaylist::class)->findBy(["playlistId" => $playlist->getId()]);
+
+                    if ($courseLinkPlaylist) {
+                        foreach ($courseLinkPlaylist as $courseLink) {
+                            $this->entityManager->remove($courseLink);
+                        }
+                        $this->entityManager->flush();
+                    }
+
                     $this->entityManager->remove($playlist);
                     $this->entityManager->flush();
                     return ['success' => true, 'message' => 'playlist_deleted'];
@@ -182,6 +201,71 @@ class ControllerPlaylist extends Controller
 
                                 $arrayResult['playlists'][] = $playlistTMP;
                             }
+                        }
+                    }
+                    return ['success' => true, 'results' => $arrayResult];
+                } catch (\Exception $e) {
+                    return ['success' => false, 'message' => $e->getMessage()];
+                }
+            },
+            'get_all_playlists' => function () {
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                $data = json_decode(file_get_contents('php://input'), true);
+                $data['page'] = !empty($data['page']) ? htmlspecialchars(strip_tags($data['page'])) : '';
+
+                try {
+                    $results = $this->entityManager->getRepository(Playlist::class)->getAllPlaylists($data['page']);
+                    $arrayResult['pagination'] = $results['pagination'];
+                    foreach ($results["items"] as $item) {
+                        if (json_encode($item) != NULL && json_encode($item) != false) {
+                            $playlistTMP = $item->jsonSerialize();
+                            $reuqestImg = $this->entityManager->getRepository(Playlist::class)->getImageOfFirstCourseInPlaylist($playlistTMP['id']);
+                            $playlistLength = $this->entityManager->getRepository(Playlist::class)->getLengthOfCourseLinkPlaylistById($playlistTMP['id']);
+                            if ($reuqestImg && $playlistLength) {
+                                $playlistTMP['image'] = $reuqestImg['img'];
+                                $playlistTMP['length'] = $playlistLength['length'];
+                            } else {
+                                $playlistTMP['image'] = null;
+                                $playlistTMP['length'] = 0;
+                            }
+
+                            $arrayResult['playlists'][] = $playlistTMP;
+                        }
+                    }
+                    return ['success' => true, 'results' => $arrayResult];
+                } catch (\Exception $e) {
+                    return ['success' => false, 'message' => $e->getMessage()];
+                }
+            },
+            'get_my_playlists' => function () {
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                $data = json_decode(file_get_contents('php://input'), true);
+                $data['page'] = !empty($data['page']) ? htmlspecialchars(strip_tags($data['page'])) : '';
+                
+                $user = $this->isUserLogged();
+                if (!$user) {
+                    return ['success' => false, 'message' => 'user_not_logged'];
+                }
+
+                try {
+                    $results = $this->entityManager->getRepository(Playlist::class)->getMyPlaylists($data['page'], $user);
+                    $arrayResult['pagination'] = $results['pagination'];
+                    foreach ($results["items"] as $item) {
+                        if (json_encode($item) != NULL && json_encode($item) != false) {
+                            $playlistTMP = $item->jsonSerialize();
+                            $reuqestImg = $this->entityManager->getRepository(Playlist::class)->getImageOfFirstCourseInPlaylist($playlistTMP['id']);
+                            $playlistLength = $this->entityManager->getRepository(Playlist::class)->getLengthOfCourseLinkPlaylistById($playlistTMP['id']);
+                            if ($reuqestImg && $playlistLength) {
+                                $playlistTMP['image'] = $reuqestImg['img'];
+                                $playlistTMP['length'] = $playlistLength['length'];
+                            } else {
+                                $playlistTMP['image'] = null;
+                                $playlistTMP['length'] = 0;
+                            }
+
+                            $arrayResult['playlists'][] = $playlistTMP;
                         }
                     }
                     return ['success' => true, 'results' => $arrayResult];

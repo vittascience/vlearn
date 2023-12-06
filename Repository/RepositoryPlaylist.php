@@ -55,6 +55,7 @@ class RepositoryPlaylist extends EntityRepository
         $results2 = $queryBuilder2->select('p')
             ->from(Playlist::class, 'p')
             ->andWhere("p.title LIKE :search OR p.description LIKE :search")
+            ->andWhere('p.rights=1 OR p.rights=2')
             ->setParameter('search', "%$search%")
             ->getQuery()
             ->getResult();
@@ -85,7 +86,7 @@ class RepositoryPlaylist extends EntityRepository
     public function getLightDataPlaylistById($id, $user)
     {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
-        $queryBuilder->select('p.id, p.title, p.description')
+        $queryBuilder->select('p.id, p.title, p.description, p.rights')
             ->from(Playlist::class, 'p')
             ->leftJoin(User::class, 'u', 'WITH', "u.id=p.id")
             ->andWhere('p.id = :id')
@@ -117,5 +118,56 @@ class RepositoryPlaylist extends EntityRepository
             ->setParameter('id', $id);
         $results = $queryBuilder->getQuery()->getOneOrNullResult();
         return $results;
+    }
+
+    public function getAllPlaylists($page) {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder();
+        $results = $queryBuilder->select('p')
+            ->from(Playlist::class, 'p')
+            ->andWhere('p.rights=1 OR p.rights=2')
+            ->getQuery()
+            ->getResult();
+
+        // Configurez le nombre d'éléments par page
+        $itemsPerPage = 25;
+        $returnResults = array_slice($results, ($page - 1) * $itemsPerPage, $itemsPerPage);
+
+        $paginatorData = [
+            'pagination' => [
+                'currentPage' => $page,
+                'itemsPerPage' => $itemsPerPage,
+                'totalItems' => count($results),
+                'totalPages' => ceil(count($results) / $itemsPerPage),
+            ],
+            'items' => $returnResults,
+        ];
+
+        return $paginatorData;
+    }
+
+    public function getMyPlaylists($page, $user) {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder();
+        $results = $queryBuilder->select('p')
+            ->from(Playlist::class, 'p')
+            ->where('p.user = :user')
+            ->setParameter('user', $user)
+            ->getQuery()
+            ->getResult();
+
+        // Configurez le nombre d'éléments par page
+        $itemsPerPage = 25;
+        $returnResults = array_slice($results, ($page - 1) * $itemsPerPage, $itemsPerPage);
+
+        $paginatorData = [
+            'pagination' => [
+                'currentPage' => $page,
+                'itemsPerPage' => $itemsPerPage,
+                'totalItems' => count($results),
+                'totalPages' => ceil(count($results) / $itemsPerPage),
+            ],
+            'items' => $returnResults,
+        ];
+
+        return $paginatorData;
     }
 }
