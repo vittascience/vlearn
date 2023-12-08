@@ -145,17 +145,11 @@ class ControllerPlaylist extends Controller
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
-
-                $user = $this->isUserLogged();
-                if (!$user) {
-                    return ['success' => false, 'message' => 'user_not_logged'];
-                }
-
                 $data = json_decode(file_get_contents('php://input'), true);
                 $id = !empty($data['id']) ? htmlspecialchars(strip_tags($data['id'])) : '';
 
                 try {
-                    $result = $this->entityManager->getRepository(Playlist::class)->getLightDataPlaylistById($id, $user->getId());
+                    $result = $this->entityManager->getRepository(Playlist::class)->getLightPublicDataPlaylistById($id);
                     if (!$result) {
                         return ['success' => false, 'message' => 'playlist_not_found'];
                     }

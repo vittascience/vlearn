@@ -97,6 +97,19 @@ class RepositoryPlaylist extends EntityRepository
         return $results;
     }
 
+    
+    public function getLightPublicDataPlaylistById($id)
+    {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder();
+        $queryBuilder->select('p.id, p.title, p.description, p.rights')
+            ->from(Playlist::class, 'p')
+            ->andWhere('p.id = :id')
+            ->andWhere('p.rights=1 OR p.rights=2')
+            ->setParameter('id', $id);
+        $results = $queryBuilder->getQuery()->getOneOrNullResult();
+        return $results;
+    }
+
     public function getImageOfFirstCourseInPlaylist($id) {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c.img')
