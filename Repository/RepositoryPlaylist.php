@@ -66,6 +66,11 @@ class RepositoryPlaylist extends EntityRepository
         $results = iterator_to_array($paginator->getIterator());
         $results = array_merge($results, $results2);
 
+        // sort results by createdAt when the two tables are merged
+        usort($results, function ($a, $b) {
+            return $a->getCreatedAt() < $b->getCreatedAt();
+        });
+
         // Configurez le nombre d'éléments par page
         $itemsPerPage = 25;
         $returnResults = array_slice($results, ($page - 1) * $itemsPerPage, $itemsPerPage);
