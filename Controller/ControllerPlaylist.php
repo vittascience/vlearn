@@ -151,6 +151,9 @@ class ControllerPlaylist extends Controller
                 try {
                     $result = $this->entityManager->getRepository(Playlist::class)->getLightPublicDataPlaylistById($id);
                     if (!$result) {
+                        $result = $this->entityManager->getRepository(Playlist::class)->getLightDataPlaylistById($id, $this->isUserLogged());
+                    }
+                    if (!$result) {
                         return ['success' => false, 'message' => 'playlist_not_found'];
                     }
                     $resources = $this->entityManager->getRepository(CourseLinkPlaylist::class)->getCourseLinkPlaylistByArrayOfIds($id);
