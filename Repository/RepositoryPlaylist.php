@@ -17,7 +17,6 @@ class RepositoryPlaylist extends EntityRepository
 
     public function getByFilter($options, $search, $sort, $page = 1)
     {
-        // same query with union all with the playlist table and course table
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
             ->from(Course::class, 'c')
@@ -44,11 +43,11 @@ class RepositoryPlaylist extends EntityRepository
             $sortDirection = !empty($incomingSortDirection) ? strtoupper($incomingSortDirection) : "DESC";
         }
 
-
         $queryBuilder->setParameter('search', "%$search%");
         $results = $queryBuilder->groupBy('c.id')
             ->orderBy("c.$sortField", $sortDirection)
-            ->getQuery();
+            ->getQuery()
+            ->getResult();
 
         //get playlists
         $queryBuilder2 = $this->getEntityManager()->createQueryBuilder();
@@ -62,25 +61,25 @@ class RepositoryPlaylist extends EntityRepository
 
 
         // Utilisez le Paginator pour paginer les résultats combinés
-        $paginator = new Paginator($queryBuilder->getQuery());
-        $results = iterator_to_array($paginator->getIterator());
-        $results = array_merge($results, $results2);
+        //$paginator = new Paginator($queryBuilder->getQuery());
+        //$results = iterator_to_array($paginator->getIterator());
+        $resultsMerged = array_merge($results, $results2);
 
         // sort results by createdAt when the two tables are merged
-        usort($results, function ($a, $b) {
+        usort($resultsMerged, function ($a, $b) {
             return $a->getCreatedAt() < $b->getCreatedAt();
         });
 
         // Configurez le nombre d'éléments par page
         $itemsPerPage = 25;
-        $returnResults = array_slice($results, ($page - 1) * $itemsPerPage, $itemsPerPage);
+        $returnResults = array_slice($resultsMerged, ($page - 1) * $itemsPerPage, $itemsPerPage);
 
         $paginatorData = [
             'pagination' => [
                 'currentPage' => $page,
                 'itemsPerPage' => $itemsPerPage,
-                'totalItems' => count($results),
-                'totalPages' => ceil(count($results) / $itemsPerPage),
+                'totalItems' => count($resultsMerged),
+                'totalPages' => ceil(count($resultsMerged) / $itemsPerPage),
             ],
             'items' => $returnResults,
         ];
