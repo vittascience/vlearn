@@ -173,10 +173,9 @@ class ControllerPlaylist extends Controller
                 $page = !empty($_POST['page']) ? htmlspecialchars(strip_tags($_POST['page'])) : 1;
                 $search = !empty($_POST['filter']['search']) ? htmlspecialchars(strip_tags($_POST['filter']['search'])) : null;
                 //$lang = !empty($_POST['filter']['lang']) ? htmlspecialchars(strip_tags($_POST['filter']['lang'])) : 1;
-                $options = !empty($data['options']) ? $data['options'] : [];
-
+                $sanitizedFilters = $this->sanitizeAndFormatFilterParams($_POST['filter']);
                 try {
-                    $results = $this->entityManager->getRepository(Playlist::class)->getByFilter($options, $search, $sort, $page);
+                    $results = $this->entityManager->getRepository(Playlist::class)->getByFilter($sanitizedFilters, $search, $sort, $page);
                     $arrayResult['pagination'] = $results['pagination'];
                     foreach ($results["items"] as $item) {
                         if (json_encode($item) != NULL && json_encode($item) != false) {
@@ -271,6 +270,34 @@ class ControllerPlaylist extends Controller
                 }
             }
         );
+    }
+
+    private function sanitizeAndFormatFilterParams($incomingFilters)
+    {
+        $sanitizedFilters = [];
+        if (!empty($incomingFilters["support"])) {
+            $supports = [];
+            foreach ($incomingFilters["support"] as $incomingSupport) {
+                array_push($supports, intval($incomingSupport));
+            }
+            $sanitizedFilters['support'] = "(" . implode(",", $supports) . ")";
+        }
+        if (!empty($incomingFilters["difficulty"])) {
+            $difficulties = [];
+            foreach ($incomingFilters["difficulty"] as $incomingDifficulty) {
+                array_push($difficulties, intval($incomingDifficulty));
+            }
+            $sanitizedFilters['difficulty'] = "(" . implode(",", $difficulties) . ")";
+        }
+        if (!empty($incomingFilters["lang"])) {
+            $languages = [];
+            foreach ($incomingFilters["lang"] as $incomingLang) {
+                array_push($languages, "'" . htmlspecialchars(strip_tags(trim($incomingLang))) . "'");
+            }
+            $sanitizedFilters['lang'] = "(" . implode(",", $languages) . ")";
+        }
+
+        return $sanitizedFilters;
     }
 
 
