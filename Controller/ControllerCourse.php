@@ -8,14 +8,11 @@ use Learn\Entity\Lesson;
 use User\Entity\Regular;
 use Learn\Entity\Folders;
 use Learn\Entity\Activity;
-use Database\DataBaseManager;
 use Learn\Entity\CourseLinkCourse;
 use Classroom\Entity\CourseLinkUser;
 use Learn\Entity\CourseLinkActivity;
 use Classroom\Entity\ActivityLinkUser;
 use Classroom\Entity\ClassroomLinkUser;
-
-/* require_once(__DIR__ . '/../../../utils/resize_img.php'); */
 
 class ControllerCourse extends Controller
 {
@@ -95,6 +92,7 @@ class ControllerCourse extends Controller
                     if (json_encode($result) != NULL && json_encode($result) != false) {
                         $resultToReturn = json_decode(json_encode(($result)));
                         $resultToReturn->forksCount = $this->entityManager->getRepository('Learn\Entity\Course')->getCourseForksCountAndTree($resultToReturn->id)['forksCount'];
+
                         $arrayResult[] =  $resultToReturn;
                     }
                 }
@@ -128,6 +126,7 @@ class ControllerCourse extends Controller
                     if (json_encode($result) != NULL && json_encode($result) != false) {
                         $resultToReturn = json_decode(json_encode(($result)));
                         $resultToReturn->forksCount = $this->entityManager->getRepository('Learn\Entity\Course')->getCourseForksCountAndTree($resultToReturn->id)['forksCount'];
+
                         $arrayResult[] =  $resultToReturn;
                     }
                 }
@@ -371,7 +370,10 @@ class ControllerCourse extends Controller
                 $tutorialErrors = $this->validateIncomingTutorialData($incomingTutorial);
                 if (!empty($tutorialErrors)) return array('errors' => $tutorialErrors);
 
-                $tutorial = Course::jsonDeserialize($_POST);
+                $tutorial = Course::jsonDeserialize($incomingTutorial);
+
+                $tutorial->setTitle(htmlspecialchars(strip_tags(trim($tutorial->getTitle()))));
+                $tutorial->setDescription(htmlspecialchars(strip_tags(trim($tutorial->getDescription()))));
 
                 //no error, get the matching tutorial from database
                 $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $tutorial->getId()));
@@ -688,7 +690,6 @@ class ControllerCourse extends Controller
                     $activities = $courseData['courses'] ?? "";
                     $title = $courseData['title'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
                     $description = $courseData['description'] ? htmlspecialchars(strip_tags(trim($courseData['description']))) : "";
-                    $image = $courseData['image'] ?? "";
                     $duration = intval($courseData['parameters']['duration']);
                     $difficulty = intval($courseData['parameters']['difficulty']);
                     $language = intval($courseData['parameters']['language']);
@@ -815,7 +816,6 @@ class ControllerCourse extends Controller
                     $courseId = htmlspecialchars(strip_tags(trim($_POST['courseId']))) ?? "";
                     $title = $courseData['title'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
                     $description = $courseData['description'] ? htmlspecialchars(strip_tags(trim($courseData['description']))) : "";
-                    $image = $courseData['image'] ?? "";
                     $duration = intval($courseData['parameters']['duration']);
                     $difficulty = intval($courseData['parameters']['difficulty']);
                     $language = intval($courseData['parameters']['language']);
@@ -848,7 +848,6 @@ class ControllerCourse extends Controller
 
                     $course->setTitle($title);
                     $course->setDescription($description);
-                    //$course->setImg($image);
                     $course->setFork(null);
                     $course->setDuration($duration);
                     $course->setDifficulty($difficulty);
@@ -1019,7 +1018,6 @@ class ControllerCourse extends Controller
                 $courseDuplicate = new Course();
                 $courseDuplicate->setTitle($newTitle);
                 $courseDuplicate->setDescription($course->getDescription());
-                //$course->setImg($image);
                 $courseDuplicate->setDuration($course->getDuration());
                 $courseDuplicate->setDifficulty($course->getDifficulty());
                 $courseDuplicate->setLang($course->getLang());
@@ -1092,6 +1090,7 @@ class ControllerCourse extends Controller
     {
         $tutorial = new \stdClass;
 
+        if ($incomingData['id']) $tutorial->id = intval($incomingData['id']);
         $tutorial->title = !empty($incomingData['title']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $incomingData['title']))) : '';
         $tutorial->description = !empty($incomingData['description']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $incomingData['description']))) : '';
         $tutorial->difficulty = !empty($incomingData['difficulty']) ? intval($incomingData['difficulty']) : 0;
