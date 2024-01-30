@@ -108,10 +108,9 @@ class ControllerNewActivities extends Controller
                 $folderId = !empty($data['folder']) ? htmlspecialchars($data['folder']) : null;
                 $tagsList = !empty($data['tags']) ? $data['tags'] : null;
 
-                $sanitizedContent = $this->sanitizeContent($content);
                 $regular = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $this->user['id']]);
 
-                $exercice = new Activity($title, $sanitizedContent, $regular, true);
+                $exercice = new Activity($title, $content, $regular, true);
 
                 if ($solution) {
                     $exercice->setSolution($solution);
@@ -914,10 +913,5 @@ class ControllerNewActivities extends Controller
         } else {
             return $string;
         }
-    }
-
-    private function sanitizeContent($content) {
-        $content['description'] = htmlspecialchars($content['description']);
-        $content['title'] = htmlspecialchars($content['title']);
     }
 }
