@@ -61,14 +61,24 @@ class RepositoryPlaylist extends EntityRepository
 
 
         // Utilisez le Paginator pour paginer les résultats combinés
-        //$paginator = new Paginator($queryBuilder->getQuery());
-        //$results = iterator_to_array($paginator->getIterator());
         $resultsMerged = array_merge($results, $results2);
 
         // sort results by createdAt when the two tables are merged
-        usort($resultsMerged, function ($a, $b) {
-            return $a->getCreatedAt() < $b->getCreatedAt();
-        });
+        if ($sortField == "createdAt") {
+            usort($resultsMerged, function ($a, $b) {
+                if ($sortDirection == "DESC")
+                    return $a->getCreatedAt() < $b->getCreatedAt();
+                else
+                    return $a->getCreatedAt() > $b->getCreatedAt();
+            });
+        } else {
+            usort($resultsMerged, function ($a, $b) {
+                if ($sortDirection == "DESC")
+                    return $a->getViews() > $b->getViews();
+                else
+                    return $a->getViews() < $b->getViews();
+            });
+        }
 
         // Configurez le nombre d'éléments par page
         $itemsPerPage = 25;
