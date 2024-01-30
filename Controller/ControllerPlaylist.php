@@ -167,9 +167,7 @@ class ControllerPlaylist extends Controller
             'get_by_filter' => function ($data) {
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
-                $data = json_decode(file_get_contents('php://input'), true);
-
-                $sort = !empty($_POST['sort']) ? htmlspecialchars(strip_tags($_POST['sort'])) : '';
+                $sort = !empty($_POST['filter']['sort'][0]) ? htmlspecialchars(strip_tags($_POST['filter']['sort'][0])) : '';
                 $page = !empty($_POST['page']) ? htmlspecialchars(strip_tags($_POST['page'])) : 1;
                 $search = !empty($_POST['filter']['search']) ? htmlspecialchars(strip_tags($_POST['filter']['search'])) : null;
                 //$lang = !empty($_POST['filter']['lang']) ? htmlspecialchars(strip_tags($_POST['filter']['lang'])) : 1;
