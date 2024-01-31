@@ -67,9 +67,9 @@ class RepositoryPlaylist extends EntityRepository
         if ($sortField == "createdAt") {
             usort($resultsMerged, function ($a, $b) {
                 if ($sortDirection == "DESC")
-                    return $a->getCreatedAt() < $b->getCreatedAt();
-                else
                     return $a->getCreatedAt() > $b->getCreatedAt();
+                else
+                    return $a->getCreatedAt() < $b->getCreatedAt();
             });
         } else {
             usort($resultsMerged, function ($a, $b) {
