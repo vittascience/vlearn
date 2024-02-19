@@ -583,6 +583,7 @@ class ControllerNewActivities extends Controller
                     $courseDuplicate->setDeleted(false);
                     $courseDuplicate->setFolder(null);
                     $courseDuplicate->setFormat($course->getFormat());
+                    $courseDuplicate->setOptionalData($course->getOptionalData());
                     $this->entityManager->persist($courseDuplicate);
                     $this->entityManager->flush();
 
