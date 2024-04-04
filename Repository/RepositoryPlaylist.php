@@ -50,7 +50,18 @@ class RepositoryPlaylist extends EntityRepository
             ->getResult();
 
         //get playlists
-        $queryBuilder2 = $this->getEntityManager()->createQueryBuilder();
+        $results2 = [];
+        if (count($options) == 0) {
+            $queryBuilder2 = $this->getEntityManager()->createQueryBuilder();
+            $results2 = $queryBuilder2->select('p')
+                ->from(Playlist::class, 'p')
+                ->andWhere("p.title LIKE :search OR p.description LIKE :search")
+                ->andWhere('p.rights=1 OR p.rights=2')
+                ->setParameter('search', "%$search%")
+                ->getQuery()
+                ->getResult();
+        }
+        /* $queryBuilder2 = $this->getEntityManager()->createQueryBuilder();
         $results2 = $queryBuilder2->select('p')
             ->from(Playlist::class, 'p')
             ->andWhere("p.title LIKE :search OR p.description LIKE :search")
@@ -58,21 +69,21 @@ class RepositoryPlaylist extends EntityRepository
             ->setParameter('search', "%$search%")
             ->getQuery()
             ->getResult();
-
+ */
 
         // Utilisez le Paginator pour paginer les résultats combinés
         $resultsMerged = array_merge($results, $results2);
 
         // sort results by createdAt when the two tables are merged
         if ($sortField == "createdAt") {
-            usort($resultsMerged, function ($a, $b) {
+            usort($resultsMerged, function ($a, $b, $sortDirection) {
                 if ($sortDirection == "DESC")
                     return $a->getCreatedAt() > $b->getCreatedAt();
                 else
                     return $a->getCreatedAt() < $b->getCreatedAt();
             });
         } else {
-            usort($resultsMerged, function ($a, $b) {
+            usort($resultsMerged, function ($a, $b, $sortDirection) {
                 if ($sortDirection == "DESC")
                     return $a->getViews() > $b->getViews();
                 else
@@ -111,7 +122,7 @@ class RepositoryPlaylist extends EntityRepository
         return $results;
     }
 
-    
+
     public function getLightPublicDataPlaylistById($id)
     {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
@@ -124,7 +135,8 @@ class RepositoryPlaylist extends EntityRepository
         return $results;
     }
 
-    public function getImageOfFirstCourseInPlaylist($id) {
+    public function getImageOfFirstCourseInPlaylist($id)
+    {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c.img')
             ->from(Course::class, 'c')
@@ -137,7 +149,8 @@ class RepositoryPlaylist extends EntityRepository
         return $results;
     }
 
-    public function getLengthOfCourseLinkPlaylistById($id) {
+    public function getLengthOfCourseLinkPlaylistById($id)
+    {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('COUNT(clp.id) as length')
             ->from(CourseLinkPlaylist::class, 'clp')
@@ -147,7 +160,8 @@ class RepositoryPlaylist extends EntityRepository
         return $results;
     }
 
-    public function getAllPlaylists($page) {
+    public function getAllPlaylists($page)
+    {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $results = $queryBuilder->select('p')
             ->from(Playlist::class, 'p')
@@ -172,7 +186,8 @@ class RepositoryPlaylist extends EntityRepository
         return $paginatorData;
     }
 
-    public function getMyPlaylists($page, $user) {
+    public function getMyPlaylists($page, $user)
+    {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $results = $queryBuilder->select('p')
             ->from(Playlist::class, 'p')
