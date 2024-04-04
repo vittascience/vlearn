@@ -49,35 +49,44 @@ class RepositoryPlaylist extends EntityRepository
             ->getQuery()
             ->getResult();
 
-        //get playlists
-        $queryBuilder2 = $this->getEntityManager()->createQueryBuilder();
-        $results2 = $queryBuilder2->select('p')
-            ->from(Playlist::class, 'p')
-            ->andWhere("p.title LIKE :search OR p.description LIKE :search")
-            ->andWhere('p.rights=1 OR p.rights=2')
-            ->setParameter('search', "%$search%")
-            ->getQuery()
-            ->getResult();
 
+        if (array_key_exists('support', $options) || array_key_exists('difficulty', $options) || $sortField != "createdAt") {
+            $results2 = [];
+        } else {
+            $queryBuilder2 = $this->getEntityManager()->createQueryBuilder();
+            $results2 = $queryBuilder2->select('p')
+                ->from(Playlist::class, 'p')
+                ->andWhere("p.title LIKE :search OR p.description LIKE :search")
+                ->andWhere('p.rights=1 OR p.rights=2')
+                ->setParameter('search', "%$search%")
+                ->getQuery()
+                ->getResult();
+        }
 
         // Utilisez le Paginator pour paginer les résultats combinés
         $resultsMerged = array_merge($results, $results2);
 
         // sort results by createdAt when the two tables are merged
         if ($sortField == "createdAt") {
-            usort($resultsMerged, function ($a, $b) {
-                if ($sortDirection == "DESC")
-                    return $a->getCreatedAt() > $b->getCreatedAt();
-                else
+            if ($sortDirection == "DESC") {
+                usort($resultsMerged, function ($a, $b) {
                     return $a->getCreatedAt() < $b->getCreatedAt();
-            });
+                });
+            } else {
+                usort($resultsMerged, function ($a, $b) {
+                    return $a->getCreatedAt() > $b->getCreatedAt();
+                });
+            }
         } else {
-            usort($resultsMerged, function ($a, $b) {
-                if ($sortDirection == "DESC")
-                    return $a->getViews() > $b->getViews();
-                else
+            if ($sortDirection == "DESC") {
+                usort($resultsMerged, function ($a, $b) {
                     return $a->getViews() < $b->getViews();
-            });
+                });
+            } else {
+                usort($resultsMerged, function ($a, $b) {
+                    return $a->getViews() > $b->getViews();
+                });
+            }
         }
 
         // Configurez le nombre d'éléments par page
