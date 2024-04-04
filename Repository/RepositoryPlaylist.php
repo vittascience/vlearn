@@ -50,7 +50,7 @@ class RepositoryPlaylist extends EntityRepository
             ->getResult();
 
 
-        if (array_key_exists('support', $options) || array_key_exists('difficulty', $options)) {
+        if (array_key_exists('support', $options) || array_key_exists('difficulty', $options) || $sortField != "createdAt") {
             $results2 = [];
         } else {
             $queryBuilder2 = $this->getEntityManager()->createQueryBuilder();
@@ -120,7 +120,7 @@ class RepositoryPlaylist extends EntityRepository
         return $results;
     }
 
-
+    
     public function getLightPublicDataPlaylistById($id)
     {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
@@ -133,8 +133,7 @@ class RepositoryPlaylist extends EntityRepository
         return $results;
     }
 
-    public function getImageOfFirstCourseInPlaylist($id)
-    {
+    public function getImageOfFirstCourseInPlaylist($id) {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c.img')
             ->from(Course::class, 'c')
@@ -147,8 +146,7 @@ class RepositoryPlaylist extends EntityRepository
         return $results;
     }
 
-    public function getLengthOfCourseLinkPlaylistById($id)
-    {
+    public function getLengthOfCourseLinkPlaylistById($id) {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('COUNT(clp.id) as length')
             ->from(CourseLinkPlaylist::class, 'clp')
@@ -158,8 +156,7 @@ class RepositoryPlaylist extends EntityRepository
         return $results;
     }
 
-    public function getAllPlaylists($page)
-    {
+    public function getAllPlaylists($page) {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $results = $queryBuilder->select('p')
             ->from(Playlist::class, 'p')
@@ -184,8 +181,7 @@ class RepositoryPlaylist extends EntityRepository
         return $paginatorData;
     }
 
-    public function getMyPlaylists($page, $user)
-    {
+    public function getMyPlaylists($page, $user) {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $results = $queryBuilder->select('p')
             ->from(Playlist::class, 'p')
