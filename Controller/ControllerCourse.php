@@ -2,9 +2,6 @@
 
 namespace Learn\Controller;
 
-require __DIR__ . "/../../../../../bootstrap.php";
-require __DIR__ . '/../../../../autoload.php';
-
 use Dotenv\Dotenv;
 use User\Entity\User;
 use Learn\Entity\Course;
@@ -22,9 +19,6 @@ class ControllerCourse extends Controller
 {
     public function __construct($entityManager, $user)
     {
-        // Load env variables
-        $dotenv = Dotenv::createImmutable(__DIR__ . "/../../../../../");
-        $dotenv->load();
         parent::__construct($entityManager, $user);
         $this->actions = array(
             'get_one' => function () {
