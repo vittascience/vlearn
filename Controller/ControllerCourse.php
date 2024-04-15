@@ -2,6 +2,10 @@
 
 namespace Learn\Controller;
 
+require __DIR__ . "/../../../../../bootstrap.php";
+require __DIR__ . '/../../../../autoload.php';
+
+use Dotenv\Dotenv;
 use User\Entity\User;
 use Learn\Entity\Course;
 use Learn\Entity\Lesson;
@@ -18,6 +22,9 @@ class ControllerCourse extends Controller
 {
     public function __construct($entityManager, $user)
     {
+        // Load env variables
+        $dotenv = Dotenv::createImmutable(__DIR__ . "/../../../../../");
+        $dotenv->load();
         parent::__construct($entityManager, $user);
         $this->actions = array(
             'get_one' => function () {
@@ -230,6 +237,7 @@ class ControllerCourse extends Controller
                         $tutorial->setImg($_FILES['imgFile']);
                     }
                     $user = $this->entityManager->getRepository('User\Entity\User')->find($userId);
+                    $regular = $this->entityManager->getRepository('User\Entity\Regular')->findOneBy(array('user' => $user));
                     $tutorial->setUser($user);
                     $tutorial->setCreatedAt();
 
@@ -253,6 +261,8 @@ class ControllerCourse extends Controller
                     $this->saveLessonsIfNeeded($tutorial, $chapters);
                     $this->saveRelatedTutorialsIfNeeded($tutorial, $linked);
 
+                    $this->sendToMailerlite($incomingTutorial->rights, $tutorial->getId(), $regular->getEmail());
+                    
                     return $tutorial;
                 } catch (\Error $error) {
                     echo ($error->getMessage());
@@ -1344,5 +1354,29 @@ class ControllerCourse extends Controller
                 $this->entityManager->flush();
             }
         }
+    }
+
+    private function sendToMailerlite($rights, $id, $email) {
+        switch ($rights) {
+            case 1:
+                $res = "Publique CC-BY-NC-SA";
+                break;
+            case 2:
+                $res = "Publique CC-BY-NC-ND";
+                break;
+            case 3:
+                $res = "Déréférencée";
+                break;
+            default:
+                $res = "Privée";
+                break;
+        }
+        $groupsApi = (new MailerLiteApi\MailerLite($_ENV['VS_SHOP_MAILERLITE_API_KEY']))->groups();
+        $subscriber = [
+            'email' => $email,
+            'ressources_license' => $res,
+            'ressources_link' => "https://vittascience.com/learn/tutorial.php?id=".$id
+        ];
+        $response = $groupsApi->addSubscriber("111807620", $subscriber);
     }
 }
