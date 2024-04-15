@@ -2,7 +2,6 @@
 
 namespace Learn\Controller;
 
-use Dotenv\Dotenv;
 use User\Entity\User;
 use Learn\Entity\Course;
 use Learn\Entity\Lesson;
