@@ -1364,11 +1364,13 @@ class ControllerCourse extends Controller
                 $res = "Privée";
                 break;
         }
-        $groupsApi = (new MailerLiteApi\MailerLite($_ENV['VS_SHOP_MAILERLITE_API_KEY']))->groups();
+        $groupsApi = (new \MailerLiteApi\MailerLite($_ENV['VS_SHOP_MAILERLITE_API_KEY']))->groups();
         $subscriber = [
             'email' => $email,
-            'ressources_license' => $res,
-            'ressources_link' => "https://vittascience.com/learn/tutorial.php?id=".$id
+            'fields' => [
+                'ressources_license' => $res,
+                'ressources_link' => "https://vittascience.com/learn/tutorial.php?id=".$id
+            ],
         ];
         $response = $groupsApi->addSubscriber("111807620", $subscriber);
     }
