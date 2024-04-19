@@ -301,6 +301,9 @@ class ControllerPlaylist extends Controller
 
     public function isUserLogged()
     {
+        if(!isset($_SESSION['id'])){
+            return false;
+        }
         $user = $this->entityManager->getRepository(User::class)->findOneBy(["id" => $_SESSION['id']]);
         if (!$user) {
             return false;
