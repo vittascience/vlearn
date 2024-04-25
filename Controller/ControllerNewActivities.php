@@ -587,14 +587,24 @@ class ControllerNewActivities extends Controller
                     $this->entityManager->persist($courseDuplicate);
                     $this->entityManager->flush();
 
+                    // folder for imported activities from course
+                    $folderExists = $this->entityManager->getRepository(Folders::class)->findOneBy(["name" => "Ressources importées via activités", "user" => $user]);
+                    $folder = null;
+                    if (!$folderExists) {
+                        $folder = new Folders("Ressources importées via activités", $user);
+                        $this->entityManager->persist($folder);
+                        $this->entityManager->flush();
+                    } else {
+                        $folder = $folderExists;
+                    }
+                    
                     foreach ($courseLinkActivities as $key => $cla) {
-                        $result = $this->importRessource($cla->getActivity()->getId());
+                        $result = $this->importRessource($cla->getActivity()->getId(), $folder);
                         if ($result['success'] == false) return $result;
                         $courseLinkActivity = new CourseLinkActivity($courseDuplicate, $result['activity'], $cla->getIndexOrder());
                         $this->entityManager->persist($courseLinkActivity);
                         $this->entityManager->flush();
                     }
-
 
                     $activities = [];
                     foreach ($courseLinkActivities as $cla) {
@@ -778,7 +788,7 @@ class ControllerNewActivities extends Controller
         return $content;
     }
 
-    private function importRessource(int $Id) {
+    private function importRessource(int $Id, $folder = null) {
         $activity = $this->entityManager->getRepository(Activity::class)->find($Id);
         // duplicate with new user
         
@@ -799,6 +809,11 @@ class ControllerNewActivities extends Controller
         if ($activity->getIsAutocorrect()) {
             $activityDuplicated->setIsAutocorrect($activity->getIsAutocorrect());
         }
+
+        if ($folder != null) {
+            $activityDuplicated->setFolder($folder);
+        }
+
         $activityDuplicated->setFork($activity);
 
         $this->entityManager->persist($activityDuplicated);
