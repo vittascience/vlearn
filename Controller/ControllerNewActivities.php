@@ -19,6 +19,7 @@ use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\GroupsLinkApplications;
 use Classroom\Entity\UsersLinkApplicationsFromGroups;
 
+
 class ControllerNewActivities extends Controller
 {
     public function __construct($entityManager, $user)
@@ -709,6 +710,50 @@ class ControllerNewActivities extends Controller
                     $tagsArray[] = $tag->jsonSerialize();
                 }
                 return ['success' => true, 'tags' => $tagsArray];
+            },
+            "import_multiples_activities" => function () {
+                // accept only POST request
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+                // accept only connected user
+                if (empty($_SESSION['id'])) return ["errorType" => "updateNotRetrievedNotAuthenticated"];
+
+                $activities = !empty($_POST['activities']) ? ($_POST['activities']) : null;
+                $user = $this->entityManager->getRepository(User::class)->findOneBy(['id' => htmlspecialchars($_SESSION['id'])]);
+                try {
+                    if ($activities) {
+                        foreach ($activities as $activity) {
+                            $title = htmlspecialchars($activity['title']);
+                            $content = $activity['content'];
+                            $importActivity = new Activity($title, $content, $user, true);                    
+                            if (array_key_exists('type', $activity)) {
+                                $importActivity->setType($activity['type']);
+                            }
+                            if (array_key_exists('solution', $activity)) {
+                                $importActivity->setSolution($activity['solution']);
+                            }
+                            if (array_key_exists('tolerance', $activity)) {
+                                if ($activity['tolerance'] == "") {
+                                    $activity['tolerance'] = 0;
+                                }
+                                $importActivity->setTolerance($activity['tolerance']);
+                            }
+                            if (array_key_exists('isAutocorrect', $activity)) {
+                                $importActivity->setIsAutocorrect($activity['isAutocorrect']);
+                            }
+    
+                            $importActivity->setFork(null);
+    
+                            $this->entityManager->persist($importActivity);
+                        }
+                        $this->entityManager->flush();
+
+                        return ['success' => true];
+                    } else {
+                        return ["error" => "no_valid_activities"];
+                    }
+                } catch (\Exception $e) {
+                    return ["error" => "error_importing_activities"];
+                }
             },
         );
     }
