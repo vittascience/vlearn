@@ -906,6 +906,13 @@ class ControllerCourse extends Controller
 
                     $course = $this->entityManager->getRepository(Course::class)->findOneBy(["id" => $courseId, "user" => $user]);
                     if (!$course) return ["error" => "Not authorized"];
+                    
+                    // get forks of the course to delete the reference
+                    $forks = $this->entityManager->getRepository(Course::class)->findBy(["fork" => $course]);
+                    foreach ($forks as $fork) {
+                        $fork->setFork(null);
+                        $this->entityManager->persist($fork);
+                    }
 
                     $this->entityManager->remove($course);
 
