@@ -27,12 +27,12 @@ class ControllerPlaylist extends Controller
 
                 //get the request payload
                 $data = json_decode(file_get_contents('php://input'), true);
-                //sanitize the data
 
-                $data['id'] = !empty($data['id']) ? htmlspecialchars(strip_tags($data['id'])) : '';
-                $data['title'] = !empty($data['title']) ? htmlspecialchars(strip_tags($data['title'])) : '';
-                $data['description'] = !empty($data['description']) ? htmlspecialchars(strip_tags($data['description'])) : '';
-                $data['rights'] = !empty($data['rights']) ? htmlspecialchars(strip_tags($data['rights'])) : '';
+                //sanitize the data
+                $data['id'] = !empty($data['id']) && intval($data['id']) ? $data['id'] : null;
+                if ($data['id']) {
+                    return ['success' => false, 'message' => 'id_not_allowed'];
+                }
 
                 if (empty($data['title'])) {
                     return ['success' => false, 'message' => 'title_empty'];
@@ -41,7 +41,7 @@ class ControllerPlaylist extends Controller
                 $ids = [];
                 try {
                     foreach ($data['resources'] as $id) {
-                        $ids[] = (int)htmlspecialchars(strip_tags($id));
+                        $ids[] = (int)$id;
                     }
                 } catch (\Exception $e) {
                     return ['success' => false, 'message' => 'course_ids_invalid'];
@@ -113,7 +113,6 @@ class ControllerPlaylist extends Controller
                 }
 
                 $data = json_decode(file_get_contents('php://input'), true);
-                $data['id'] = !empty($data['id']) ? htmlspecialchars(strip_tags($data['id'])) : '';
 
                 if (empty($data['id'])) {
                     return ['success' => false, 'message' => 'id_empty'];
@@ -146,17 +145,19 @@ class ControllerPlaylist extends Controller
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
                 $data = json_decode(file_get_contents('php://input'), true);
-                $id = !empty($data['id']) ? htmlspecialchars(strip_tags($data['id'])) : '';
+                if (empty($data['id'])) {
+                    return ['success' => false, 'message' => 'id_empty'];
+                }
 
                 try {
-                    $result = $this->entityManager->getRepository(Playlist::class)->getLightPublicDataPlaylistById($id);
+                    $result = $this->entityManager->getRepository(Playlist::class)->getLightPublicDataPlaylistById($data['id']);
                     if (!$result) {
-                        $result = $this->entityManager->getRepository(Playlist::class)->getLightDataPlaylistById($id, $this->isUserLogged());
+                        $result = $this->entityManager->getRepository(Playlist::class)->getLightDataPlaylistById($data['id'], $this->isUserLogged());
                     }
                     if (!$result) {
                         return ['success' => false, 'message' => 'playlist_not_found'];
                     }
-                    $resources = $this->entityManager->getRepository(CourseLinkPlaylist::class)->getCourseLinkPlaylistByArrayOfIds($id);
+                    $resources = $this->entityManager->getRepository(CourseLinkPlaylist::class)->getCourseLinkPlaylistByArrayOfIds($data['id']);
                     $result['resources'] = $resources;
                     // prepare and return data
                     return ['success' => true, 'playlist' => $result];
