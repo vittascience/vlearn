@@ -30,8 +30,8 @@ class ControllerPlaylist extends Controller
 
                 //sanitize the data
                 $data['id'] = !empty($data['id']) && intval($data['id']) ? $data['id'] : null;
-                if ($data['id']) {
-                    return ['success' => false, 'message' => 'id_not_allowed'];
+                if (empty($data['id'])) {
+                    return ['success' => false, 'message' => 'no_id'];
                 }
 
                 if (empty($data['title'])) {
