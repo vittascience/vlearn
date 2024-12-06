@@ -12,30 +12,39 @@ class ControllerComment extends Controller
         parent::__construct($entityManager, $user);
         $this->actions = array(
             'add' => function ($data) {
-                $commentAnswered = $this->entityManager->getRepository('Learn\Entity\Comment')->find($data['comid']);
-                $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['tutoid']);
-                $user = $this->entityManager->getRepository('User\Entity\User')->find($_SESSION['id']);
+                try {
+                    $commentAnswered = NULL;
+                    if ($data['comid'] > 0) {
+                        $commentAnswered = $this->entityManager->getRepository('Learn\Entity\Comment')->find($data['comid']);
+                    }
+                
+                    $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $data['tutoid']));
+                    $user = $this->entityManager->getRepository('User\Entity\User')->findOneBy(array("id" => $_SESSION['id']));
+    
+                    $comment = new Comment();
+                    $comment->setUser($user);
+                    $comment->setCommentAnswered($commentAnswered);
+                    $comment->setTutorial($tutorial);
+                    $comment->setMessage($data['message']);
+    
+                    $this->entityManager->persist($comment);
+                    $this->entityManager->flush();
+    
+                    $mailSent = mailComment("Un utilisateur a posté un commentaire.", $user, $comment, $data);
 
-                $comment = new Comment();
-                $comment->setUser($user);
-                $comment->setCommentAnswered($commentAnswered);
-                $comment->setTutorial($tutorial);
-                $comment->setMessage($data['message']);
-
-                $this->entityManager->persist($comment);
-                $this->entityManager->flush();
-
-                $arrayComment = array(
-                    'id' => $comment->getId(),
-                    'picture' => $comment->getUser()->getPicture(),
-                    'username' => $comment->getUser()->getFirstname() . " " . $comment->getUser()->getSurname(),
-                    'message' => $comment->getMessage(),
-                    'date' => $comment->getUpdatedAt(),
-                );
-
-                mailComment("Un utilisateur a posté un commentaire.", $user, $comment, $data);
-
-                return $arrayComment;
+                    $arrayComment = array(
+                        'id' => $comment->getId(),
+                        'picture' => $comment->getUser()->getPicture(),
+                        'username' => $comment->getUser()->getFirstname() . " " . $comment->getUser()->getSurname(),
+                        'message' => $comment->getMessage(),
+                        'date' => $comment->getUpdatedAt(),
+                        'mailSent' => $mailSent
+                    );
+                    
+                    return ["success" => true, "data" => $arrayComment];
+                } catch (\Exception $e) {
+                    return ["success" => false, "message" => $e->getMessage()];
+                }
             },
             'update' => function ($data) {
                 // This function can be accessed by post method only
@@ -114,7 +123,9 @@ class ControllerComment extends Controller
                             "commentAnswered" => NULL,
                             "message" => $comment->getCommentAnswered()->getMessage(),
                             "createdAt" => $comment->getCommentAnswered()->getCreatedAt(),
-                            "updatedAt" => $comment->getCommentAnswered()->getUpdatedAt()
+                            "updatedAt" => $comment->getCommentAnswered()->getUpdatedAt(),
+                            "picture" => $comment->getUser()->getPicture(),
+                            "username" => $comment->getUser()->getFirstname() . " " . $comment->getUser()->getSurname()
                         ];
                     } else {
                         $reply = null;
@@ -125,7 +136,9 @@ class ControllerComment extends Controller
                         "commentAnswered" => $reply,
                         "message" => $comment->getMessage(),
                         "createdAt" => $comment->getCreatedAt(),
-                        "updatedAt" => $comment->getUpdatedAt()
+                        "updatedAt" => $comment->getUpdatedAt(),
+                        "picture" => $comment->getUser()->getPicture(),
+                        "username" => $comment->getUser()->getFirstname() . " " . $comment->getUser()->getSurname()
                     ];
                     array_push($arrayResult, $result);
                 }
@@ -173,14 +186,13 @@ class ControllerComment extends Controller
         );
     }
 }
+
 function mailComment($subject, $user, $comment, $data)
 {
     $mail = new Mailer();
     $subject = "Un utilisateur a posté un commentaire.";
-    $body = "L'utilisateur " . $user->getFirstname() . " " . $user->getSurname() . " (#ID : " . $user->getId() . ")
-a fait une action sur le message #" . $comment->getId() . ".";
+    $body = "L'utilisateur " . $user->getFirstname() . " " . $user->getSurname() . " (#ID : " . $user->getId() . ") a fait une action sur le message #" . $comment->getId() . ".";
     $body .= "<b>Message :</b>";
     $body .= "</br><p>" . trim(htmlspecialchars($data['message'])) . "</p>";
-
-    $mail->sendMail("contact@vittascience.com", $subject, $body, strip_tags($body), "fr_default", "support@vittascience.com", "Support Vittascience");
+    return $mail->sendMail("contact@vittascience.com", $subject, $body, strip_tags($body), "fr_default", "support@vittascience.com", "Support Vittascience");
 }
