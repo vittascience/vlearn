@@ -123,7 +123,9 @@ class ControllerComment extends Controller
                             "commentAnswered" => NULL,
                             "message" => $comment->getCommentAnswered()->getMessage(),
                             "createdAt" => $comment->getCommentAnswered()->getCreatedAt(),
-                            "updatedAt" => $comment->getCommentAnswered()->getUpdatedAt()
+                            "updatedAt" => $comment->getCommentAnswered()->getUpdatedAt(),
+                            "picture" => $comment->getUser()->getPicture(),
+                            "username" => $comment->getUser()->getFirstname() . " " . $comment->getUser()->getSurname()
                         ];
                     } else {
                         $reply = null;
@@ -134,7 +136,9 @@ class ControllerComment extends Controller
                         "commentAnswered" => $reply,
                         "message" => $comment->getMessage(),
                         "createdAt" => $comment->getCreatedAt(),
-                        "updatedAt" => $comment->getUpdatedAt()
+                        "updatedAt" => $comment->getUpdatedAt(),
+                        "picture" => $comment->getUser()->getPicture(),
+                        "username" => $comment->getUser()->getFirstname() . " " . $comment->getUser()->getSurname()
                     ];
                     array_push($arrayResult, $result);
                 }
