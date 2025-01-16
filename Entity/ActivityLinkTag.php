@@ -4,32 +4,21 @@ namespace Learn\Entity;
 
 use Learn\Entity\Tag;
 use Learn\Entity\Activity;
-use Utils\MetaDataMatcher;
 use Doctrine\ORM\Mapping as ORM;
-use Utils\Exceptions\EntityOperatorException;
-use Utils\Exceptions\EntityDataIntegrityException;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryActivityLinkTag")
- * @ORM\Table(name="learn_activities_link_tags" )
- */
+#[ORM\Entity(repositoryClass: "Learn\Repository\RepositoryActivityLinkTag")]
+#[ORM\Table(name: "learn_activities_link_tags")]
 class ActivityLinkTag implements \JsonSerializable, \Utils\JsonDeserializer
 {
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Activity")
-     * @ORM\JoinColumn(name="id_activity", referencedColumnName="id", onDelete="CASCADE")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "Learn\Entity\Activity", inversedBy: "activityLinkTags")]
+    #[ORM\JoinColumn(name: "id_activity", referencedColumnName: "id", onDelete: "CASCADE")]
     private $activity;
 
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Tag")
-     * @ORM\JoinColumn(name="id_tag", referencedColumnName="id", onDelete="CASCADE")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "Learn\Entity\Tag", inversedBy: "activityLinkTags")]
+    #[ORM\JoinColumn(name: "id_tag", referencedColumnName: "id", onDelete: "CASCADE")]
     private $tag;
-
-
 
     public function __construct(Activity $activity, Tag $tag)
     {
@@ -68,7 +57,6 @@ class ActivityLinkTag implements \JsonSerializable, \Utils\JsonDeserializer
     {
         $this->activity = $activity;
     }
-
 
     public function jsonSerialize()
     {

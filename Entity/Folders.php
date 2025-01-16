@@ -5,108 +5,69 @@ namespace Learn\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Utils\MetaDataMatcher;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryFolders")
- * @ORM\Table(name="learn_folders")
- */
+#[ORM\Entity(repositoryClass: "Learn\Repository\RepositoryFolders")]
+#[ORM\Table(name: "learn_folders")]
 class Folders implements \JsonSerializable, \Utils\JsonDeserializer
 {
-
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     private $id;
 
-    /**
-     * @ORM\Column(name="name", type="string", length=30, nullable=false)
-     * @var string
-     */
-    private $name;
+    #[ORM\Column(name: "name", type: "string", length: 30, nullable: false)]
+    private string $name;
 
-    /**
-     * @ORM\OneToOne(targetEntity="Learn\Entity\Folders")
-     * @ORM\JoinColumn(name="parent_folder", nullable=true, referencedColumnName="id", onDelete="CASCADE")
-     * @var Folders
-    */
-    private $parentFolder = null;
+    #[ORM\OneToOne(targetEntity: "Learn\Entity\Folders")]
+    #[ORM\JoinColumn(name: "parent_folder", nullable: true, referencedColumnName: "id", onDelete: "CASCADE")]
+    private ?Folders $parentFolder = null;
 
-
-    /**
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", nullable=false, referencedColumnName="id", onDelete="CASCADE")
-     * @var User
-    */
+    #[ORM\ManyToOne(targetEntity: "User\Entity\User")]
+    #[ORM\JoinColumn(name: "user", nullable: false, referencedColumnName: "id", onDelete: "CASCADE")]
     private $user;
 
-
-
-    public function __construct($name, $user = null, $parentFolder = null)
+    public function __construct(string $name, $user = null, ?Folders $parentFolder = null)
     {
         $this->name = $name;
         $this->user = $user;
         $this->parentFolder = $parentFolder;
     }
 
-    /**
-     * @return mixed
-     */
     public function getId()
     {
         return $this->id;
     }
 
-    /**
-     * @return string
-     */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @param string $name
-     */
-    public function setName($name)
+    public function setName(string $name): void
     {
         $this->name = $name;
     }
 
-    /**
-     * @return User
-     */
     public function getUser()
     {
         return $this->user;
     }
 
-    /**
-     * @param User $user
-     */
-    public function setUser($user)
+    public function setUser($user): void
     {
         $this->user = $user;
     }
 
-    /**
-     * @return Folders
-     */
-    public function getParentFolder()
+    public function getParentFolder(): ?Folders
     {
         return $this->parentFolder;
     }
 
-    /**
-     * @param Folders $parentFoler
-     */
-    public function setParentFolder($parentFolder)
+    public function setParentFolder(?Folders $parentFolder): void
     {
         $this->parentFolder = $parentFolder;
     }
 
-
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return [
             'id' => $this->getId(),
@@ -115,7 +76,6 @@ class Folders implements \JsonSerializable, \Utils\JsonDeserializer
             'parentFolder' => $this->getParentFolder(),
         ];
     }
-
 
     public static function jsonDeserialize($jsonDecoded)
     {

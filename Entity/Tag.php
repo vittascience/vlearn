@@ -3,85 +3,54 @@
 namespace Learn\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use Utils\MetaDataMatcher;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryTag")
- * @ORM\Table(name="learn_tags")
- */
+#[ORM\Entity(repositoryClass: "Learn\Repository\RepositoryTag")]
+#[ORM\Table(name: "learn_tags")]
 class Tag implements \JsonSerializable, \Utils\JsonDeserializer
 {
-
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     private $id;
 
-    /**
-     * @ORM\Column(name="name", type="string", length=255, nullable=false)
-     * @var string
-     */
-    private $name;
+    #[ORM\Column(name: "name", type: "string", length: 255, nullable: false)]
+    private string $name;
 
+    #[ORM\ManyToOne(targetEntity: "Learn\Entity\Tag")]
+    #[ORM\JoinColumn(name: "parent_tag", nullable: true, referencedColumnName: "id", onDelete: "CASCADE")]
+    private ?Tag $parentTag = null;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Tag")
-     * @ORM\JoinColumn(name="parent_tag", nullable=true, referencedColumnName="id", onDelete="CASCADE")
-     * @var Tag
-     */
-    private $parentTag;
-
-
-    public function __construct($name)
+    public function __construct(string $name)
     {
         $this->name = $name;
     }
 
-    /**
-     * @return mixed
-     */
-    public function getId()
+    public function getId(): ?int
     {
         return $this->id;
     }
 
-    /**
-     * @return string
-     */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @param string $name
-     */
-    public function setName(String $name)
+    public function setName(string $name): void
     {
         $this->name = $name;
     }
 
-    /**
-     * @return Tag
-     */
-    public function getParentTag()
+    public function getParentTag(): ?Tag
     {
         return $this->parentTag;
     }
 
-    /**
-     * @param Tag $parentTag
-     */
-    public function setParentTag(?Tag $parentTag)
+    public function setParentTag(?Tag $parentTag): void
     {
         $this->parentTag = $parentTag;
     }
 
-
-
-    public function jsonSerialize()
+    public function jsonSerialize(): array
     {
         return [
             'id' => $this->getId(),
@@ -90,8 +59,7 @@ class Tag implements \JsonSerializable, \Utils\JsonDeserializer
         ];
     }
 
-
-    public static function jsonDeserialize($jsonDecoded)
+    public static function jsonDeserialize($jsonDecoded): self
     {
         $classInstance = new self();
         foreach ($jsonDecoded as $attributeName => $attributeValue) {

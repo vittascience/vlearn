@@ -4,37 +4,26 @@ namespace Learn\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryCourseLinkPlaylist")
- * @ORM\Table(name="learn_course_link_playlist")
- */
+#[ORM\Entity(repositoryClass: "Learn\Repository\RepositoryCourseLinkPlaylist")]
+#[ORM\Table(name: "learn_course_link_playlist")]
 class CourseLinkPlaylist
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     private $id;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Course")
-     * @ORM\JoinColumn(name="course_id", referencedColumnName="id", onDelete="CASCADE")
-     */
+    #[ORM\ManyToOne(targetEntity: "Learn\Entity\Course")]
+    #[ORM\JoinColumn(name: "course_id", referencedColumnName: "id", onDelete: "CASCADE")]
     private $courseId;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Playlist")
-     * @ORM\JoinColumn(name="playlist_id", referencedColumnName="id", onDelete="CASCADE")
-     */
+    #[ORM\ManyToOne(targetEntity: "Learn\Entity\Playlist")]
+    #[ORM\JoinColumn(name: "playlist_id", referencedColumnName: "id", onDelete: "CASCADE")]
     private $playlistId;
 
-    /**
-     * @ORM\Column(type="integer",name="index_order")
-     */
+    #[ORM\Column(type: "integer", name: "index_order")]
     private $indexOrder;
 
-    
     public function getId()
     {
         return $this->id;

@@ -4,30 +4,18 @@ namespace Learn\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityDataIntegrityException;
-use Utils\Exceptions\EntityOperatorException;
-use Utils\MetaDataMatcher;
 use User\Entity\User;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryFavorite")
- * @ORM\Table(name="learn_favorites",
- *   uniqueConstraints={
- *       @ORM\UniqueConstraint(name="user_tutorial_unique", columns={"user_id", "tutorial_id"})
- *   }
- *  )
- */
+#[ORM\Entity(repositoryClass: "Learn\Repository\RepositoryFavorite")]
+#[ORM\Table(name: "learn_favorites", uniqueConstraints: [new ORM\UniqueConstraint(name: "user_tutorial_unique", columns: ["user_id", "tutorial_id"])])]
 class Favorite
 {
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity="User\Entity\User", inversedBy="favorite")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: "User\Entity\User", inversedBy: "favorite")]
     private $user;
 
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity=Course::class, inversedBy="favorite")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: Course::class, inversedBy: "favorite")]
     private $tutorial;
 
     public function __toString()
@@ -35,6 +23,7 @@ class Favorite
         $format = "Participation (Id: %s, %s, %s)\n";
         return sprintf($format, $this->id, $this->user, $this->poll);
     }
+
     public function __construct($user, $tutorial)
     {
         $this->user = $user;
@@ -50,8 +39,9 @@ class Favorite
     {
         if (is_int($id) && $id > 0) {
             $this->id = $id;
-        } else
+        } else {
             throw new EntityDataIntegrityException("id needs to be integer and positive");
+        }
     }
 
     public function getUser()

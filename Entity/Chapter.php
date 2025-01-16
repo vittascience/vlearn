@@ -4,39 +4,28 @@ namespace Learn\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityDataIntegrityException;
-use Utils\Exceptions\EntityOperatorException;
-use Utils\MetaDataMatcher;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryChapter")
- * @ORM\Table(name="learn_chapters",
- *   uniqueConstraints={
- *       @ORM\UniqueConstraint(name="collection_name_unique", columns={"collection_id", "name"})
- *   }
- *  )
- */
+#[ORM\Entity(repositoryClass: "Learn\Repository\RepositoryChapter")]
+#[ORM\Table(name: "learn_chapters", uniqueConstraints: [
+    new ORM\UniqueConstraint(name: "collection_name_unique", columns: ["collection_id", "name"])
+])]
 class Chapter
 {
     // REG_NAME: Only letters and digits and length of string is between 1 and 100
     const REG_NAME = "/^[a-zA-ZáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ]{1}[\w\sáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ'&@-_()]{0,99}[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ)]{0,1}$/";
 
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     private $id;
-    /**
-     * @ORM\ManyToOne(targetEntity=Collection::class, inversedBy="chapter")
-     */
+
+    #[ORM\ManyToOne(targetEntity: Collection::class, inversedBy: "chapter")]
     private $collection;
-    /**
-     * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="chapter")
-     */
+
+    #[ORM\OneToMany(targetEntity: Lesson::class, mappedBy: "chapter")]
     private $lesson;
-    /**
-     * @ORM\Column(type="string")
-     */
+
+    #[ORM\Column(type: "string")]
     private $name;
 
     public function __construct($id = 0, $name = "")
@@ -50,6 +39,7 @@ class Chapter
         $format = "Chapter (id: %s, collection: %s, lesson: %s, name: %s)\n";
         return sprintf($format, $this->getId(), $this->getCollection(), $this->lesson, $this->name);
     }
+
     public function getId()
     {
         return $this->id;
@@ -62,13 +52,16 @@ class Chapter
     {
         if (is_int($id) && $id > 0) {
             $this->id = $id;
-        } else
+        } else {
             throw new EntityDataIntegrityException("id needs to be integer and positive");
+        }
     }
+
     public function getCollection()
     {
         return $this->collection;
     }
+
     /**
      * @param Collection $collection
      */
@@ -99,6 +92,7 @@ class Chapter
     {
         return $this->lesson;
     }
+
     public function setLesson($lesson)
     {
         if ($lesson instanceof Lesson || $lesson == null) {

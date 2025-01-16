@@ -4,63 +4,46 @@ namespace Learn\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityDataIntegrityException;
-use Utils\Exceptions\EntityOperatorException;
-use Utils\MetaDataMatcher;
-use Doctrine\Common\Collections\ArrayCollection;
 use User\Entity\User;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryComment")
- * @ORM\Table(name="learn_comments")
- */
+#[ORM\Entity(repositoryClass: "Learn\Repository\RepositoryComment")]
+#[ORM\Table(name: "learn_comments")]
 class Comment
 {
     // REG_MESSAGE: Only letters and digits and length of string is between 1 and 1000
     const REG_MESSAGE = "/^[a-zA-ZáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ]{1}[\w\sáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ'&@-_()]{0,999}[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ)]{0,1}$/";
 
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     private $id;
-    /**
-     * @ORM\ManyToOne(targetEntity=Course::class, inversedBy="comment")
-     */
+
+    #[ORM\ManyToOne(targetEntity: Course::class, inversedBy: "comment")]
     private $tutorial;
     
-    /**
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", referencedColumnName="id", onDelete="CASCADE")
-     * @var User
-     */
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: "user", referencedColumnName: "id", onDelete: "CASCADE")]
     private $user;
-    /**
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Comment")
-     * @ORM\JoinColumn(name="comment_answered", referencedColumnName="id", onDelete="CASCADE")
-     * @var Comment
-     */
+
+    #[ORM\ManyToOne(targetEntity: self::class)]
+    #[ORM\JoinColumn(name: "comment_answered", referencedColumnName: "id", onDelete: "CASCADE")]
     private $commentAnswered = null;
 
-    /**
-     * @ORM\Column(type="string")
-     */
+    #[ORM\Column(type: "string")]
     private $message;
-    /**
-     * @ORM\Column(name="created_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-     * @var \DateTime
-     */
+
+    #[ORM\Column(name: "created_at", type: "datetime", columnDefinition: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")]
     private $createdAt;
-    /**
-     * @ORM\Column(name="updated_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-     * @var \DateTime
-     */
+
+    #[ORM\Column(name: "updated_at", type: "datetime", columnDefinition: "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")]
     private $updatedAt;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();
     }
+
     public function __toString()
     {
         $format = "Course (id: %s, user: %s, message: %s, part: %s)\n";
@@ -76,8 +59,9 @@ class Comment
     {
         if (is_int($id) && $id > 0) {
             $this->id = $id;
-        } else
+        } else {
             throw new EntityDataIntegrityException("id needs to be integer and positive");
+        }
     }
 
     public function getTutorial()
@@ -135,6 +119,7 @@ class Comment
             throw new EntityDataIntegrityException("message needs to be string and have between 1 and 1000 characters");
         }
     }
+
     public function getCreatedAt()
     {
         return $this->createdAt;
@@ -156,7 +141,6 @@ class Comment
 
     public function setUpdatedAt($updatedAt)
     {
-        $this->updatedAt = $updatedAt;
         if ($updatedAt instanceof \DateTime || $updatedAt == null) {
             $this->updatedAt = $updatedAt;
         } else {

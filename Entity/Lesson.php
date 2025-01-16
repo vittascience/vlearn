@@ -4,32 +4,20 @@ namespace Learn\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityDataIntegrityException;
-use Utils\Exceptions\EntityOperatorException;
-use Utils\MetaDataMatcher;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryLesson")
- * @ORM\Table(name="learn_chapters_link_tutorials",
- *   uniqueConstraints={
- *       @ORM\UniqueConstraint(name="chapter_tutorial_unique", columns={"chapter_id", "tutorial_id"})
- *   }
- *  )
- */
+#[ORM\Entity(repositoryClass: "Learn\Repository\RepositoryLesson")]
+#[ORM\Table(name: "learn_chapters_link_tutorials", uniqueConstraints: [
+    new ORM\UniqueConstraint(name: "chapter_tutorial_unique", columns: ["chapter_id", "tutorial_id"])
+])]
 class Lesson
 {
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity=Chapter::class, inversedBy="lesson")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: Chapter::class, inversedBy: "lesson")]
     private $chapter;
 
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity=Course::class, inversedBy="lesson")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: Course::class, inversedBy: "lesson")]
     private $tutorial;
-
-
 
     public function getId()
     {
@@ -40,8 +28,9 @@ class Lesson
     {
         if (is_int($id) && $id > 0) {
             $this->id = $id;
-        } else
+        } else {
             throw new EntityDataIntegrityException("id needs to be integer and positive");
+        }
     }
 
     public function getChapter()

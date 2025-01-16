@@ -5,84 +5,60 @@ namespace Learn\Entity;
 use User\Entity\User;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryPlaylist")
- * @ORM\Table(name="learn_playlist")
- */
+#[ORM\Entity(repositoryClass: "Learn\Repository\RepositoryPlaylist")]
+#[ORM\Table(name: "learn_playlist")]
 class Playlist
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: "integer")]
     private $id;
 
-    /**
-     * @ORM\Column(name="title", type="string", length=1000, nullable=false)
-     * @var string
-     */
-    private $title;
+    #[ORM\Column(name: "title", type: "string", length: 1000, nullable: false)]
+    private string $title;
 
-    /**
-     * @ORM\Column(name="description", type="string", length=1000, nullable=true)
-     * @var string
-     */
-    private $description;
+    #[ORM\Column(name: "description", type: "string", length: 1000, nullable: true)]
+    private ?string $description;
 
-    /**
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", nullable=false, referencedColumnName="id", onDelete="CASCADE")
-     * @var User
-     */
-    private $user;
+    #[ORM\ManyToOne(targetEntity: "User\Entity\User")]
+    #[ORM\JoinColumn(name: "user", nullable: false, referencedColumnName: "id", onDelete: "CASCADE")]
+    private User $user;
 
-    /**
-     * @ORM\Column(name="created_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-     * @var \DateTime
-     */
-    private $createdAt;
+    #[ORM\Column(name: "created_at", type: "datetime", options: ["default" => "CURRENT_TIMESTAMP"])]
+    private \DateTime $createdAt;
 
-    /**
-     * @ORM\Column(name="updated_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-     * @var \DateTime
-     */
-    private $updatedAt;
+    #[ORM\Column(name: "updated_at", type: "datetime", options: ["default" => "CURRENT_TIMESTAMP"])]
+    private \DateTime $updatedAt;
 
-    /**
-     * @ORM\Column(name="rights", type="integer", nullable=false, options={"default":0})
-     * @var integer
-     * values are between 0 and 3
-     */
-    private $rights;
+    #[ORM\Column(name: "rights", type: "integer", nullable: false, options: ["default" => 0])]
+    private int $rights;
 
-    public function __construct($title)
+    public function __construct(string $title)
     {
         $this->title = $title;
     }
 
-    
     public function getId()
     {
         return $this->id;
     }
 
-    public function getTitle(): String
+    public function getTitle(): string
     {
         return $this->title;
     }
 
-    public function setTitle(String $title)
+    public function setTitle(string $title)
     {
         $this->title = $title;
     }
 
-    public function getDescription(): ?String
+    public function getDescription(): ?string
     {
         return $this->description;
     }
 
-    public function setDescription(?String $description)
+    public function setDescription(?string $description)
     {
         $this->description = $description;
     }
@@ -129,12 +105,7 @@ class Playlist
 
     public function jsonSerialize()
     {
-
-        if ($this->getUser() != null) {
-            $user = $this->getUser()->jsonSerialize();
-        } else {
-            $user = null;
-        }
+        $user = $this->getUser() ? $this->getUser()->jsonSerialize() : null;
 
         return [
             'id' => $this->getId(),
