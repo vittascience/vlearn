@@ -352,8 +352,8 @@ class ControllerCourse extends Controller
                         $tutorialParts[$i]->isCollapsed = false;
                     } else {
                         // bind and sanitize incoming data
-                        $title = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->title)));
-                        $content = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->content)));
+                        $title = $tutorialParts[$i]->title;
+                        $content = $tutorialParts[$i]->content;
                         $isCollapsed = filter_var($tutorialParts[$i]->isCollapsed, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
                         // replace values by the same values but sanitized
                         $tutorialParts[$i]->title =  $title;
@@ -375,8 +375,8 @@ class ControllerCourse extends Controller
 
                 $tutorial = Course::jsonDeserialize($incomingTutorial);
 
-                $tutorial->setTitle(htmlspecialchars(strip_tags(trim($tutorial->getTitle()))));
-                $tutorial->setDescription(htmlspecialchars(strip_tags(trim($tutorial->getDescription()))));
+                $tutorial->setTitle($tutorial->getTitle());
+                $tutorial->setDescription($tutorial->getDescription());
 
                 //no error, get the matching tutorial from database
                 $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $tutorial->getId()));
