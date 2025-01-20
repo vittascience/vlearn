@@ -206,7 +206,7 @@ class ControllerCourse extends Controller
                             $tutorialParts[$i]->isCollapsed =  false;
                         } else {
                             // bind and sanitize incoming data
-                            $title = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->title)));
+                            $title = $tutorialParts[$i]->title;
                             $content = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->content)));
                             $isCollapsed = filter_var($tutorialParts[$i]->isCollapsed, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
                             // replace values by the same values but sanitized
@@ -352,8 +352,8 @@ class ControllerCourse extends Controller
                         $tutorialParts[$i]->isCollapsed = false;
                     } else {
                         // bind and sanitize incoming data
-                        $title = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->title)));
-                        $content = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->content)));
+                        $title = $tutorialParts[$i]->title;
+                        $content = $tutorialParts[$i]->content;
                         $isCollapsed = filter_var($tutorialParts[$i]->isCollapsed, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
                         // replace values by the same values but sanitized
                         $tutorialParts[$i]->title =  $title;
@@ -375,8 +375,8 @@ class ControllerCourse extends Controller
 
                 $tutorial = Course::jsonDeserialize($incomingTutorial);
 
-                $tutorial->setTitle(htmlspecialchars(strip_tags(trim($tutorial->getTitle()))));
-                $tutorial->setDescription(htmlspecialchars(strip_tags(trim($tutorial->getDescription()))));
+                $tutorial->setTitle($tutorial->getTitle());
+                $tutorial->setDescription($tutorial->getDescription());
 
                 //no error, get the matching tutorial from database
                 $databaseCourse = $this->entityManager->getRepository('Learn\Entity\Course')->findOneBy(array("id" => $tutorial->getId()));
@@ -423,7 +423,9 @@ class ControllerCourse extends Controller
                     $activity->setIsCollapsed($tutorialParts[$index]->isCollapsed);
                     try {
                         $this->entityManager->persist($courseLinkActivity);
-                    } catch (\Error $e) {
+                    } 
+                    catch (\Error $e) {
+                        echo $e->getMessage();
                     }
 
                     $this->entityManager->flush();
@@ -1099,10 +1101,11 @@ class ControllerCourse extends Controller
     private function bindIncomingTutorialData($incomingData)
     {
         $tutorial = new \stdClass;
-
-        if ($incomingData['id']) $tutorial->id = intval($incomingData['id']);
-        $tutorial->title = !empty($incomingData['title']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $incomingData['title']))) : '';
-        $tutorial->description = !empty($incomingData['description']) ? trim(htmlspecialchars(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $incomingData['description']))) : '';
+        if (array_key_exists('id', $incomingData) && !empty($incomingData['id'])) {
+            $tutorial->id = intval($incomingData['id']);
+        }
+        $tutorial->title = !empty($incomingData['title']) ? $incomingData['title'] : '';
+        $tutorial->description = !empty($incomingData['description']) ? $incomingData['description'] : '';
         $tutorial->difficulty = !empty($incomingData['difficulty']) ? intval($incomingData['difficulty']) : 0;
         $tutorial->duration = !empty($incomingData['duration']) ? intval($incomingData['duration']) : 3600;
         $tutorial->lang = !empty($incomingData['lang']) ? htmlspecialchars(strip_tags(trim($incomingData['lang']))) : '';
