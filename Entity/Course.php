@@ -108,7 +108,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         $this->setImg("basic.png");
     }
 
-    public function setId(int $id)
+    public function setId($id)
     {
         if ($id > 0) {
             $this->id = $id;
@@ -142,7 +142,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         return $this->title;
     }
 
-    public function setTitle(string $title)
+    public function setTitle($title)
     {
         if (preg_match(self::REG_TITLE, $title)) {
             $this->title = $title;
@@ -166,7 +166,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         return $this->duration;
     }
 
-    public function setDuration(int $duration)
+    public function setDuration($duration)
     {
         if ($duration >= 0) {
             $this->duration = $duration;
@@ -185,7 +185,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         $this->views += 1;
     }
 
-    public function setViews(int $views)
+    public function setViews($views)
     {
         if ($views >= 0) {
             $this->views = $views;
@@ -199,7 +199,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         return $this->difficulty;
     }
 
-    public function setDifficulty(int $difficulty)
+    public function setDifficulty($difficulty)
     {
         if ($difficulty >= 0) {
             $this->difficulty = $difficulty;
@@ -233,7 +233,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         return $this->img;
     }
 
-    public function setImg(string $img)
+    public function setImg($img)
     {
         if ($img != 'basic.png') {
             $arrayPicture = $this->checkPicture($img);
@@ -298,7 +298,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
         return $this->rights;
     }
 
-    public function setRights(int $rights)
+    public function setRights($rights)
     {
         if ($rights >= 0 && $rights <= 3) {
             $this->rights = $rights;

@@ -36,7 +36,7 @@ class Collection implements \JsonSerializable, \Utils\JsonDeserializer
         return $this->id;
     }
 
-    public function setId(int $id): void
+    public function setId($id): void
     {
         if ($id > 0) {
             $this->id = $id;
@@ -50,7 +50,7 @@ class Collection implements \JsonSerializable, \Utils\JsonDeserializer
         return $this->nameCollection;
     }
 
-    public function setNameCollection(string $nameCollection): void
+    public function setNameCollection($nameCollection): void
     {
         if (preg_match(self::REG_NAME_GRADE_COLLECTION, $nameCollection)) {
             $this->nameCollection = $nameCollection;
@@ -64,7 +64,7 @@ class Collection implements \JsonSerializable, \Utils\JsonDeserializer
         return $this->gradeCollection;
     }
 
-    public function setGradeCollection(string $gradeCollection): void
+    public function setGradeCollection($gradeCollection): void
     {
         if (preg_match(self::REG_NAME_GRADE_COLLECTION, $gradeCollection)) {
             $this->gradeCollection = $gradeCollection;
