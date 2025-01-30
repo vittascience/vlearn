@@ -1111,6 +1111,7 @@ class ControllerCourse extends Controller
         $tutorial->lang = !empty($incomingData['lang']) ? htmlspecialchars(strip_tags(trim($incomingData['lang']))) : '';
         $tutorial->support = !empty($incomingData['support']) ? intval($incomingData['support']) : 0;
         $tutorial->rights = !empty($incomingData['rights']) ? intval($incomingData['rights']) : 0;
+        $tutorial->views = !empty($incomingData['views']) ? intval($incomingData['views']) : 0;
 
         return $tutorial;
     }
