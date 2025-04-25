@@ -152,7 +152,7 @@ class RepositoryCourse extends EntityRepository
 
     public function getRandomResourcesByLang($lang, $number, $sort) {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
-        $queryBuilder->select('c.id, c.title, c.img, c.description, c.updatedAt, c.views, u.firstname, u.surname, u.id')
+        $queryBuilder->select('c.id, c.title, c.img, c.description, c.updatedAt, c.views, u.firstname, u.surname, u.id as userId')
             ->from(Course::class, 'c')
             ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
             ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
