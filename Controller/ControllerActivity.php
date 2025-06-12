@@ -385,7 +385,6 @@ class ControllerActivity extends Controller
 
                 $folder = $this->entityManager->getRepository(Folders::class)->find($id);
 
-                // check if allowed 
                 $requester_id = $_SESSION['id'];
                 $creator_id = $folder->getUser();
                 $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
@@ -403,12 +402,6 @@ class ControllerActivity extends Controller
 
                 return $folder;
             }
-            // @ToBeRemoved
-            // @Naser no ajax call to this method from the front
-            // last check June 2022
-            // 'get_mine' => function () {
-            //     return $this->entityManager->getRepository(Activity::class)->findBy(array("user" => $this->user));
-            // },
         );
     }
 
@@ -420,7 +413,6 @@ class ControllerActivity extends Controller
         foreach ($Courses as $course) {
             $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
             foreach ($courseLinkActivity as $cla) {
-                // get userlinkactivity 
                 $userLinkActivity = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $cla->getActivity(), "isFromCourse" => 1, "course" => $course->getId()]);
                 foreach ($userLinkActivity as $ula) {
                     $this->entityManager->remove($ula);
@@ -432,9 +424,16 @@ class ControllerActivity extends Controller
  
         foreach ($Activities as $activity) {
             $activitiesLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findBy(["activity" => $activity->getId()]);
+            $courseLinkActivity = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["activity" => $activity->getId()]);
+
             foreach ($activitiesLinkUser as $activityLinkUser) {
                 $this->entityManager->remove($activityLinkUser);
             }
+
+            foreach ($courseLinkActivity as $cla) {
+                $this->entityManager->remove($cla);
+            }
+            
             $this->entityManager->remove($activity);
         }
 
@@ -442,6 +441,7 @@ class ControllerActivity extends Controller
             $this->deleteChildren($child);
             $this->entityManager->remove($child);
         }
+        $this->entityManager->flush();
         
         return true;
     }
