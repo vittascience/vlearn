@@ -491,6 +491,13 @@ class ControllerCourse extends Controller
                     $this->entityManager->flush();
                 }
 
+                 // remove entries from playlist
+                $linkedPlaylists = $this->entityManager->getRepository('Learn\Entity\CourseLinkPlaylist')->findBy(array('courseId' => $databaseCourse));
+                foreach ($linkedPlaylists as $linkedPlaylist) {
+                    $this->entityManager->remove($linkedPlaylist);
+                    $this->entityManager->flush();
+                }
+
                 // flush anything that as not been saved in db
                 $this->entityManager->flush();
 
