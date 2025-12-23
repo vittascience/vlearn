@@ -13,9 +13,11 @@ use Classroom\Entity\CourseLinkUser;
 use Learn\Entity\CourseLinkActivity;
 use Classroom\Entity\ActivityLinkUser;
 use Classroom\Entity\ClassroomLinkUser;
+use Utils\Traits\UploadTrait;
 
 class ControllerCourse extends Controller
 {
+    use UploadTrait;
     public function __construct($entityManager, $user)
     {
         parent::__construct($entityManager, $user);
@@ -618,8 +620,13 @@ class ControllerCourse extends Controller
 
                 // no errors, we can process the data
                 $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
-
                 $success = move_uploaded_file($imageTempName, "$uploadDir/$filenameToUpload");
+
+                try {
+                    $this->uploadFileToS3($uploadDir . '/' . $filenameToUpload, 'user_data/resources/' . $filenameToUpload, $this->getContentTypeForS3($extension));
+                } catch (\Exception $e) {
+                    error_log('Error uploading image to S3: ' . $e->getMessage());
+                }
 
                 // something went wrong while storing the image, return an error
                 if (!$success) {
@@ -675,6 +682,13 @@ class ControllerCourse extends Controller
                 // set the target dir and move file
                 $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
                 $success = move_uploaded_file($fileTempName, "$uploadDir/$filenameToUpload");
+
+                // try to upload the file to s3
+                try {
+                    $this->uploadFileToS3($uploadDir . '/' . $filenameToUpload, 'user_data/resources/' . $filenameToUpload, $this->getContentTypeForS3($extension));
+                } catch (\Exception $e) {
+                    error_log('Error uploading file to S3: ' . $e->getMessage());
+                }
 
                 // something went wrong while storing the file, return an error
                 if (!$success) {
@@ -1391,5 +1405,19 @@ class ControllerCourse extends Controller
             ],
         ];
         $response = $groupsApi->addSubscriber("111807620", $subscriber);
+    }
+
+
+    private function getContentTypeForS3($extension) {
+        $mimeTypes = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'svg' => 'image/svg+xml',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+            'apng' => 'image/apng'
+        ];
+        return $mimeTypes[$extension] ?? 'application/octet-stream';
     }
 }

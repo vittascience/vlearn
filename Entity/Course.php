@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityOperatorException;
 use Doctrine\Common\Collections\ArrayCollection;
 use Utils\Exceptions\EntityDataIntegrityException;
+use Utils\Traits\UploadTrait;
 
 /**
  * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryCourse")
@@ -17,6 +18,7 @@ use Utils\Exceptions\EntityDataIntegrityException;
  */
 class Course implements \JsonSerializable, \Utils\JsonDeserializer
 {
+    use UploadTrait;
     const TITLE_MAX_LENGTH = 255;
     const TIME_MIN = 1;
     const TITLE_PART_MAX_LENGTH = 255;
@@ -387,6 +389,21 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             }
            
             move_uploaded_file($tmpPath, $realPath . "" . $filename);
+
+            
+            // try for S3 upload
+            $mimeTypes = [
+                'png' => 'image/png',
+                'jpeg' => 'image/jpeg',
+                'jpg' => 'image/jpeg'
+            ];
+            $contentType = $mimeTypes[$arrayPicture['ext']] ?? 'application/octet-stream';
+            try {
+                $this->uploadFileToS3($realPath . $filename, 'user_data/tuto_img/' . $filename, $contentType);
+            } catch (\Exception $e) {
+                error_log('Error uploading image to S3: ' . $e->getMessage());
+            }
+
             //création d'une image de poids réduite
             /* resize_img($realPath . $filename, $realPath . 'lazy_' . $filename); */
         } else {
@@ -430,7 +447,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
      * @return datetime
      */
     public function getUpdatedAt()
-    {
+    {   
         return $this->updatedAt;
     }
 
