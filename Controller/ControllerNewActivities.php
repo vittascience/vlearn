@@ -100,7 +100,7 @@ class ControllerNewActivities extends Controller
                 // accept only POST request
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
-                $title = !empty($data['title']) ? htmlspecialchars($data['title']) : null;
+                $title = !empty($data['title']) ? $data['title'] : null;
                 $type = !empty($data['type']) ? htmlspecialchars($data['type']) : null;
                 $content = !empty($data['content']) ? $data['content'] : null;
                 $solution = !empty($data['solution']) ? $data['solution'] : null;
