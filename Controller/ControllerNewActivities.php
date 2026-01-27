@@ -353,7 +353,7 @@ class ControllerNewActivities extends Controller
                     $errorsArray = [];
 
                     if ($acti->getType() == "fillIn") {
-                        $fillInReturn = $this->manageFillInAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
+                        $fillInReturn = $this->manageFillInAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect(), $actualTries);
                         $activity = $fillInReturn[0];
                         $errorsArray = $fillInReturn[1];
                     } else if (($acti->getType() == "free" || $acti->getType() == "")) {
@@ -361,11 +361,11 @@ class ControllerNewActivities extends Controller
                         $activity = $freeReturn[0];
                         $errorsArray = $freeReturn[1];
                     } else if ($acti->getType() == "quiz") {
-                        $quizReturn = $this->manageQuizAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
+                        $quizReturn = $this->manageQuizAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect(), $actualTries);
                         $activity = $quizReturn[0];
                         $errorsArray = $quizReturn[1];
                     } else if ($acti->getType() == "dragAndDrop") {
-                        $dragAndDropReturn = $this->manageDragAndDropAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect());
+                        $dragAndDropReturn = $this->manageDragAndDropAutocorrection($acti, $activity, $response, $acti->getIsAutocorrect(), $actualTries);
                         $activity = $dragAndDropReturn[0];
                         $errorsArray = $dragAndDropReturn[1];
                     }
@@ -881,7 +881,7 @@ class ControllerNewActivities extends Controller
         return [$activityLinkUser, $errorsArray];
     }
 
-    private function manageQuizAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
+    private function manageQuizAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect, $actualTries = false) {
         $solution = $this->manageUnserialize($this->manageJsonDecode($activity->getSolution()));
         $errorsArray = [];
         $correct = 0;
@@ -897,7 +897,15 @@ class ControllerNewActivities extends Controller
         }
 
         if ($correct == $total && $autocorrect) {
-            $activityLinkUser->setNote(3);
+            if ($actualTries !== false && $actualTries < 3) {
+                $activityLinkUser->setNote(3);
+            } else if ($actualTries !== false && $actualTries < 5) {
+                $activityLinkUser->setNote(2);
+            } else if ($actualTries !== false) {
+                $activityLinkUser->setNote(1);
+            } else {
+                $activityLinkUser->setNote(3);
+            }
         } else if ($autocorrect) {
             $activityLinkUser->setNote(0);
         }
@@ -905,7 +913,7 @@ class ControllerNewActivities extends Controller
         return [$activityLinkUser, $errorsArray];
     }
 
-    private function manageDragAndDropAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
+    private function manageDragAndDropAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect, $actualTries = false) {
         $solution = $this->manageUnserialize($this->manageJsonDecode($activity->getSolution()));
         $errorsArray = [];
         $correct = 0;
@@ -921,7 +929,15 @@ class ControllerNewActivities extends Controller
         }
 
         if ($correct == $total && $autocorrect) {
-            $activityLinkUser->setNote(3);
+            if ($actualTries !== false && $actualTries < 3) {
+                $activityLinkUser->setNote(3);
+            } else if ($actualTries !== false && $actualTries < 5) {
+                $activityLinkUser->setNote(2);
+            } else if ($actualTries !== false) {
+                $activityLinkUser->setNote(1);
+            } else {
+                $activityLinkUser->setNote(3);
+            }
         } else if ($autocorrect) {
             $activityLinkUser->setNote(0);
         }
@@ -929,7 +945,7 @@ class ControllerNewActivities extends Controller
         return [$activityLinkUser, $errorsArray];
     }
 
-    private function manageFillInAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect) {
+    private function manageFillInAutocorrection(Activity $activity, ActivityLinkUser $activityLinkUser, $response, $autocorrect, $actualTries = false) {
         $solution = $this->manageUnserialize($this->manageJsonDecode($activity->getSolution()));
         $errorsArray = [];
         $tolerance = $activity->getTolerance();
@@ -947,7 +963,15 @@ class ControllerNewActivities extends Controller
         }
 
         if (count($errorsArray) == 0 && $autocorrect) {
-            $activityLinkUser->setNote(3);
+            if ($actualTries !== false && $actualTries < 3) {
+                $activityLinkUser->setNote(3);
+            } else if ($actualTries !== false && $actualTries < 5) {
+                $activityLinkUser->setNote(2);
+            } else if ($actualTries !== false) {
+                $activityLinkUser->setNote(1);
+            } else {
+                $activityLinkUser->setNote(3);
+            }
         } else if ($autocorrect) {
             $activityLinkUser->setNote(0);
         }
