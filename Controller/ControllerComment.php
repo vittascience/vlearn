@@ -30,7 +30,7 @@ class ControllerComment extends Controller
                     $this->entityManager->persist($comment);
                     $this->entityManager->flush();
     
-                    $mailSent = mailComment("Un utilisateur a posté un commentaire.", $user, $comment, $data);
+                    $mailSent = mailComment($user, $comment, $data, 'add');
 
                     $arrayComment = array(
                         'id' => $comment->getId(),
@@ -77,7 +77,7 @@ class ControllerComment extends Controller
                     $picture = "/public/content/img/login.png";
                 }
 
-                mailComment("Un utilisateur a modifié un commentaire.", $user, $comment, $data);
+                mailComment($user, $comment, $data, 'update');
 
                 return  [
                     "id" => $comment->getId(),
@@ -187,12 +187,20 @@ class ControllerComment extends Controller
     }
 }
 
-function mailComment($subject, $user, $comment, $data)
+function mailComment($user, $comment, $data, $action)
 {
     $mail = new Mailer();
-    $subject = "Un utilisateur a posté un commentaire.";
-    $body = "L'utilisateur " . $user->getFirstname() . " " . $user->getSurname() . " (#ID : " . $user->getId() . ") a fait une action sur le message #" . $comment->getId() . ".";
-    $body .= "<b>Message :</b>";
-    $body .= "</br><p>" . trim(htmlspecialchars($data['message'])) . "</p>";
+    if($action === 'add'){
+        $subject = "Un utilisateur a posté un commentaire.";
+        $body = "L'utilisateur " . $user->getFirstname() . " " . $user->getSurname() . " (#ID : " . $user->getId() . ") a ajouté un commentaire sur la ressource #" . $data['tutoid'] . "(<a href='https://vittascience.com/learn/tutorial.php?id=" . $data['tutoid'] . "'>lien</a>).";
+        $body .= "<b>Message :</b>";
+        $body .= "</br><p>" . trim(htmlspecialchars($data['message'])) . "</p>";
+    } elseif($action === 'update'){
+        $subject = "Un utilisateur a modifié un commentaire.";
+        $body = "L'utilisateur " . $user->getFirstname() . " " . $user->getSurname() . " (#ID : " . $user->getId() . ") a fait une modification sur son commentaire de la ressource #" . $data['tutoid'] . "(<a href='https://vittascience.com/learn/tutorial.php?id=" . $data['tutoid'] . "'>lien</a>).";
+        $body .= "<b>Message :</b>";
+        $body .= "</br><p>" . trim(htmlspecialchars($data['message'])) . "</p>";
+    }
+    
     return $mail->sendMail("contact@vittascience.com", $subject, $body, strip_tags($body), "fr_default", "support@vittascience.com", "Support Vittascience");
 }
