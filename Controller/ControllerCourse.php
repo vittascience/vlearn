@@ -1243,8 +1243,9 @@ class ControllerCourse extends Controller
         if ($linkCourseToClassroomExists) {
             // foreach user linked to the course
             foreach ($linkCourseToClassroomExists as $link) {
-                // get the user
-                $userLinked = $link->getUser();
+                // get the user — re-fetch to ensure it still exists in DB (CourseLinkUser can outlive the user if no CASCADE DELETE)
+                $userLinked = $this->entityManager->getRepository(User::class)->find($link->getUser()->getId());
+                if (!$userLinked) continue;
                 // for each activity in the course
                 foreach ($activities as $key => $activity) {
 

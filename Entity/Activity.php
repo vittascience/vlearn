@@ -101,6 +101,18 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
      */
     private $isCollapsed = false;
 
+    /**
+     * @ORM\Column(name="created_at", type="datetime", nullable=false)
+     * @var \DateTime
+     */
+    private $createdAt = null;
+
+    /**
+     * @ORM\Column(name="updated_at", type="datetime", nullable=true)
+     * @var \DateTime
+     */
+    private $updatedAt = null;
+
     public function __construct($title, $content, $user = null, $isFromClassroom = false)
     {
         $this->title = $title;
@@ -343,6 +355,26 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
         $this->isCollapsed = $isCollapsed;
 
         return $this;
+    }
+
+    public function getCreatedAt()
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTime $createdAt)
+    {
+        $this->createdAt = $createdAt;
+    }
+
+    public function getUpdatedAt()
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(\DateTime $updatedAt)
+    {
+        $this->updatedAt = $updatedAt;
     }
 
     public function copy($objectToCopyFrom)
