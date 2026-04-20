@@ -224,6 +224,7 @@ class ControllerActivity extends Controller
 
                 // create the activity
                 $activity = new Activity($title, $content, $user, $isFromClassroom);
+                $activity->setCreatedAt(new \DateTime());
                 $activity->setType($type);
 
                 // if the activity belongs to vittasciences resources, set the resources id 
@@ -248,6 +249,7 @@ class ControllerActivity extends Controller
                     $user = $this->entityManager->getRepository('User\Entity\User')
                         ->find($this->user['id']);
                     $activity = new Activity($d['title'], $d['content'], $user, $isFromClassroom);
+                    $activity->setCreatedAt(new \DateTime());
                     if (isset($d['id'])) {
                         $fork = $this->entityManager->getRepository('Learn\Entity\Activity')
                             ->find($d['id']);
@@ -262,6 +264,7 @@ class ControllerActivity extends Controller
             'update' => function ($data) {
                 $activity = $this->entityManager->getRepository('Learn\Entity\Activity')
                     ->find($data['id']);
+                $activity->setUpdatedAt(new \DateTime());
                 $activity->setTitle($data['title']);
                 $activity->setContent($data['content']);
                 $this->entityManager->persist($activity);

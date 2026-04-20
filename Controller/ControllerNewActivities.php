@@ -112,6 +112,7 @@ class ControllerNewActivities extends Controller
                 $regular = $this->entityManager->getRepository(User::class)->findOneBy(['id' => $this->user['id']]);
 
                 $exercice = new Activity($title, $content, $regular, true);
+                $exercice->setCreatedAt(new \DateTime());
 
                 if ($solution) {
                     $exercice->setSolution($solution);
@@ -238,6 +239,7 @@ class ControllerNewActivities extends Controller
                         $activity->setTitle($title);
                         $activity->setType($type);
                         $activity->setContent($content);
+                        $activity->setDateUpdated(new \DateTime());
 
                         if ($solution) {
                             $activity->setSolution($solution);
