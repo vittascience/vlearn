@@ -193,8 +193,8 @@ class ControllerCourse extends Controller
 
                             foreach ($nameAndUrlPairs as $nameAndUrlPair) {
                                 // bind and sanitize incoming data
-                                $name = htmlspecialchars(strip_tags(trim($nameAndUrlPair->name)));
-                                $url = htmlspecialchars(strip_tags(trim($nameAndUrlPair->url)));
+                                $name = strip_tags(trim($nameAndUrlPair->name));
+                                $url = strip_tags(trim($nameAndUrlPair->url));
 
                                 // fill content with sanitized values
                                 $content .= empty($url)
@@ -207,7 +207,7 @@ class ControllerCourse extends Controller
                         } else {
                             // bind and sanitize incoming data
                             $title = $tutorialParts[$i]->title;
-                            $content = htmlspecialchars(strip_tags(trim($tutorialParts[$i]->content)));
+                            $content = trim($tutorialParts[$i]->content);
                             $isCollapsed = filter_var($tutorialParts[$i]->isCollapsed, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
                             // replace values by the same values but sanitized
                             $tutorialParts[$i]->title =  $title;
@@ -339,8 +339,8 @@ class ControllerCourse extends Controller
 
                         foreach ($nameAndUrlPairs as $nameAndUrlPair) {
                             // bind and sanitize incoming data
-                            $name = htmlspecialchars(strip_tags(trim($nameAndUrlPair->name)));
-                            $url = htmlspecialchars(strip_tags(trim($nameAndUrlPair->url)));
+                            $name = strip_tags(trim($nameAndUrlPair->name));
+                            $url = strip_tags(trim($nameAndUrlPair->url));
 
                             // fill content with sanitized values
                             $content .= empty($url)
@@ -700,8 +700,8 @@ class ControllerCourse extends Controller
                     $courseData = json_decode($_POST['course'], true);
                     // sanitize incoming data
                     $activities = $courseData['courses'] ?? "";
-                    $title = $courseData['title'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
-                    $description = $courseData['description'] ? htmlspecialchars(strip_tags(trim($courseData['description']))) : "";
+                    $title = $courseData['title'] ? strip_tags(trim($courseData['title'])) : "";
+                    $description = $courseData['description'] ? trim($courseData['description']) : "";
                     $duration = intval($courseData['parameters']['duration']);
                     $difficulty = intval($courseData['parameters']['difficulty']);
                     $language = intval($courseData['parameters']['language']);
@@ -826,8 +826,8 @@ class ControllerCourse extends Controller
                     // sanitize incoming data
                     $activities = $courseData['courses'] ?? "";
                     $courseId = htmlspecialchars(strip_tags(trim($_POST['courseId']))) ?? "";
-                    $title = $courseData['title'] ? htmlspecialchars(strip_tags(trim($courseData['title']))) : "";
-                    $description = $courseData['description'] ? htmlspecialchars(strip_tags(trim($courseData['description']))) : "";
+                    $title = $courseData['title'] ? strip_tags(trim($courseData['title'])) : "";
+                    $description = $courseData['description'] ? trim($courseData['description']) : "";
                     $duration = intval($courseData['parameters']['duration']);
                     $difficulty = intval($courseData['parameters']['difficulty']);
                     $language = intval($courseData['parameters']['language']);
