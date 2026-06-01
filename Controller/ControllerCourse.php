@@ -207,7 +207,7 @@ class ControllerCourse extends Controller
                         } else {
                             // bind and sanitize incoming data
                             $title = $tutorialParts[$i]->title;
-                            $content = strip_tags(trim($tutorialParts[$i]->content));
+                            $content = trim($tutorialParts[$i]->content);
                             $isCollapsed = filter_var($tutorialParts[$i]->isCollapsed, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
                             // replace values by the same values but sanitized
                             $tutorialParts[$i]->title =  $title;
@@ -701,7 +701,7 @@ class ControllerCourse extends Controller
                     // sanitize incoming data
                     $activities = $courseData['courses'] ?? "";
                     $title = $courseData['title'] ? strip_tags(trim($courseData['title'])) : "";
-                    $description = $courseData['description'] ? strip_tags(trim($courseData['description'])) : "";
+                    $description = $courseData['description'] ? trim($courseData['description']) : "";
                     $duration = intval($courseData['parameters']['duration']);
                     $difficulty = intval($courseData['parameters']['difficulty']);
                     $language = intval($courseData['parameters']['language']);
@@ -827,7 +827,7 @@ class ControllerCourse extends Controller
                     $activities = $courseData['courses'] ?? "";
                     $courseId = htmlspecialchars(strip_tags(trim($_POST['courseId']))) ?? "";
                     $title = $courseData['title'] ? strip_tags(trim($courseData['title'])) : "";
-                    $description = $courseData['description'] ? strip_tags(trim($courseData['description'])) : "";
+                    $description = $courseData['description'] ? trim($courseData['description']) : "";
                     $duration = intval($courseData['parameters']['duration']);
                     $difficulty = intval($courseData['parameters']['difficulty']);
                     $language = intval($courseData['parameters']['language']);
