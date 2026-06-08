@@ -239,7 +239,7 @@ class ControllerNewActivities extends Controller
                         $activity->setTitle($title);
                         $activity->setType($type);
                         $activity->setContent($content);
-                        $activity->setDateUpdated(new \DateTime());
+                        $activity->setUpdatedAt(new \DateTime());
 
                         if ($solution) {
                             $activity->setSolution($solution);
