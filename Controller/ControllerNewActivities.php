@@ -40,8 +40,8 @@ class ControllerNewActivities extends Controller
                 // for each apps check if it is active and allow to use it
                 foreach ($Apps as $app) {
 
-                    $users_link_applications = $this->entityManager->getRepository(UsersLinkApplications::class)->findOneBy(['application' => $app->getId(), 'user' => $this->user]);
-                    $users_link_applications_from_groups = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findOneBy(['application' => $app->getId(), 'user' => $this->user]);
+                    $users_link_applications = $this->entityManager->getRepository(UsersLinkApplications::class)->findOneBy(['application' => $app->getId(), 'user' => $this->user['id']]);
+                    $users_link_applications_from_groups = $this->entityManager->getRepository(UsersLinkApplicationsFromGroups::class)->findOneBy(['application' => $app->getId(), 'user' => $this->user['id']]);
                     $appSerialized = $app->jsonSerialize();
 
 
