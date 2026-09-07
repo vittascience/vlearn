@@ -17,7 +17,6 @@ use Utils\Traits\UploadTrait;
 
 class ControllerCourse extends Controller
 {
-    // Own __construct($entityManager, $user) shadows the trait's, so alias + call it explicitly.
     use UploadTrait {
         UploadTrait::__construct as private initS3Upload;
     }
