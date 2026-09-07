@@ -400,7 +400,7 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             $contentType = $mimeTypes[$arrayPicture['ext']] ?? 'application/octet-stream';
             try {
                 $this->uploadFileToS3($realPath . $filename, 'user_data/tuto_img/' . $filename, $contentType);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 error_log('Error uploading image to S3: ' . $e->getMessage());
             }
 
