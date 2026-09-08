@@ -623,13 +623,23 @@ class ControllerCourse extends Controller
                 $filenameToUpload = time() . "_$filenameWithoutSpaces.$extension";
 
                 // no errors, we can process the data
-                $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
+                $s3Only = $this->isS3OnlyMode();
+                $uploadDir = $s3Only ? rtrim(sys_get_temp_dir(), '/') : __DIR__ . "/../../../../public/content/user_data/resources";
                 $success = move_uploaded_file($imageTempName, "$uploadDir/$filenameToUpload");
 
+                $uploaded = false;
                 try {
-                    $this->uploadFileToS3($uploadDir . '/' . $filenameToUpload, 'user_data/resources/' . $filenameToUpload, $this->getContentTypeForS3($extension));
-                } catch (\Exception $e) {
+                    $uploaded = $this->uploadFileToS3($uploadDir . '/' . $filenameToUpload, 'user_data/resources/' . $filenameToUpload, $this->getContentTypeForS3($extension));
+                } catch (\Throwable $e) {
                     error_log('Error uploading image to S3: ' . $e->getMessage());
+                }
+
+                if ($s3Only) {
+                    @unlink("$uploadDir/$filenameToUpload");
+                    if (!$uploaded) {
+                        array_push($errors, array('errorType' => "imageNotStored"));
+                        return array('errors' => $errors);
+                    }
                 }
 
                 // something went wrong while storing the image, return an error
@@ -641,7 +651,7 @@ class ControllerCourse extends Controller
                 // no errors, return data
                 return array(
                     "filename" => $filenameToUpload,
-                    "src" => "/public/content/user_data/resources/$filenameToUpload"
+                    "src" => \Utils\UserDataUrl::resolve('resources/' . $filenameToUpload)
                 );
             },
             'upload_file_from_text_editor' => function () {
@@ -684,14 +694,24 @@ class ControllerCourse extends Controller
                 $filenameToUpload = time() . "_$filenameWithoutSpaces.$extension";
 
                 // set the target dir and move file
-                $uploadDir = __DIR__ . "/../../../../public/content/user_data/resources";
+                $s3Only = $this->isS3OnlyMode();
+                $uploadDir = $s3Only ? rtrim(sys_get_temp_dir(), '/') : __DIR__ . "/../../../../public/content/user_data/resources";
                 $success = move_uploaded_file($fileTempName, "$uploadDir/$filenameToUpload");
 
                 // try to upload the file to s3
+                $uploaded = false;
                 try {
-                    $this->uploadFileToS3($uploadDir . '/' . $filenameToUpload, 'user_data/resources/' . $filenameToUpload, $this->getContentTypeForS3($extension));
-                } catch (\Exception $e) {
+                    $uploaded = $this->uploadFileToS3($uploadDir . '/' . $filenameToUpload, 'user_data/resources/' . $filenameToUpload, $this->getContentTypeForS3($extension));
+                } catch (\Throwable $e) {
                     error_log('Error uploading file to S3: ' . $e->getMessage());
+                }
+
+                if ($s3Only) {
+                    @unlink("$uploadDir/$filenameToUpload");
+                    if (!$uploaded) {
+                        array_push($errors, array('errorType' => "fileNotStored"));
+                        return array('errors' => $errors);
+                    }
                 }
 
                 // something went wrong while storing the file, return an error
@@ -703,7 +723,7 @@ class ControllerCourse extends Controller
                 // no errors, return data
                 return array(
                     "filename" => $filenameToUpload,
-                    "src" => "/public/content/user_data/resources/$filenameToUpload"
+                    "src" => \Utils\UserDataUrl::resolve('resources/' . $filenameToUpload)
                 );
             },
             'add_from_classroom' => function () {

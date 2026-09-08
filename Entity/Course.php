@@ -382,26 +382,33 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
             if (!$arrayPicture['success']) {
             }
             $tmpPath = $img['tmp_name'];
-            $realPath = __DIR__ . "/../../../../public/content/user_data/tuto_img/";
+            $s3Only = $this->isS3OnlyMode();
+            $realPath = $s3Only ? rtrim(sys_get_temp_dir(), '/') . '/' : __DIR__ . "/../../../../public/content/user_data/tuto_img/";
             while (true) {
                 $filename = uniqid(rand(), true) . '_' . $img['name'];
                 if (!file_exists($realPath . "" . $filename)) break;
             }
-           
+
             move_uploaded_file($tmpPath, $realPath . "" . $filename);
 
-            
-            // try for S3 upload
             $mimeTypes = [
                 'png' => 'image/png',
                 'jpeg' => 'image/jpeg',
                 'jpg' => 'image/jpeg'
             ];
             $contentType = $mimeTypes[$arrayPicture['ext']] ?? 'application/octet-stream';
+            $uploaded = false;
             try {
-                $this->uploadFileToS3($realPath . $filename, 'user_data/tuto_img/' . $filename, $contentType);
+                $uploaded = $this->uploadFileToS3($realPath . $filename, 'user_data/tuto_img/' . $filename, $contentType);
             } catch (\Throwable $e) {
                 error_log('Error uploading image to S3: ' . $e->getMessage());
+            }
+
+            if ($s3Only) {
+                @unlink($realPath . $filename);
+                if (!$uploaded) {
+                    return;
+                }
             }
 
             //création d'une image de poids réduite

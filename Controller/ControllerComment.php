@@ -72,7 +72,7 @@ class ControllerComment extends Controller
                 }
                 
                 if ($user->getPicture() !== NULL) {
-                    $picture = "/public/content/user_data/user_img/" . $user->getPicture();
+                    $picture = \Utils\UserDataUrl::resolve('user_img/' . $user->getPicture());
                 } else {
                     $picture = "/public/content/img/login.png";
                 }
@@ -161,7 +161,7 @@ class ControllerComment extends Controller
                         $username = $user->getFirstname() . " " . $user->getSurname();
                     }
                     if ($user->getPicture() !== NULL) {
-                        $picture = "/public/content/user_data/user_img/" . $user->getPicture();
+                        $picture = \Utils\UserDataUrl::resolve('user_img/' . $user->getPicture());
                     } else {
                         $picture = "/public/content/img/login.png";
                     }
