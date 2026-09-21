@@ -51,10 +51,12 @@ class ControllerNewActivities extends Controller
 
                         if ($users_link_applications) {
                             // UsersRestrictions
-                            $userRestriction = $this->entityManager->getRepository(UsersRestrictions::class)->findOneBy(['user' => $this->user]);
-                            $dateBegin = $userRestriction->getDateBegin() ?? null;
-                            $dateEnd = $userRestriction->getDateEnd() ?? null;
-                            $appSerialized['dateEnd'] = $dateEnd;
+                            $userRestriction = $this->entityManager->getRepository(UsersRestrictions::class)->findOneBy(['user' => $this->user['id']]);
+                            if ($userRestriction) {
+                                $dateBegin = $userRestriction->getDateBegin() ?? null;
+                                $dateEnd = $userRestriction->getDateEnd() ?? null;
+                                $appSerialized['dateEnd'] = $dateEnd;
+                            }
                             
                             if ($users_link_applications->getmaxActivitiesPerTeachers() == -1 ||
                                 $users_link_applications->getmaxActivitiesPerTeachers() > 0) {
