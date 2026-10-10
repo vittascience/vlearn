@@ -178,6 +178,7 @@ class ControllerNewActivities extends Controller
                 $id = !empty($data['id']) ? htmlspecialchars($data['id']): null;
                 if ($id) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($id);
+                    if ($activity && !$this->canManageActivity($activity)) return ['error' => 'notAllowed'];
                 
                     if ($activity) {
 
@@ -228,6 +229,7 @@ class ControllerNewActivities extends Controller
                 $id = !empty($data['id']) ? htmlspecialchars($data['id']): null;
                 if ($id) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($id);
+                    if ($activity && !$this->canManageActivity($activity)) return ['error' => 'notAllowed'];
                     if ($activity) {
 
                         $title = !empty($data['title']) ? $data['title'] : null;
@@ -762,6 +764,15 @@ class ControllerNewActivities extends Controller
         );
     }
 
+
+    // Only the owner or an admin may change or delete an activity
+    private function canManageActivity(Activity $activity): bool {
+        $userId = intval($this->user['id'] ?? 0);
+        if (!$userId) return false;
+        if ($activity->getUser() && intval($activity->getUser()->getId()) === $userId) return true;
+        $regular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $userId]);
+        return $regular !== null && $regular->getIsAdmin();
+    }
 
     public function manageTagsForActivities(Activity $activity, ?array $idTagList) {
         $activityLinkTags = $this->entityManager->getRepository(ActivityLinkTag::class)->findBy(['activity' => $activity]);
