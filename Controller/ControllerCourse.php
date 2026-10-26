@@ -1103,6 +1103,90 @@ class ControllerCourse extends Controller
 
                 return ["success" => true, "course" => $courseSerialized];
             },
+            'import_activity_from_bank' => function ($data) {
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                $teacher = $this->getBankImportTeacher();
+                if (!$teacher) return ["success" => false, "errorType" => "notAllowed"];
+
+                $tutorial = $this->entityManager->getRepository(Course::class)->find(intval($data['tutorialId'] ?? 0));
+                $error = $this->getBankImportError($tutorial, $teacher);
+                if ($error) return ["success" => false, "errorType" => $error];
+
+                $link = $this->entityManager->getRepository(CourseLinkActivity::class)->findOneBy([
+                    "course" => $tutorial,
+                    "activity" => intval($data['activityId'] ?? 0)
+                ]);
+                if (!$link) return ["success" => false, "errorType" => "activityNotFound"];
+
+                $activity = $this->copyBankActivity($link->getActivity(), $teacher, $this->getTeacherFolder($data['folderId'] ?? null, $teacher));
+                $this->entityManager->persist($activity);
+                $this->entityManager->flush();
+
+                return ["success" => true, "activity" => $activity];
+            },
+            'import_course_from_bank' => function ($data) {
+                if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
+
+                $teacher = $this->getBankImportTeacher();
+                if (!$teacher) return ["success" => false, "errorType" => "notAllowed"];
+
+                $tutorial = $this->entityManager->getRepository(Course::class)->find(intval($data['tutorialId'] ?? 0));
+                $error = $this->getBankImportError($tutorial, $teacher);
+                if ($error) return ["success" => false, "errorType" => $error];
+
+                $links = $this->entityManager->getRepository(CourseLinkActivity::class)->getActivitiesOrdered($tutorial->getId());
+                // the first part is the materials list, skip it when it is empty
+                $links = array_values(array_filter($links, function ($link) {
+                    return !preg_match('/^\[fa\-list\]\[\/list\]$/', $link->getActivity()->getContent());
+                }));
+                if (empty($links)) return ["success" => false, "errorType" => "activityNotFound"];
+
+                $title = $this->decodeBankText($tutorial->getTitle());
+                $description = $this->decodeBankText($tutorial->getDescription());
+
+                $this->entityManager->beginTransaction();
+                try {
+                    // course and its activities are grouped in a folder named after the resource
+                    $folder = new Folders($this->getBankFolderName($title), $teacher, $this->getTeacherFolder($data['folderId'] ?? null, $teacher));
+                    $this->entityManager->persist($folder);
+
+                    $course = new Course();
+                    $course->setTitle(mb_substr($title, 0, 1000));
+                    $course->setDescription(mb_substr($description !== '' ? $description : $title, 0, 1000));
+                    $course->setSupport(0);
+                    $course->setFork(null);
+                    $course->setDuration($tutorial->getDuration());
+                    $course->setDifficulty($tutorial->getDifficulty());
+                    $course->setLang($tutorial->getLang());
+                    $course->setUser($teacher);
+                    $course->setRights(0);
+                    $course->setDeleted(false);
+                    $course->setFormat(false);
+                    $course->setFolder($folder);
+                    $course->setCreatedAt();
+                    $this->entityManager->persist($course);
+
+                    $activities = [];
+                    foreach ($links as $index => $link) {
+                        $activity = $this->copyBankActivity($link->getActivity(), $teacher, $folder);
+                        $this->entityManager->persist($activity);
+                        $this->entityManager->persist(new CourseLinkActivity($course, $activity, $index));
+                        $activities[] = $activity;
+                    }
+
+                    $this->entityManager->flush();
+                    $this->entityManager->commit();
+                } catch (\Throwable $error) {
+                    $this->entityManager->rollback();
+                    return ["success" => false, "errorType" => "importFailed"];
+                }
+
+                $courseSerialized = $course->jsonSerialize();
+                $courseSerialized['activities'] = $activities;
+
+                return ["success" => true, "course" => $courseSerialized, "folderId" => $folder->getId()];
+            },
             'set_state_from_course' => function ($data) {
                 $courseId = htmlspecialchars($data['courseId']);
                 $state = htmlspecialchars($data['state']);
@@ -1404,6 +1488,74 @@ class ControllerCourse extends Controller
                 $this->entityManager->flush();
             }
         }
+    }
+
+    private function getBankImportTeacher()
+    {
+        if (empty($_SESSION['id'])) return null;
+        $user = $this->entityManager->getRepository(User::class)->find(intval($_SESSION['id']));
+        if (!$user) return null;
+        $regular = $this->entityManager->getRepository(Regular::class)->findOneBy(['user' => $user]);
+        return $regular ? $user : null;
+    }
+
+    /**
+     * Private tutorials are only importable by their author, CC-BY-NC-ND ones (rights 2) cannot be copied by others
+     */
+    private function getBankImportError($tutorial, User $teacher)
+    {
+        if (!$tutorial || $tutorial->isDeleted()) return "tutorialNotFound";
+        if ($tutorial->getUser() && $tutorial->getUser()->getId() == $teacher->getId()) return null;
+        if ($tutorial->getRights() == 0) return "tutorialNotFound";
+        if ($tutorial->getRights() == 2) return "tutorialLicenseNoDerivatives";
+        return null;
+    }
+
+    private function getTeacherFolder($folderId, User $teacher)
+    {
+        if (empty($folderId)) return null;
+        return $this->entityManager->getRepository(Folders::class)->findOneBy([
+            'id' => intval($folderId),
+            'user' => $teacher
+        ]);
+    }
+
+    private function copyBankActivity(Activity $source, User $teacher, $folder)
+    {
+        $activity = new Activity($source->getTitle(), $this->convertMaterialsListBbcode($source->getContent()), $teacher, true);
+        $activity->setType($source->getType());
+        $activity->setFork($source);
+        $activity->setFolder($folder);
+        $activity->setCreatedAt(new \DateTime());
+        return $activity;
+    }
+
+    // the materials list uses learn-only tags, the classroom only renders standard list/url bbcode
+    private function convertMaterialsListBbcode($content)
+    {
+        return str_ireplace(['[fa-list]', '[fa-url=', '[fa-*]'], ['[list]', '[url=', ''], $content);
+    }
+
+    // tutorial titles and descriptions are stored URI and (sometimes several times) HTML encoded by the learn editor
+    private function decodeBankText($text)
+    {
+        $decoded = rawurldecode((string) $text);
+        for ($i = 0; $i < 5; $i++) {
+            $previous = $decoded;
+            $decoded = html_entity_decode($decoded, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($decoded === $previous) break;
+        }
+        return trim(strip_tags($decoded));
+    }
+
+    // folder names are stored encoded like in create_folder and the column holds 30 characters
+    private function getBankFolderName($title)
+    {
+        $name = mb_substr($title, 0, 30);
+        while (mb_strlen(htmlspecialchars($name)) > 30) {
+            $name = mb_substr($name, 0, -1);
+        }
+        return htmlspecialchars($name);
     }
 
     private function sendToMailerlite($rights, $id, $email) {
