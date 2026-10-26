@@ -1522,12 +1522,18 @@ class ControllerCourse extends Controller
 
     private function copyBankActivity(Activity $source, User $teacher, $folder)
     {
-        $activity = new Activity($source->getTitle(), $source->getContent(), $teacher, true);
+        $activity = new Activity($source->getTitle(), $this->convertMaterialsListBbcode($source->getContent()), $teacher, true);
         $activity->setType($source->getType());
         $activity->setFork($source);
         $activity->setFolder($folder);
         $activity->setCreatedAt(new \DateTime());
         return $activity;
+    }
+
+    // the materials list uses learn-only tags, the classroom only renders standard list/url bbcode
+    private function convertMaterialsListBbcode($content)
+    {
+        return str_ireplace(['[fa-list]', '[fa-url=', '[fa-*]'], ['[list]', '[url=', ''], $content);
     }
 
     // tutorial titles and descriptions are stored URI and (sometimes several times) HTML encoded by the learn editor
