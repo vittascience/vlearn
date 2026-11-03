@@ -14,6 +14,7 @@ use Learn\Entity\ActivityLinkTag;
 use Classroom\Entity\Applications;
 use Learn\Entity\CourseLinkActivity;
 use Classroom\Entity\ActivityLinkUser;
+use Classroom\Entity\ClassroomLinkUser;
 use Classroom\Entity\UsersRestrictions;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\GroupsLinkApplications;
@@ -310,6 +311,7 @@ class ControllerNewActivities extends Controller
                 // no errors, get the activity
                 $acti = $this->entityManager->getRepository(Activity::class)->find($activityId);
                 $activity = $this->entityManager->getRepository(ActivityLinkUser::class)->findOneBy(["id" => $activityLinkId]);
+                if (!$activity || !$this->canAccessStudentActivity($activity)) return ["error" => "activityNotAllowed"];
 
                 
                 $actualTries = $activity->getTries();
@@ -425,6 +427,7 @@ class ControllerNewActivities extends Controller
                
                 if ($activityId && $isRegular) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($activityId);
+                    if (!$activity || !$this->canManageActivity($activity)) return ['error' => 'notAllowed'];
 
                     $title = "";
                     $newTitle = "";
@@ -493,6 +496,7 @@ class ControllerNewActivities extends Controller
                 if ($activityId && $activityLinkId) {
                     $activity = $this->entityManager->getRepository(Activity::class)->find($activityId);
                     $activityLinkUser = $this->entityManager->getRepository(ActivityLinkUser::class)->findOneBy(["id" => $activityLinkId]);
+                    if (!$activityLinkUser || !$this->canAccessStudentActivity($activityLinkUser)) return ["error" => "activityNotAllowed"];
                     $response = $this->manageUnserialize($this->manageJsonDecode($activityLinkUser->getResponse()));
                 
                     if ($activity && $activityLinkUser) {
@@ -766,6 +770,19 @@ class ControllerNewActivities extends Controller
 
 
     // Only the owner or an admin may change or delete an activity
+    // The student or one of their teachers
+    private function canAccessStudentActivity(ActivityLinkUser $activityLinkUser): bool {
+        $userId = intval($_SESSION['id'] ?? 0);
+        $studentId = intval($activityLinkUser->getUser()->getId());
+        if ($userId === $studentId) return true;
+
+        $classroomLinks = $this->entityManager->getRepository(ClassroomLinkUser::class);
+        foreach ($classroomLinks->findBy(['user' => $studentId, 'rights' => 0]) as $studentLink) {
+            if ($classroomLinks->findOneBy(['user' => $userId, 'classroom' => $studentLink->getClassroom()->getId(), 'rights' => 2])) return true;
+        }
+        return false;
+    }
+
     private function canManageActivity(Activity $activity): bool {
         $userId = intval($this->user['id'] ?? 0);
         if (!$userId) return false;
