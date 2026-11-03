@@ -25,6 +25,7 @@ class ControllerCourseLinkCourse extends Controller
                 return  $arrayResult;
             },
             'add' => function ($data) {
+                if (!$this->canEditTutorial($data['id'] ?? 0)) return ['error' => 'notAllowed'];
                 $tutorial1 = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['id']);
                 foreach (json_decode($data['linkedTuto']) as $tuto) {
                     $tutorial2 = $this->entityManager->getRepository('Learn\Entity\Course')->find($tuto);
@@ -35,6 +36,7 @@ class ControllerCourseLinkCourse extends Controller
                 return true;
             },
             'update' => function ($data) {
+                if (!$this->canEditTutorial($data['tutorial1'] ?? 0)) return ['error' => 'notAllowed'];
                 $tutorial1 = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['tutorial1']);
                 $tutorial2 = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['tutorial2']);
                 $related = new CourseLinkCourse($tutorial1, $tutorial2);
@@ -43,6 +45,7 @@ class ControllerCourseLinkCourse extends Controller
                 return true;
             },
             'delete' => function ($data) {
+                if (!$this->canEditTutorial($data['tutorial1'] ?? 0)) return ['error' => 'notAllowed'];
                 $tutorial1 = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['tutorial1']);
                 $tutorial2 = $this->entityManager->getRepository('Learn\Entity\Course')->find($data['tutorial2']);
                 $related = $this->entityManager->getRepository("Learn\Entity\CourseLinkCourse")
@@ -52,5 +55,17 @@ class ControllerCourseLinkCourse extends Controller
                 return true;
             }
         );
+    }
+
+    // Only the tutorial's owner or a superadmin manages its related tutorials
+    private function canEditTutorial($tutorialId): bool
+    {
+        if (empty($_SESSION['id'])) return false;
+        $userId = intval($_SESSION['id']);
+        $tutorial = $this->entityManager->getRepository('Learn\Entity\Course')->find(intval($tutorialId));
+        if (!$tutorial) return false;
+        if ($tutorial->getUser() && $tutorial->getUser()->getId() == $userId) return true;
+        $regular = $this->entityManager->getRepository('User\Entity\Regular')->findOneBy(['user' => $userId]);
+        return $regular && $regular->getIsAdmin();
     }
 }

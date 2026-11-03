@@ -608,7 +608,7 @@ class ControllerCourse extends Controller
                 if (empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
                 if (empty($imageTempName)) array_push($errors, array("errorType" => "invalidImageTempName"));
                 if (empty($extension)) array_push($errors, array("errorType" => "invalidImageExtension"));
-                if (!in_array($extension, array("jpg", "jpeg", "png", "svg", "webp", "gif", "apng"))) {
+                if (!in_array($extension, array("jpg", "jpeg", "png", "webp", "gif", "apng"))) {
                     array_push($errors, array("errorType" => "invalidImageExtension"));
                 }
                 if (empty($imageSize)) array_push($errors, array("errorType" => "invalidImageSize"));
@@ -777,13 +777,14 @@ class ControllerCourse extends Controller
 
                     if ($folderId != null) {
                         $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
-                        if ($folder) {
+                        if ($folder && $folder->getUser() && $folder->getUser()->getId() == $user->getId()) {
                             $course->setFolder($folder);
                         }
                     }
                     $this->entityManager->persist($course);
                     $this->entityManager->flush();
 
+                    $activities = $this->keepAllowedActivities($activities, $user, []);
                     foreach ($activities as $index => $activity) {
                         $acti = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $activity['id']]);
                         $courseLinkActivity = new CourseLinkActivity($course, $acti, $index);
@@ -818,7 +819,7 @@ class ControllerCourse extends Controller
                 if (empty($imageName)) array_push($errors, array("errorType" => "invalidImageName"));
                 if (empty($imageTempName)) array_push($errors, array("errorType" => "invalidImageTempName"));
                 if (empty($extension)) array_push($errors, array("errorType" => "invalidImageExtension"));
-                if (!in_array($extension, array("jpg", "jpeg", "png", "svg", "webp", "gif", "apng"))) {
+                if (!in_array($extension, array("jpg", "jpeg", "png", "webp", "gif", "apng"))) {
                     array_push($errors, array("errorType" => "invalidImageExtension"));
                 }
                 if (empty($imageSize)) array_push($errors, array("errorType" => "invalidImageSize"));
@@ -893,8 +894,8 @@ class ControllerCourse extends Controller
                     // no errors, we can process the data
 
                     $user = $this->entityManager->getRepository(User::class)->findOneBy(["id" => $_SESSION['id']]);
-                    $course = $this->entityManager->getRepository(Course::class)->findOneBy(["id" => $courseId]);
-
+                    $course = $this->entityManager->getRepository(Course::class)->findOneBy(["id" => $courseId, "user" => $user]);
+                    if (!$course) return ["error" => "Not authorized"];
 
                     $course->setTitle($title);
                     $course->setDescription($description);
@@ -912,6 +913,10 @@ class ControllerCourse extends Controller
 
                     // get all courselinkactivity
                     $courseLinkActivities = $this->entityManager->getRepository(CourseLinkActivity::class)->findBy(["course" => $course]);
+                    $linkedActivityIds = array_map(function ($courseLinkActivity) {
+                        return $courseLinkActivity->getActivity() ? $courseLinkActivity->getActivity()->getId() : 0;
+                    }, $courseLinkActivities);
+                    $activities = $this->keepAllowedActivities($activities, $user, $linkedActivityIds);
                     // delete all courselinkactivity
                     foreach ($courseLinkActivities as $courseLinkActivity) {
                         $this->entityManager->remove($courseLinkActivity);
@@ -985,16 +990,18 @@ class ControllerCourse extends Controller
                 }
             },
             'moveCourseToFolder'  => function ($data) {
+                if (empty($_SESSION['id'])) return ['error' => 'notAuthenticated'];
 
                 $courseId = htmlspecialchars($data['courseId']);
                 $folderId = htmlspecialchars($data['folderId']);
 
                 $course = $this->entityManager->getRepository(Course::class)->find(["id" => $courseId]);
+                if (!$course) return ['error' => 'notAllowed'];
 
                 // check if allowed 
-                $requester_id = $_SESSION['id'];
+                $requester_id = intval($_SESSION['id']);
                 $creator_id = $course->getUser();
-                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
+                $Allowed = $this->isAllowed($creator_id ? $creator_id->getId() : 0, $requester_id);
 
                 if (!$Allowed) {
                     return array(
@@ -1003,6 +1010,7 @@ class ControllerCourse extends Controller
                 }
 
                 $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
+                if ($folder && !$this->isAllowed($folder->getUser() ? $folder->getUser()->getId() : 0, $requester_id)) return ['error' => 'notAllowed'];
                 $course->setFolder($folder);
                 $this->entityManager->persist($course);
                 $this->entityManager->flush();
@@ -1289,6 +1297,16 @@ class ControllerCourse extends Controller
         }
 
         return $sanitizedFilters;
+    }
+
+    // A course only takes the teacher's own activities, plus those it already contained
+    private function keepAllowedActivities($activities, User $user, array $linkedActivityIds): array
+    {
+        return array_values(array_filter(is_array($activities) ? $activities : [], function ($activity) use ($user, $linkedActivityIds) {
+            $activityId = intval($activity['id'] ?? 0);
+            return in_array($activityId, $linkedActivityIds)
+                || $this->entityManager->getRepository(Activity::class)->findOneBy(['id' => $activityId, 'user' => $user]);
+        }));
     }
 
     private function isAllowed(Int $creator_id, Int $requester_id)
