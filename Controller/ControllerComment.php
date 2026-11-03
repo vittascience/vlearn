@@ -12,6 +12,7 @@ class ControllerComment extends Controller
         parent::__construct($entityManager, $user);
         $this->actions = array(
             'add' => function ($data) {
+                if (empty($_SESSION['id'])) return ["success" => false, "message" => "notAuthenticated"];
                 try {
                     $commentAnswered = NULL;
                     if ($data['comid'] > 0) {
@@ -91,7 +92,17 @@ class ControllerComment extends Controller
                 // This function can be accessed by post method only
                 if ($_SERVER['REQUEST_METHOD'] !== 'POST') return ["error" => "Method not Allowed"];
 
-                $comment = $this->entityManager->getRepository('Learn\Entity\Comment')->find($data['comid']);
+                if (empty($_SESSION['id'])) return ["error" => "notAuthenticated"];
+
+                $comment = $this->entityManager->getRepository('Learn\Entity\Comment')->find(intval($data['comid'] ?? 0));
+                if (!$comment) return ["error" => "commentNotFound"];
+
+                // only its author or a superadmin
+                $userId = intval($_SESSION['id']);
+                $regular = $this->entityManager->getRepository('User\Entity\Regular')->findOneBy(["user" => $userId]);
+                $isAuthor = $comment->getUser() && $comment->getUser()->getId() == $userId;
+                if (!$isAuthor && !($regular && $regular->getIsAdmin())) return ["error" => "notAllowed"];
+
                 $this->entityManager->remove($comment);
                 $this->entityManager->flush();
 
