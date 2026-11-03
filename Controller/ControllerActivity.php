@@ -15,6 +15,7 @@ use Classroom\Entity\Applications;
 use Learn\Entity\CourseLinkActivity;
 use Classroom\Entity\UsersLinkGroups;
 use Classroom\Entity\ActivityLinkUser;
+use Classroom\Entity\ClassroomLinkUser;
 use Classroom\Entity\ActivityLinkClassroom;
 use Classroom\Entity\UsersLinkApplications;
 use Classroom\Entity\GroupsLinkApplications;
@@ -106,6 +107,8 @@ class ControllerActivity extends Controller
                 //get the activity and convert it to a php object
                 $activity = $this->entityManager->getRepository(Activity::class)
                     ->find($activityId);
+                if (!$activity) return ['error' => 'activityNotFound'];
+                if (!$this->canReadActivity($activity)) return ['error' => 'notAllowed'];
                 $activityToSend = json_decode(json_encode($activity));
 
                 // get the tags of the activity
@@ -146,11 +149,9 @@ class ControllerActivity extends Controller
 
                 $Activity_id = (int)htmlspecialchars($data['id']);
                 $activity = $this->entityManager->getRepository(Activity::class)->findOneBy(["id" => $Activity_id]);
+                if (!$activity) return ["name" => "unknow", "id" => "unknow", "message" => "notAllowed"];
 
-                $creator_id = $activity->getUser();
-                $requester_id = $_SESSION['id'];
-
-                $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
+                $Allowed = $this->isOwnerOrAdmin($activity->getUser());
 
                 $name = ["name" => "unknow", "id" => "unknow", "message" => "notAllowed"];
                 if ($activity && $Allowed) {
@@ -240,6 +241,7 @@ class ControllerActivity extends Controller
                 return $activity;
             },
             'add_several' => function ($data) {
+                if (empty($_SESSION['id'])) return ['error' => 'notAuthenticated'];
                 $activities = [];
                 foreach ($data["array"] as $d) {
                     $isFromClassroom = false;
@@ -262,10 +264,18 @@ class ControllerActivity extends Controller
                 return $activities;
             },
             'update' => function ($data) {
+                if (empty($_SESSION['id'])) return ['error' => 'notAuthenticated'];
                 $activity = $this->entityManager->getRepository('Learn\Entity\Activity')
-                    ->find($data['id']);
+                    ->find(intval($data['id'] ?? 0));
+                if (!$activity) return ['error' => 'activityNotFound'];
+                if (!$this->isOwnerOrAdmin($activity->getUser())) return ['error' => 'notAllowed'];
+
+                // same title sanitizing as 'add', decoded first so an already encoded title isn't encoded twice
+                $title = trim(preg_replace('/<[^>]*>[^<]*<[^>]*>/', '', $data['title'] ?? ''));
+                $title = htmlspecialchars(htmlspecialchars_decode($title, ENT_QUOTES));
+
                 $activity->setUpdatedAt(new \DateTime());
-                $activity->setTitle($data['title']);
+                $activity->setTitle($title);
                 $activity->setContent($data['content']);
                 $this->entityManager->persist($activity);
                 $this->entityManager->flush();
@@ -296,6 +306,7 @@ class ControllerActivity extends Controller
                 }
 
                 $folder = $this->entityManager->getRepository(Folders::class)->find($folderId);
+                if ($folder && !$this->isOwnerOrAdmin($folder->getUser())) return ['error' => 'notAllowed'];
                 $activity->setFolder($folder);
                 $this->entityManager->persist($activity);
                 $this->entityManager->flush();
@@ -319,7 +330,7 @@ class ControllerActivity extends Controller
                 $creator_id = $folder->getUser();
                 $Allowed = $this->isAllowed($creator_id->getId(), $requester_id);
 
-                if (!$Allowed) {
+                if (!$Allowed || ($destinationFolder && !$this->isOwnerOrAdmin($destinationFolder->getUser()))) {
                     return array(
                         'error' => 'notAllowed'
                     );
@@ -335,12 +346,14 @@ class ControllerActivity extends Controller
                 ];
             },
             "get_all_user_folders" => function () {
+                if (empty($_SESSION['id'])) return ['error' => 'notAuthenticated'];
                 // get all user's activities
                 $user = $this->entityManager->getRepository(User::class)->find($this->user['id']);
                 $myFolders = $this->entityManager->getRepository(Folders::class)->findBy(["user" => $user]);
                 return $myFolders;
             },
             "create_folder" => function () {
+                if (empty($_SESSION['id'])) return ['error' => 'notAuthenticated'];
                 $name = htmlspecialchars($_POST['name']);
                 $parent = htmlspecialchars($_POST['parent']);
 
@@ -352,6 +365,7 @@ class ControllerActivity extends Controller
                 }
 
                 $parentFolder = $this->entityManager->getRepository(Folders::class)->find($parent);
+                if ($parentFolder && !$this->isOwnerOrAdmin($parentFolder->getUser())) return ['error' => 'notAllowed'];
                 $user = $this->entityManager->getRepository(User::class)->find($this->user['id']);
                 $folder = new Folders($name, $user, $parentFolder);
 
@@ -465,6 +479,36 @@ class ControllerActivity extends Controller
         }
 
         return $Allowed;
+    }
+
+    private function isOwnerOrAdmin($owner): bool
+    {
+        if (empty($_SESSION['id'])) return false;
+        return $this->isAllowed($owner ? $owner->getId() : 0, intval($_SESSION['id']));
+    }
+
+    // Co-teachers also read an activity attributed in one of their classrooms, to modify that attribution
+    private function canReadActivity(Activity $activity): bool
+    {
+        if ($this->isOwnerOrAdmin($activity->getUser())) return true;
+
+        $taughtClassroomIds = array_map(function ($link) {
+            return $link->getClassroom()->getId();
+        }, $this->entityManager->getRepository(ClassroomLinkUser::class)->findBy(['user' => intval($_SESSION['id']), 'rights' => 2]));
+        if (empty($taughtClassroomIds)) return false;
+
+        if ($this->entityManager->getRepository(ActivityLinkClassroom::class)->findOneBy(['activity' => $activity, 'classroom' => $taughtClassroomIds])) return true;
+
+        return (bool) $this->entityManager->createQueryBuilder()
+            ->select('COUNT(alu.id)')
+            ->from(ActivityLinkUser::class, 'alu')
+            ->innerJoin(ClassroomLinkUser::class, 'clu', 'WITH', 'clu.user = alu.user AND clu.rights = 0')
+            ->where('alu.activity = :activity')
+            ->andWhere('clu.classroom IN (:classrooms)')
+            ->setParameter('activity', $activity)
+            ->setParameter('classrooms', $taughtClassroomIds)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 
     /**
