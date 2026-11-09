@@ -10,10 +10,8 @@ use Utils\Exceptions\EntityOperatorException;
 use Utils\Exceptions\EntityDataIntegrityException;
 
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryActivity")
- * @ORM\Table(name="learn_activities")
- */
+#[ORM\Table(name: 'learn_activities')]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryActivity::class)]
 class Activity implements \JsonSerializable, \Utils\JsonDeserializer
 {
     // REG_TITLE: Only letters and digits and length of string is between 1 and 1000
@@ -22,95 +20,93 @@ class Activity implements \JsonSerializable, \Utils\JsonDeserializer
     const REG_CONTENT = "/.{0,9999}/";
 
 
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private $id;
 
     /**
-     * @ORM\Column(name="is_from_classroom", type="boolean", nullable=false, options={"default":false})
      * @var bool
      */
+    #[ORM\Column(name: 'is_from_classroom', type: 'boolean', nullable: false, options: ['default' => false])]
     private $isFromClassroom = false;
 
     /**
-     * @ORM\Column(name="title", type="string", length=1000, nullable=true, options={"default":"No title"})
      * @var string
      */
+    #[ORM\Column(name: 'title', type: 'string', length: 1000, nullable: true, options: ['default' => 'No title'])]
     private $title = "No title";
 
     /**
-     * @ORM\Column(name="content", type="string", length=10000, nullable=false, options={"default":"No content"})
      * @var string
      */
+    #[ORM\Column(name: 'content', type: 'string', length: 10000, nullable: false, options: ['default' => 'No content'])]
     private $content = "no content";
 
     /**
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Activity")
-     * @ORM\JoinColumn(name="id_fork", nullable=true, referencedColumnName="id", onDelete="CASCADE")
      * @var Activity
      */
+    #[ORM\JoinColumn(name: 'id_fork', nullable: true, referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \Learn\Entity\Activity::class)]
     private $fork = null;
 
     /**
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="id_user", nullable=true, referencedColumnName="id", onDelete="CASCADE")
      * @var User
      */
+    #[ORM\JoinColumn(name: 'id_user', nullable: true, referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \User\Entity\User::class)]
     private $user = null;
 
     /**
-     * @ORM\Column(name="type", type="string", length=255, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'type', type: 'string', length: 255, nullable: true)]
     private $type;
 
 
     /**
-     * @ORM\Column(name="solution", type="text", nullable=true)
      * @var String
      */
+    #[ORM\Column(name: 'solution', type: 'text', nullable: true)]
     private $solution;
 
     /**
-     * @ORM\Column(name="tolerance", type="integer", length=11, nullable=true)
      * @var int
      */
+    #[ORM\Column(name: 'tolerance', type: 'integer', length: 11, nullable: true)]
     private $tolerance;
 
 
     /**
-     * @ORM\Column(name="is_autocorrect", type="boolean", nullable=true)
      * @var bool
      */
+    #[ORM\Column(name: 'is_autocorrect', type: 'boolean', nullable: true)]
     private $isAutocorrect;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Folders")
-     * @ORM\JoinColumn(name="folder", nullable=true, referencedColumnName="id", onDelete="CASCADE")
      * @var Folders
      */
+    #[ORM\JoinColumn(name: 'folder', nullable: true, referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \Learn\Entity\Folders::class)]
     private $folder;
 
     /**
-     * @ORM\Column(name="is_collapsed", type="boolean", nullable=true, options={"default":0})
      *
      * @var bool
      */
+    #[ORM\Column(name: 'is_collapsed', type: 'boolean', nullable: true, options: ['default' => 0])]
     private $isCollapsed = false;
 
     /**
-     * @ORM\Column(name="created_at", type="datetime", nullable=false)
      * @var \DateTime
      */
+    #[ORM\Column(name: 'created_at', type: 'datetime', nullable: false)]
     private $createdAt = null;
 
     /**
-     * @ORM\Column(name="updated_at", type="datetime", nullable=true)
      * @var \DateTime
      */
+    #[ORM\Column(name: 'updated_at', type: 'datetime', nullable: true)]
     private $updatedAt = null;
 
     public function __construct($title, $content, $user = null, $isFromClassroom = false)

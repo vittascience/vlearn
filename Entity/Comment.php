@@ -9,52 +9,44 @@ use Utils\MetaDataMatcher;
 use Doctrine\Common\Collections\ArrayCollection;
 use User\Entity\User;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryComment")
- * @ORM\Table(name="learn_comments")
- */
+#[ORM\Table(name: 'learn_comments')]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryComment::class)]
 class Comment
 {
     // REG_MESSAGE: Only letters and digits and length of string is between 1 and 1000
     const REG_MESSAGE = "/^[a-zA-ZáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ]{1}[\w\sáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ'&@-_()]{0,999}[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ)]{0,1}$/";
 
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private $id;
-    /**
-     * @ORM\ManyToOne(targetEntity=Course::class, inversedBy="comment")
-     */
+    #[ORM\ManyToOne(targetEntity: Course::class, inversedBy: 'comment')]
     private $tutorial;
     
     /**
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", referencedColumnName="id", onDelete="CASCADE")
      * @var User
      */
+    #[ORM\JoinColumn(name: 'user', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \User\Entity\User::class)]
     private $user;
     /**
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Comment")
-     * @ORM\JoinColumn(name="comment_answered", referencedColumnName="id", onDelete="CASCADE")
      * @var Comment
      */
+    #[ORM\JoinColumn(name: 'comment_answered', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \Learn\Entity\Comment::class)]
     private $commentAnswered = null;
 
-    /**
-     * @ORM\Column(type="string")
-     */
+    #[ORM\Column(type: 'string')]
     private $message;
     /**
-     * @ORM\Column(name="created_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
      * @var \DateTime
      */
+    #[ORM\Column(name: 'created_at', type: 'datetime', columnDefinition: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')]
     private $createdAt;
     /**
-     * @ORM\Column(name="updated_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
      * @var \DateTime
      */
+    #[ORM\Column(name: 'updated_at', type: 'datetime', columnDefinition: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')]
     private $updatedAt;
     public function __construct()
     {

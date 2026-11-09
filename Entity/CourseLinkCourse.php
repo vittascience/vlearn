@@ -7,26 +7,17 @@ use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Exceptions\EntityOperatorException;
 use Utils\MetaDataMatcher;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryCourseLinkCourse")
- * @ORM\Table(name="learn_tutorials_link_tutorials",
- *   uniqueConstraints={
- *       @ORM\UniqueConstraint(name="couple_tutorial_unique", columns={"tutorial1_id", "tutorial2_id"})
- *   }
- *  )
- */
+#[ORM\Table(name: 'learn_tutorials_link_tutorials')]
+#[ORM\UniqueConstraint(name: 'couple_tutorial_unique', columns: ['tutorial1_id', 'tutorial2_id'])]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryCourseLinkCourse::class)]
 class CourseLinkCourse
 {
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity=Course::class, inversedBy="related")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: Course::class, inversedBy: 'related')]
     private $tutorial1;
 
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity=Course::class, inversedBy="related")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: Course::class, inversedBy: 'related')]
     private $tutorial2;
 
     public function __construct($tutorial1, $tutorial2)

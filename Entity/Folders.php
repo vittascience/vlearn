@@ -5,39 +5,35 @@ namespace Learn\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Utils\MetaDataMatcher;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryFolders")
- * @ORM\Table(name="learn_folders")
- */
+#[ORM\Table(name: 'learn_folders')]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryFolders::class)]
 class Folders implements \JsonSerializable, \Utils\JsonDeserializer
 {
 
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private $id;
 
     /**
-     * @ORM\Column(name="name", type="string", length=30, nullable=false)
      * @var string
      */
+    #[ORM\Column(name: 'name', type: 'string', length: 30, nullable: false)]
     private $name;
 
     /**
-     * @ORM\OneToOne(targetEntity="Learn\Entity\Folders")
-     * @ORM\JoinColumn(name="parent_folder", nullable=true, referencedColumnName="id", onDelete="CASCADE")
      * @var Folders
-    */
+     */
+    #[ORM\JoinColumn(name: 'parent_folder', nullable: true, referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\OneToOne(targetEntity: \Learn\Entity\Folders::class)]
     private $parentFolder = null;
 
 
     /**
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", nullable=false, referencedColumnName="id", onDelete="CASCADE")
      * @var User
-    */
+     */
+    #[ORM\JoinColumn(name: 'user', nullable: false, referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \User\Entity\User::class)]
     private $user;
 
 

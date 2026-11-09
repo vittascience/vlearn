@@ -7,36 +7,23 @@ use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Exceptions\EntityOperatorException;
 use Utils\MetaDataMatcher;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryChapter")
- * @ORM\Table(name="learn_chapters",
- *   uniqueConstraints={
- *       @ORM\UniqueConstraint(name="collection_name_unique", columns={"collection_id", "name"})
- *   }
- *  )
- */
+#[ORM\Table(name: 'learn_chapters')]
+#[ORM\UniqueConstraint(name: 'collection_name_unique', columns: ['collection_id', 'name'])]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryChapter::class)]
 class Chapter
 {
     // REG_NAME: Only letters and digits and length of string is between 1 and 100
     const REG_NAME = "/^[a-zA-ZáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ]{1}[\w\sáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ'&@-_()]{0,99}[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ)]{0,1}$/";
 
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private $id;
-    /**
-     * @ORM\ManyToOne(targetEntity=Collection::class, inversedBy="chapter")
-     */
+    #[ORM\ManyToOne(targetEntity: Collection::class, inversedBy: 'chapter')]
     private $collection;
-    /**
-     * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="chapter")
-     */
+    #[ORM\OneToMany(targetEntity: Lesson::class, mappedBy: 'chapter')]
     private $lesson;
-    /**
-     * @ORM\Column(type="string")
-     */
+    #[ORM\Column(type: 'string')]
     private $name;
 
     public function __construct($id = 0, $name = "")

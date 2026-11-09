@@ -12,10 +12,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Traits\UploadTrait;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryCourse")
- * @ORM\Table(name="learn_courses")
- */
+#[ORM\Table(name: 'learn_courses')]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryCourse::class)]
 class Course implements \JsonSerializable, \Utils\JsonDeserializer
 {
     use UploadTrait;
@@ -32,131 +30,121 @@ class Course implements \JsonSerializable, \Utils\JsonDeserializer
 
     // REG_LANG: Only  a-z letters length of string is equal 2
     const REG_LANG = "/^[a-z]{2}$/";
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private $id;
     public $activities = [];
-    /**
-     * @ORM\OneToMany(targetEntity=Favorite::class, mappedBy="tutorial")
-     */
-
+    #[ORM\OneToMany(targetEntity: Favorite::class, mappedBy: 'tutorial')]
     private $favorite;
 
-    /**
-     * @ORM\OneToMany(targetEntity=Lesson::class, mappedBy="tutorial")
-     */
+    #[ORM\OneToMany(targetEntity: Lesson::class, mappedBy: 'tutorial')]
     private $lesson;
 
-    /**
-     * @ORM\OneToMany(targetEntity=Comment::class, mappedBy="tutorial")
-     */
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'tutorial')]
     private $comment;
 
     /**
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", nullable=false, referencedColumnName="id", onDelete="CASCADE")
      * @var User
      */
+    #[ORM\JoinColumn(name: 'user', nullable: false, referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \User\Entity\User::class)]
     private $user = null;
 
     /**
-     * @ORM\Column(name="title", type="string", length=1000, nullable=false, options={"default":"No title"})
      * @var string
      */
+    #[ORM\Column(name: 'title', type: 'string', length: 1000, nullable: false, options: ['default' => 'No title'])]
     private $title = "No title";
     /**
-     * @ORM\Column(name="description", type="string", length=1000, nullable=false, options={"default":"No description"})
      * @var string
      */
+    #[ORM\Column(name: 'description', type: 'string', length: 1000, nullable: false, options: ['default' => 'No description'])]
     private $description = "No description";
     /**
-     * @ORM\Column(name="duration", type="integer", options={"default":3600})
      * @var integer
      */
+    #[ORM\Column(name: 'duration', type: 'integer', options: ['default' => 3600])]
     private $duration = 3600; // in seconds
-
     /**
-     * @ORM\Column(name="views", type="integer", options={"default":0})
      * @var integer
      */
+    #[ORM\Column(name: 'views', type: 'integer', options: ['default' => 0])]
     private $views = 0; // in seconds
     /**
-     * @ORM\Column(name="difficulty", type="integer", nullable=false, options={"default":0})
      * @var integer
      * difficulty is between 0 and 3
      */
+    #[ORM\Column(name: 'difficulty', type: 'integer', nullable: false, options: ['default' => 0])]
     private $difficulty = 0;
     /**
-     * @ORM\Column(name="lang", type="string", length=100, nullable=true, options={"default":"No lang"})
      * @var string
      */
+    #[ORM\Column(name: 'lang', type: 'string', length: 100, nullable: true, options: ['default' => 'No lang'])]
     private $lang = "No lang";
     /**
-     * @ORM\Column(name="support", type="integer", nullable=true, options={"default":0})
      * @var integer
      */
+    #[ORM\Column(name: 'support', type: 'integer', nullable: true, options: ['default' => 0])]
     private $support;
     /**
-     * @ORM\Column(name="img", type="string", length=10000, nullable=false, options={"default":"No image"})
      * @var string
      */
+    #[ORM\Column(name: 'img', type: 'string', length: 10000, nullable: false, options: ['default' => 'No image'])]
     private $img = "No image";
     /**
-     * @ORM\Column(name="link", type="string", nullable=false, options={"default":"No link"})
      * @var string
      */
+    #[ORM\Column(name: 'link', type: 'string', nullable: false, options: ['default' => 'No link'])]
     private $link = "no link";
     /**
-     * @ORM\Column(name="created_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
      * @var \DateTime
      */
+    #[ORM\Column(name: 'created_at', type: 'datetime', columnDefinition: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')]
     private $createdAt;
     /**
-     * @ORM\Column(name="updated_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
      * @var \DateTime
      */
+    #[ORM\Column(name: 'updated_at', type: 'datetime', columnDefinition: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')]
     private $updatedAt;
     /**
-     * @ORM\Column(name="is_deleted", type="boolean", nullable=false, options={"default":false})
      * @var bool
      */
+    #[ORM\Column(name: 'is_deleted', type: 'boolean', nullable: false, options: ['default' => false])]
     private $deleted = false;
 
     /**
-     * @ORM\Column(name="rights", type="integer", nullable=false, options={"default":0})
      * @var integer
      * values are between 0 and 3
      */
+    #[ORM\Column(name: 'rights', type: 'integer', nullable: false, options: ['default' => 0])]
     private $rights = 0;
 
     /**
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Course")
-     * @ORM\JoinColumn(name="id_fork", nullable=true, referencedColumnName="id", onDelete="CASCADE")
      * @var Course
      */
+    #[ORM\JoinColumn(name: 'id_fork', nullable: true, referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \Learn\Entity\Course::class)]
     private $fork = null;
 
 
     /**
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Folders")
-     * @ORM\JoinColumn(name="folder", nullable=true, referencedColumnName="id", onDelete="CASCADE")
      * @var Folders
      */
+    #[ORM\JoinColumn(name: 'folder', nullable: true, referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \Learn\Entity\Folders::class)]
     private $folder;
 
     /**
-     * @ORM\Column(name="format", type="boolean", nullable=true, options={"default":false})
      * @var bool
      */
+    #[ORM\Column(name: 'format', type: 'boolean', nullable: true, options: ['default' => false])]
     private $format;
 
     /**
-     * @ORM\Column(name="optional_data", type="text", nullable=true)
      * @var String
      */
+    #[ORM\Column(name: 'optional_data', type: 'text', nullable: true)]
     private $optionalData = null;
 
     /**
