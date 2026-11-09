@@ -13,11 +13,11 @@ use Utils\MetaDataMatcher;
 class CourseLinkCourse
 {
     #[ORM\Id]
-    #[ORM\ManyToOne(targetEntity: Course::class, inversedBy: 'related')]
+    #[ORM\ManyToOne(targetEntity: Course::class)]
     private $tutorial1;
 
     #[ORM\Id]
-    #[ORM\ManyToOne(targetEntity: Course::class, inversedBy: 'related')]
+    #[ORM\ManyToOne(targetEntity: Course::class)]
     private $tutorial2;
 
     public function __construct($tutorial1, $tutorial2)
