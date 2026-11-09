@@ -16,7 +16,7 @@ class RepositoryCourseLinkActivity extends EntityRepository
             ->from(CourseLinkActivity::class, 't')
             ->where('t.course= :idTuto')
             ->setParameter('idTuto',$idTuto)
-            ->orderBy(' t.indexOrder', 'ASC');
+            ->orderBy(' t.indexOrder', \SortDirection::Ascending);
         $query = $queryBuilder->getQuery();
         // echo ($queryBuilder->getDql());
         return $query->getResult();

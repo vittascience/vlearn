@@ -10,7 +10,6 @@ use Learn\Entity\Playlist;
 use Doctrine\ORM\EntityRepository;
 use Learn\Entity\CourseLinkActivity;
 use Learn\Entity\CourseLinkPlaylist;
-use Doctrine\ORM\Tools\Pagination\Paginator;
 
 class RepositoryPlaylist extends EntityRepository
 {
@@ -20,8 +19,8 @@ class RepositoryPlaylist extends EntityRepository
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
             ->from(Course::class, 'c')
-            ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
-            ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
+            ->leftJoin(CourseLinkActivity::class, 'cla', 'ON', "c.id=cla.course")
+            ->leftJoin(Activity::class, 'a', 'ON', "a.id=cla.activity")
             ->andWhere('c.rights=1 OR c.rights=2')
             ->andWhere('a.isFromClassroom=0')
             ->andWhere("
@@ -45,7 +44,7 @@ class RepositoryPlaylist extends EntityRepository
 
         $queryBuilder->setParameter('search', "%$search%");
         $results = $queryBuilder->groupBy('c.id')
-            ->orderBy("c.$sortField", $sortDirection)
+            ->orderBy("c.$sortField", $sortDirection === 'ASC' ? \SortDirection::Ascending : \SortDirection::Descending)
             ->getQuery()
             ->getResult();
 
@@ -111,7 +110,7 @@ class RepositoryPlaylist extends EntityRepository
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('p.id, p.title, p.description, p.rights')
             ->from(Playlist::class, 'p')
-            ->leftJoin(User::class, 'u', 'WITH', "u.id=p.id")
+            ->leftJoin(User::class, 'u', 'ON', "u.id=p.id")
             ->andWhere('p.id = :id')
             ->andWhere('p.user = :user')
             ->setParameter('id', $id)
@@ -137,7 +136,7 @@ class RepositoryPlaylist extends EntityRepository
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c.img')
             ->from(Course::class, 'c')
-            ->leftJoin(CourseLinkPlaylist::class, 'clp', 'WITH', "c.id=clp.courseId")
+            ->leftJoin(CourseLinkPlaylist::class, 'clp', 'ON', "c.id=clp.courseId")
             ->andWhere('clp.playlistId = :id')
             ->andWhere('clp.indexOrder = 0')
             ->setParameter('id', $id)

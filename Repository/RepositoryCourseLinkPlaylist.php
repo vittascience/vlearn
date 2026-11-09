@@ -16,8 +16,8 @@ class RepositoryCourseLinkPlaylist extends EntityRepository
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('clp.id as link, c.id as id, c.title, c.description, c.updatedAt, c.views, c.rights, u.firstname, u.surname, u.id as user, c.img')
             ->from(CourseLinkPlaylist::class, 'clp')
-            ->leftJoin(Course::class, 'c', 'WITH', "c.id=clp.courseId")
-            ->leftJoin(User::class, 'u', 'WITH', "u.id=c.user")
+            ->leftJoin(Course::class, 'c', 'ON', "c.id=clp.courseId")
+            ->leftJoin(User::class, 'u', 'ON', "u.id=c.user")
             ->andWhere('clp.playlistId = :id')
             ->setParameter('id', $id);
         $results = $queryBuilder->getQuery()->getResult();
