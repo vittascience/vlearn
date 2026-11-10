@@ -5,55 +5,51 @@ namespace Learn\Entity;
 use User\Entity\User;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryPlaylist")
- * @ORM\Table(name="learn_playlist")
- */
+#[ORM\Table(name: 'learn_playlist')]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryPlaylist::class)]
 class Playlist
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private $id;
 
     /**
-     * @ORM\Column(name="title", type="string", length=1000, nullable=false)
      * @var string
      */
+    #[ORM\Column(name: 'title', type: 'string', length: 1000, nullable: false)]
     private $title;
 
     /**
-     * @ORM\Column(name="description", type="string", length=1000, nullable=true)
      * @var string
      */
+    #[ORM\Column(name: 'description', type: 'string', length: 1000, nullable: true)]
     private $description;
 
     /**
-     * @ORM\ManyToOne(targetEntity="User\Entity\User")
-     * @ORM\JoinColumn(name="user", nullable=false, referencedColumnName="id", onDelete="CASCADE")
      * @var User
      */
+    #[ORM\JoinColumn(name: 'user', nullable: false, referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \User\Entity\User::class)]
     private $user;
 
     /**
-     * @ORM\Column(name="created_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
      * @var \DateTime
      */
+    #[ORM\Column(name: 'created_at', type: 'datetime', columnDefinition: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')]
     private $createdAt;
 
     /**
-     * @ORM\Column(name="updated_at", type="datetime", columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
      * @var \DateTime
      */
+    #[ORM\Column(name: 'updated_at', type: 'datetime', columnDefinition: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')]
     private $updatedAt;
 
     /**
-     * @ORM\Column(name="rights", type="integer", nullable=false, options={"default":0})
      * @var integer
      * values are between 0 and 3
      */
+    #[ORM\Column(name: 'rights', type: 'integer', nullable: false, options: ['default' => 0])]
     private $rights;
 
     public function __construct($title)

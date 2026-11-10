@@ -5,32 +5,28 @@ namespace Learn\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Utils\MetaDataMatcher;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryTag")
- * @ORM\Table(name="learn_tags")
- */
+#[ORM\Table(name: 'learn_tags')]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryTag::class)]
 class Tag implements \JsonSerializable, \Utils\JsonDeserializer
 {
 
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private $id;
 
     /**
-     * @ORM\Column(name="name", type="string", length=255, nullable=false)
      * @var string
      */
+    #[ORM\Column(name: 'name', type: 'string', length: 255, nullable: false)]
     private $name;
 
 
     /**
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Tag")
-     * @ORM\JoinColumn(name="parent_tag", nullable=true, referencedColumnName="id", onDelete="CASCADE")
      * @var Tag
      */
+    #[ORM\JoinColumn(name: 'parent_tag', nullable: true, referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\ManyToOne(targetEntity: \Learn\Entity\Tag::class)]
     private $parentTag;
 
 

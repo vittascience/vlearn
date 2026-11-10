@@ -502,7 +502,7 @@ class ControllerActivity extends Controller
         return (bool) $this->entityManager->createQueryBuilder()
             ->select('COUNT(alu.id)')
             ->from(ActivityLinkUser::class, 'alu')
-            ->innerJoin(ClassroomLinkUser::class, 'clu', 'WITH', 'clu.user = alu.user AND clu.rights = 0')
+            ->innerJoin(ClassroomLinkUser::class, 'clu', 'ON', 'clu.user = alu.user AND clu.rights = 0')
             ->where('alu.activity = :activity')
             ->andWhere('clu.classroom IN (:classrooms)')
             ->setParameter('activity', $activity)

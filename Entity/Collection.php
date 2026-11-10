@@ -7,37 +7,30 @@ use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Exceptions\EntityOperatorException;
 use Utils\MetaDataMatcher;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryCollection")
- * @ORM\Table(name="learn_collections")
- */
+#[ORM\Table(name: 'learn_collections')]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryCollection::class)]
 class Collection implements \JsonSerializable, \Utils\JsonDeserializer
 {
     // REG_NAME_GRADE_COLLECTION: Only letters and digits and length of string is between 1 and 100
     const REG_NAME_GRADE_COLLECTION = "/^[a-zA-ZáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ]{1}[\w\sáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ'&@-_()]{0,99}[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿæœÁÀÂÄÃÅÇÉÈÊËÍÌÎÏÑÓÒÔÖÕÚÙÛÜÝŸÆŒ)]{0,1}$/";
 
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * 
-     * @ORM\Column(type="integer")
-     */
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column(type: 'integer')]
     private $id;
 
-    /**
-     * @ORM\OneToMany(targetEntity=Chapter::class, cascade={"persist", "remove"}, mappedBy="collection")
-     */
+    #[ORM\OneToMany(targetEntity: Chapter::class, cascade: ['persist', 'remove'], mappedBy: 'collection')]
     private $chapter;
 
     /**
-     * @ORM\Column(name="name_collection", type="string", length=100, nullable=false, options={"default":"Unamed"})
      * @var string
      */
+    #[ORM\Column(name: 'name_collection', type: 'string', length: 100, nullable: false, options: ['default' => 'Unamed'])]
     private $nameCollection = "Unamed";
     /**
-     * @ORM\Column(name="grade_collection", type="string", length=100, nullable=false, options={"default":"Unamed"})
      * @var string
      */
+    #[ORM\Column(name: 'grade_collection', type: 'string', length: 100, nullable: false, options: ['default' => 'Unamed'])]
     private $gradeCollection = "Unamed";
 
     public function __construct($id = 0, $nameCollection = "Unamed", $gradeCollection = "Unamed")

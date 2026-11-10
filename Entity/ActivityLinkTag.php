@@ -9,24 +9,18 @@ use Doctrine\ORM\Mapping as ORM;
 use Utils\Exceptions\EntityOperatorException;
 use Utils\Exceptions\EntityDataIntegrityException;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryActivityLinkTag")
- * @ORM\Table(name="learn_activities_link_tags" )
- */
+#[ORM\Table(name: 'learn_activities_link_tags')]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryActivityLinkTag::class)]
 class ActivityLinkTag implements \JsonSerializable, \Utils\JsonDeserializer
 {
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Activity")
-     * @ORM\JoinColumn(name="id_activity", referencedColumnName="id", onDelete="CASCADE")
-     */
+    #[ORM\JoinColumn(name: 'id_activity', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: \Learn\Entity\Activity::class)]
     private $activity;
 
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity="Learn\Entity\Tag")
-     * @ORM\JoinColumn(name="id_tag", referencedColumnName="id", onDelete="CASCADE")
-     */
+    #[ORM\JoinColumn(name: 'id_tag', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: \Learn\Entity\Tag::class)]
     private $tag;
 
 

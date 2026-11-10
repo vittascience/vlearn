@@ -7,26 +7,17 @@ use Utils\Exceptions\EntityDataIntegrityException;
 use Utils\Exceptions\EntityOperatorException;
 use Utils\MetaDataMatcher;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryLesson")
- * @ORM\Table(name="learn_chapters_link_tutorials",
- *   uniqueConstraints={
- *       @ORM\UniqueConstraint(name="chapter_tutorial_unique", columns={"chapter_id", "tutorial_id"})
- *   }
- *  )
- */
+#[ORM\Table(name: 'learn_chapters_link_tutorials')]
+#[ORM\UniqueConstraint(name: 'chapter_tutorial_unique', columns: ['chapter_id', 'tutorial_id'])]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryLesson::class)]
 class Lesson
 {
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity=Chapter::class, inversedBy="lesson")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: Chapter::class, inversedBy: 'lesson')]
     private $chapter;
 
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity=Course::class, inversedBy="lesson")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: Course::class, inversedBy: 'lesson')]
     private $tutorial;
 
 

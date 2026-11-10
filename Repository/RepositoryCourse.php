@@ -23,8 +23,8 @@ class RepositoryCourse extends EntityRepository
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
             ->from(Course::class, 'c')
-            ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
-            ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
+            ->leftJoin(CourseLinkActivity::class, 'cla', 'ON', "c.id=cla.course")
+            ->leftJoin(Activity::class, 'a', 'ON', "a.id=cla.activity")
             ->andWhere('c.rights=1 OR c.rights=2')
             ->andWhere('a.isFromClassroom=0')
             ->andWhere("
@@ -49,7 +49,7 @@ class RepositoryCourse extends EntityRepository
         $results = $queryBuilder->setFirstResult(($page - 1) * self::RESULT_PER_PAGE)
             ->setMaxResults(self::RESULT_PER_PAGE)
             ->groupBy('c.id')
-            ->orderBy("c.$sortField", $sortDirection)
+            ->orderBy("c.$sortField", $sortDirection === 'ASC' ? \SortDirection::Ascending : \SortDirection::Descending)
             ->getQuery()
             ->getResult();
         return $results;
@@ -60,8 +60,8 @@ class RepositoryCourse extends EntityRepository
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c')
             ->from(Course::class, 'c')
-            ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
-            ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
+            ->leftJoin(CourseLinkActivity::class, 'cla', 'ON', "c.id=cla.course")
+            ->leftJoin(Activity::class, 'a', 'ON', "a.id=cla.activity")
             ->andWhere('c.rights=1 OR c.rights=2')
             ->andWhere('a.isFromClassroom=0')
             ->andWhere("
@@ -88,11 +88,11 @@ class RepositoryCourse extends EntityRepository
 
         $results = $queryBuilder->select('c')
             ->from(Course::class, 'c')
-            ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
-            ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
+            ->leftJoin(CourseLinkActivity::class, 'cla', 'ON', "c.id=cla.course")
+            ->leftJoin(Activity::class, 'a', 'ON', "a.id=cla.activity")
             ->andWhere('c.rights=1 OR c.rights=2')
             ->andWhere('a.isFromClassroom=0')
-            ->orderBy("c.$doctrineProperty", "$orderByValue")
+            ->orderBy("c.$doctrineProperty", $orderByValue === 'DESC' ? \SortDirection::Descending : \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
         return $results;
@@ -130,7 +130,7 @@ class RepositoryCourse extends EntityRepository
                  u.picture AS author_img
              ")
             ->from(Course::class, 'c')
-            ->leftJoin(User::class, 'u', 'WITH', 'c.user=u.id')
+            ->leftJoin(User::class, 'u', 'ON', 'c.user=u.id')
             ->andWhere('c.fork = :tutorialId')
             ->setParameter('tutorialId', $tutorialId)
             ->getQuery()
@@ -154,9 +154,9 @@ class RepositoryCourse extends EntityRepository
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('c.id, c.title, c.img, c.description, c.updatedAt, c.views, u.firstname, u.surname, u.id as userId')
             ->from(Course::class, 'c')
-            ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
-            ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
-            ->leftJoin(User::class, 'u', 'WITH', 'c.user=u.id')
+            ->leftJoin(CourseLinkActivity::class, 'cla', 'ON', "c.id=cla.course")
+            ->leftJoin(Activity::class, 'a', 'ON', "a.id=cla.activity")
+            ->leftJoin(User::class, 'u', 'ON', 'c.user=u.id')
             ->andWhere('c.lang = :lang')
             ->andWhere('c.rights=1 OR c.rights=2')
             ->andWhere('a.isFromClassroom=0')
@@ -164,7 +164,7 @@ class RepositoryCourse extends EntityRepository
             ->setMaxResults(10);
 
         if ($sort != null) {
-            $queryBuilder->orderBy("c.$sort", 'DESC');
+            $queryBuilder->orderBy("c.$sort", \SortDirection::Descending);
         }
         
         $results = $queryBuilder->getQuery()->getResult();
@@ -189,8 +189,8 @@ class RepositoryCourse extends EntityRepository
         $queryBuilder = $this->getEntityManager()->createQueryBuilder();
         $queryBuilder->select('count(DISTINCT c.id)')
             ->from(Course::class, 'c')
-            ->leftJoin(CourseLinkActivity::class, 'cla', 'WITH', "c.id=cla.course")
-            ->leftJoin(Activity::class, 'a', 'WITH', "a.id=cla.activity")
+            ->leftJoin(CourseLinkActivity::class, 'cla', 'ON', "c.id=cla.course")
+            ->leftJoin(Activity::class, 'a', 'ON', "a.id=cla.activity")
             ->andWhere('c.rights=1 OR c.rights=2')
             ->andWhere('a.isFromClassroom=0');
 

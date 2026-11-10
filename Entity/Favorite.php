@@ -8,26 +8,17 @@ use Utils\Exceptions\EntityOperatorException;
 use Utils\MetaDataMatcher;
 use User\Entity\User;
 
-/**
- * @ORM\Entity(repositoryClass="Learn\Repository\RepositoryFavorite")
- * @ORM\Table(name="learn_favorites",
- *   uniqueConstraints={
- *       @ORM\UniqueConstraint(name="user_tutorial_unique", columns={"user_id", "tutorial_id"})
- *   }
- *  )
- */
+#[ORM\Table(name: 'learn_favorites')]
+#[ORM\UniqueConstraint(name: 'user_tutorial_unique', columns: ['user_id', 'tutorial_id'])]
+#[ORM\Entity(repositoryClass: \Learn\Repository\RepositoryFavorite::class)]
 class Favorite
 {
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity="User\Entity\User", inversedBy="favorite")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: \User\Entity\User::class, inversedBy: 'favorite')]
     private $user;
 
-    /**
-     * @ORM\Id
-     * @ORM\ManyToOne(targetEntity=Course::class, inversedBy="favorite")
-     */
+    #[ORM\Id]
+    #[ORM\ManyToOne(targetEntity: Course::class, inversedBy: 'favorite')]
     private $tutorial;
 
     public function __toString()
