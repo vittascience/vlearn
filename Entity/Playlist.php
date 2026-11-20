@@ -123,7 +123,7 @@ class Playlist
         $this->rights = $rights;
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
 
         if ($this->getUser() != null) {

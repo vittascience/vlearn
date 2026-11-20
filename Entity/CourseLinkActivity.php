@@ -93,7 +93,7 @@ class CourseLinkActivity implements \JsonSerializable, \Utils\JsonDeserializer
     }
 
 
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return [
             "course" => $this->getCourse(),
