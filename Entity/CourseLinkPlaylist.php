@@ -60,7 +60,7 @@ class CourseLinkPlaylist
         $this->indexOrder = $indexOrder;
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return [
             'id' => $this->getId(),
